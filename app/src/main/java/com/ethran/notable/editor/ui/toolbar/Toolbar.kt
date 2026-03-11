@@ -192,10 +192,18 @@ fun Toolbar(
                     )
                 state.pageView.updatePageSettings(updatedPage)
                 scope.launch { CanvasEventBus.refreshUi.emit(Unit) }
+            },
+            onClose = { state.menuStates.isBackgroundSelectorModalOpen = false },
+            onSetAsDefault = { backgroundType, background ->
+                if (backgroundType == "native" && background != null) {
+                    scope.launch(Dispatchers.IO) {
+                        appRepository.kvProxy.setAppSettings(
+                            GlobalAppSettings.current.copy(defaultNativeTemplate = background)
+                        )
+                    }
+                }
             }
-        ) {
-            state.menuStates.isBackgroundSelectorModalOpen = false
-        }
+        )
     }
     if (state.isToolbarOpen) {
         Column(

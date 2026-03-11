@@ -17,6 +17,8 @@ android {
         minSdk 29
         targetSdk 35
 
+        resValue "string", "app_name", "Singularity"
+
         versionCode 34
         versionName '0.1.12'
         if (project.hasProperty('IS_NEXT') && project.IS_NEXT.toBoolean()) {

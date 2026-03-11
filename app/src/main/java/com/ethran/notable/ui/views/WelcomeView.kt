@@ -8,6 +8,8 @@ import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.Settings
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -60,6 +62,9 @@ import com.ethran.notable.R
 import com.ethran.notable.editor.utils.getCurRefreshModeString
 import com.ethran.notable.editor.utils.isRecommendedRefreshMode
 import com.ethran.notable.editor.utils.setRecommendedMode
+import com.ethran.notable.data.datastore.GlobalAppSettings
+import com.ethran.notable.data.datastore.VaultPathBootstrap
+import com.ethran.notable.io.pathFromTreeUri
 import com.ethran.notable.navigation.NavigationDestination
 import com.ethran.notable.ui.viewmodels.WelcomeViewModel
 import com.ethran.notable.utils.hasFilePermission
@@ -74,6 +79,8 @@ object WelcomeDestination : NavigationDestination {
 @Composable
 fun WelcomeView(
     goToLibrary: () -> Unit = {},
+    onFirstLaunchComplete: (() -> Unit)? = null,
+    requireVaultPaths: Boolean = false,
     viewModel: WelcomeViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
@@ -83,6 +90,22 @@ fun WelcomeView(
     var filePermissionGranted by remember { mutableStateOf(hasFilePermission(context)) }
     var recommendedRefreshMode by remember { mutableStateOf(isRecommendedRefreshMode()) }
     var refreshModeString by remember { mutableStateOf(getCurRefreshModeString()) }
+    var inboxPath by remember { mutableStateOf<String?>(GlobalAppSettings.current.obsidianInboxPath.takeIf { it.isNotBlank() }) }
+    var attachmentPath by remember { mutableStateOf<String?>(GlobalAppSettings.current.obsidianAttachmentPath.takeIf { it.isNotBlank() }) }
+
+    val persistFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+    val inboxPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+        if (uri != null) {
+            context.contentResolver.takePersistableUriPermission(uri, persistFlags)
+            pathFromTreeUri(context, uri)?.let { inboxPath = it }
+        }
+    }
+    val attachmentPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+        if (uri != null) {
+            context.contentResolver.takePersistableUriPermission(uri, persistFlags)
+            pathFromTreeUri(context, uri)?.let { attachmentPath = it }
+        }
+    }
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -121,20 +144,42 @@ fun WelcomeView(
         }
     }
 
+    val canContinue = filePermissionGranted && (!requireVaultPaths || (inboxPath != null && attachmentPath != null))
 
-    // Call the stateless content view
     WelcomeContent(
         filePermissionGranted = filePermissionGranted,
         recommendedRefreshMode = recommendedRefreshMode,
         refreshModeString = refreshModeString,
+        inboxPath = inboxPath,
+        attachmentPath = attachmentPath,
+        onInboxPick = { inboxPicker.launch(null) },
+        onAttachmentPick = { attachmentPicker.launch(null) },
+        requireVaultPaths = requireVaultPaths,
         onFilePermissionRequest = { requestPermissions() },
         onRefreshModeRequest = { setRecommendedMode() },
         onContinue = {
+            val inbox = inboxPath ?: GlobalAppSettings.current.obsidianInboxPath
+            val pickedAttachment = attachmentPath
+            val attachmentRaw = pickedAttachment ?: GlobalAppSettings.current.obsidianAttachmentPath
+            // Use the exact path from the file picker so exports go to the selected folder, not under inbox.
+            val attachment = if (pickedAttachment != null) {
+                val t = pickedAttachment.trim().trim('/')
+                if (t == "/" || t.isEmpty()) "" else t
+            } else attachmentRaw
+            GlobalAppSettings.update(
+                GlobalAppSettings.current.copy(
+                    obsidianInboxPath = inbox,
+                    obsidianAttachmentPath = attachment,
+                    showWelcome = false
+                )
+            )
+            VaultPathBootstrap.save(context, inbox, attachment)
             scope.launch(Dispatchers.IO) {
                 viewModel.removeWelcome()
             }
-            goToLibrary()
-        }
+            if (onFirstLaunchComplete != null) onFirstLaunchComplete() else goToLibrary()
+        },
+        canContinue = canContinue
     )
 }
 
@@ -143,9 +188,15 @@ fun WelcomeContent(
     filePermissionGranted: Boolean,
     recommendedRefreshMode: Boolean,
     refreshModeString: String,
+    inboxPath: String?,
+    attachmentPath: String?,
+    onInboxPick: () -> Unit,
+    onAttachmentPick: () -> Unit,
+    requireVaultPaths: Boolean,
     onFilePermissionRequest: () -> Unit,
     onRefreshModeRequest: () -> Unit,
-    onContinue: () -> Unit
+    onContinue: () -> Unit,
+    canContinue: Boolean
 ) {
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -159,7 +210,6 @@ fun WelcomeContent(
         ) {
             WelcomeHeader()
 
-            // Pass values and callbacks down
             PermissionsRow(
                 isFilePermissionGranted = filePermissionGranted,
                 isRecommendedRefreshMode = recommendedRefreshMode,
@@ -167,6 +217,15 @@ fun WelcomeContent(
                 onFileClick = onFilePermissionRequest,
                 onRefreshClick = onRefreshModeRequest
             )
+
+            if (requireVaultPaths || inboxPath != null || attachmentPath != null) {
+                VaultPathRow(
+                    inboxPath = inboxPath,
+                    attachmentPath = attachmentPath,
+                    onInboxPick = onInboxPick,
+                    onAttachmentPick = onAttachmentPick
+                )
+            }
 
             Box(
                 modifier = Modifier
@@ -184,13 +243,13 @@ fun WelcomeContent(
 
             Button(
                 onClick = onContinue,
-                enabled = filePermissionGranted,
+                enabled = canContinue,
                 modifier = Modifier
                     .fillMaxWidth(0.8f)
                     .padding(top = 24.dp)
             ) {
                 Text(
-                    if (filePermissionGranted)
+                    if (canContinue)
                         stringResource(R.string.welcome_view_continue)
                     else
                         stringResource(R.string.welcome_view_complete_setup_first)
@@ -198,6 +257,77 @@ fun WelcomeContent(
             }
 
             Spacer(modifier = Modifier.height(30.dp))
+        }
+    }
+}
+
+@Composable
+private fun VaultPathRow(
+    inboxPath: String?,
+    attachmentPath: String?,
+    onInboxPick: () -> Unit,
+    onAttachmentPick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        elevation = 0.dp,
+        backgroundColor = MaterialTheme.colors.surface,
+        shape = RoundedCornerShape(8.dp)
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Text(
+                text = stringResource(R.string.welcome_view_vault_inbox),
+                style = MaterialTheme.typography.subtitle2,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colors.onSurface
+            )
+            Text(
+                text = stringResource(R.string.welcome_view_vault_inbox_hint),
+                style = MaterialTheme.typography.caption,
+                color = MaterialTheme.colors.onSurface.copy(alpha = 0.7f)
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Button(
+                onClick = onInboxPick,
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    backgroundColor = if (inboxPath != null) MaterialTheme.colors.primary.copy(alpha = 0.12f)
+                    else MaterialTheme.colors.primary
+                )
+            ) {
+                Text(
+                    if (inboxPath != null) inboxPath else stringResource(R.string.welcome_view_vault_inbox_pick),
+                    maxLines = 1
+                )
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                text = stringResource(R.string.welcome_view_vault_attachments),
+                style = MaterialTheme.typography.subtitle2,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colors.onSurface
+            )
+            Text(
+                text = stringResource(R.string.welcome_view_vault_attachments_hint),
+                style = MaterialTheme.typography.caption,
+                color = MaterialTheme.colors.onSurface.copy(alpha = 0.7f)
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Button(
+                onClick = onAttachmentPick,
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    backgroundColor = if (attachmentPath != null) MaterialTheme.colors.primary.copy(alpha = 0.12f)
+                    else MaterialTheme.colors.primary
+                )
+            ) {
+                Text(
+                    if (attachmentPath != null) attachmentPath else stringResource(R.string.welcome_view_vault_attachments_pick),
+                    maxLines = 1
+                )
+            }
         }
     }
 }
@@ -487,9 +617,15 @@ fun WelcomePreviewSetup() {
             filePermissionGranted = false,
             recommendedRefreshMode = false,
             refreshModeString = "Normal",
+            inboxPath = null,
+            attachmentPath = null,
+            onInboxPick = {},
+            onAttachmentPick = {},
+            requireVaultPaths = false,
             onFilePermissionRequest = {},
             onRefreshModeRequest = {},
-            onContinue = {}
+            onContinue = {},
+            canContinue = false
         )
     }
 }
@@ -505,9 +641,15 @@ fun WelcomePreviewReady() {
             filePermissionGranted = true,
             recommendedRefreshMode = true,
             refreshModeString = "Extreme",
+            inboxPath = "Documents/primary/inbox",
+            attachmentPath = "Documents/primary/attachments",
+            onInboxPick = {},
+            onAttachmentPick = {},
+            requireVaultPaths = false,
             onFilePermissionRequest = {},
             onRefreshModeRequest = {},
-            onContinue = {}
+            onContinue = {},
+            canContinue = true
         )
     }
 }

@@ -126,9 +126,9 @@ fun NotebookConfigDialog(
                         bookRepository.update(updatedBook)
                     }
                 }
-            }) {
-            showBackgroundSelector = false
-        }
+            },
+            onClose = { showBackgroundSelector = false }
+        )
     }
     // Confirmation Dialog for Deletion
     if (showDeleteDialog) {

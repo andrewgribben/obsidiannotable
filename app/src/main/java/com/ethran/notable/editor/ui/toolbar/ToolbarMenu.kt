@@ -92,10 +92,6 @@ private fun ToolbarMenuContent(
 //    val parentFolder = if (book != null) book.parentFolderId
 //    else page.parentFolderId
 
-    val exportingPageToPdfMsg = stringResource(R.string.exporting_the_page_to, "PDF")
-    val exportingPageToPngMsg = stringResource(R.string.exporting_the_page_to, "PNG")
-    val exportingPageToJpegMsg = stringResource(R.string.exporting_the_page_to, "JPEG")
-    val exportingPageToXoppMsg = stringResource(R.string.exporting_the_page_to, "xopp")
     val exportingBookToPdfMsg = stringResource(R.string.exporting_the_book_to, "PDF")
     val exportingBookToPngMsg = stringResource(R.string.exporting_the_book_to, "PNG")
     val exportingBookToXoppMsg = stringResource(R.string.exporting_the_book_to, "xopp")
@@ -112,53 +108,6 @@ private fun ToolbarMenuContent(
         MenuItem(stringResource(R.string.home_view_name)) {
 //
             goToLibrary()
-            onClose()
-        }
-        DividerCentered()
-
-        // Page exports
-        MenuItem(stringResource(R.string.export_page_to, "PDF")) {
-            scope.launch(Dispatchers.IO) {
-                snackManager.runWithSnack(exportingPageToPdfMsg) {
-                   exportEngine.export(
-                        target = ExportTarget.Page(pageId = currentPageId),
-                        format = ExportFormat.PDF
-                    )
-                }
-            }
-            onClose()
-        }
-        MenuItem(stringResource(R.string.export_page_to, "PNG")) {
-            scope.launch(Dispatchers.IO) {
-                snackManager.runWithSnack(exportingPageToPngMsg) {
-                   exportEngine.export(
-                        target = ExportTarget.Page(pageId = currentPageId),
-                        format = ExportFormat.PNG
-                    )
-                }
-            }
-            onClose()
-        }
-        MenuItem(stringResource(R.string.export_page_to, "JPEG")) {
-            scope.launch(Dispatchers.IO) {
-                snackManager.runWithSnack(exportingPageToJpegMsg) {
-                   exportEngine.export(
-                        target = ExportTarget.Page(pageId = currentPageId),
-                        format = ExportFormat.JPEG
-                    )
-                }
-            }
-            onClose()
-        }
-        MenuItem(stringResource(R.string.export_page_to, "xopp")) {
-            scope.launch(Dispatchers.IO) {
-                snackManager.runWithSnack(exportingPageToXoppMsg) {
-                   exportEngine.export(
-                        target = ExportTarget.Page(pageId = currentPageId),
-                        format = ExportFormat.XOPP
-                    )
-                }
-            }
             onClose()
         }
         DividerCentered()

@@ -23,6 +23,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavController
 import com.ethran.notable.data.AppRepository
 import com.ethran.notable.data.datastore.EditorSettingCacheManager
+import com.ethran.notable.data.datastore.GlobalAppSettings
 import com.ethran.notable.editor.state.EditorState
 import com.ethran.notable.editor.state.History
 import com.ethran.notable.editor.ui.EditorSidebar
@@ -150,7 +151,9 @@ fun EditorView(
         }
 
 
-        // Inbox mode detection — query DB since pageFromDb loads async
+        // Inbox mode detection — query DB since pageFromDb loads async.
+        // A page is an inbox/capture page when it has no notebook and an inbox path is configured.
+        // (Legacy pages may still have background == "inbox"; treat those as inbox too.)
         var isInboxPage by remember { mutableStateOf(false) }
         val selectedTags = remember { mutableStateListOf<String>() }
         // Read tags reactively — updates when VaultTagScanner.refreshCache() runs
@@ -160,7 +163,9 @@ fun EditorView(
             val pageData = withContext(Dispatchers.IO) {
                 appRepository.pageRepository.getById(pageId)
             }
-            val inbox = pageData?.background == "inbox"
+            val inbox = pageData?.notebookId == null &&
+                GlobalAppSettings.current.obsidianInboxPath.isNotBlank() ||
+                pageData?.background == "inbox"
             isInboxPage = inbox
             editorState.isInboxPage = inbox
         }
@@ -242,7 +247,11 @@ fun EditorView(
                             onTagRemove = { tag -> selectedTags.remove(tag) },
                             onSave = {
                                 SyncState.launchSync(
-                                    appRepository, pageId, selectedTags.toList(), context
+                                    appRepository,
+                                    pageId,
+                                    selectedTags.toList(),
+                                    context,
+                                    exportEngine
                                 )
                                 navController.popBackStack()
                             },

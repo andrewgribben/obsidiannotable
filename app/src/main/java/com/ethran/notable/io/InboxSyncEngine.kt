@@ -2,13 +2,21 @@ package com.ethran.notable.io
 
 import android.content.Context
 import android.graphics.RectF
-import android.os.Environment
 import com.ethran.notable.data.AppRepository
+import com.ethran.notable.io.ExportEngine
+import com.ethran.notable.io.ExportFormat
+import com.ethran.notable.io.ExportOptions
+import com.ethran.notable.io.resolveVaultAttachmentDir
+import com.ethran.notable.io.ExportTarget
 import com.ethran.notable.data.db.Annotation
 import com.ethran.notable.data.db.AnnotationType
 import com.ethran.notable.data.db.Stroke
 import com.ethran.notable.data.datastore.GlobalAppSettings
+import com.ethran.notable.io.resolveExternalStoragePath
+import com.ethran.notable.ui.SnackConf
+import com.ethran.notable.ui.SnackState
 import io.shipbook.shipbooksdk.ShipBook
+import androidx.core.net.toUri
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -27,7 +35,8 @@ object InboxSyncEngine {
         appRepository: AppRepository,
         pageId: String,
         tags: List<String>,
-        context: Context
+        context: Context,
+        exportEngine: ExportEngine
     ) {
         log.i("Starting inbox sync for page $pageId with tags: $tags")
 
@@ -133,9 +142,54 @@ object InboxSyncEngine {
         val finalContent = fullText
 
         val createdDate = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(page.createdAt)
-        val markdown = generateMarkdown(createdDate, tags, finalContent)
-
         val inboxPath = GlobalAppSettings.current.obsidianInboxPath
+        val attachmentPath = GlobalAppSettings.current.obsidianAttachmentPath
+        val timestamp = SimpleDateFormat("yyyy-MM-dd-HH-mm-ss", Locale.US).format(page.createdAt)
+        val inboxDir = resolveExternalStoragePath(inboxPath)
+        inboxDir.mkdirs()
+
+        // PDF goes to vault attachment folder (relative to inbox). Blank = same folder as .md.
+        val attachmentDir = resolveVaultAttachmentDir(inboxPath, attachmentPath)
+        val pdfRelativeLink = if (inboxPath.isNotBlank() && attachmentDir != null) {
+            try {
+                attachmentDir.mkdirs()
+                log.i("Inbox sync: exporting page to PDF at ${attachmentDir.absolutePath}, file $timestamp.pdf")
+                val result = exportEngine.export(
+                    ExportTarget.Page(pageId),
+                    ExportFormat.PDF,
+                    ExportOptions(
+                        copyToClipboard = false,
+                        targetFolderUri = attachmentDir.toUri(),
+                        fileName = timestamp,
+                        overwrite = true
+                    )
+                )
+                if (result.startsWith("Saved ") && !result.contains("(app storage)")) {
+                    // Use filename only — Obsidian wikilinks resolve by unique filename,
+                    // so no path prefix is needed.
+                    val link = "$timestamp.pdf"
+                    log.i("Inbox sync: PDF saved, link added: $link")
+                    link
+                } else if (result.contains("(app storage)")) {
+                    log.w("Inbox sync: PDF saved to app storage (grant All files access for vault)")
+                    SnackState.globalSnackFlow.tryEmit(SnackConf(text = "PDF saved to app storage. Grant All files access in Settings to save to vault.", duration = 6000))
+                    null
+                } else {
+                    log.e("PDF export for inbox failed: $result")
+                    SnackState.globalSnackFlow.tryEmit(SnackConf(text = "PDF export failed: $result", duration = 5000))
+                    null
+                }
+            } catch (e: Exception) {
+                log.e("PDF export for inbox failed: ${e.message}", e)
+                SnackState.globalSnackFlow.tryEmit(SnackConf(text = "PDF export failed: ${e.message}", duration = 5000))
+                null
+            }
+        } else {
+            log.i("Inbox sync: no inbox or attachment dir, skipping PDF export")
+            null
+        }
+
+        val markdown = generateMarkdown(createdDate, tags, finalContent, pdfRelativeLink)
         writeMarkdownFile(markdown, page.createdAt, inboxPath)
 
         log.i("Inbox sync complete for page $pageId")
@@ -260,10 +314,25 @@ object InboxSyncEngine {
         return result
     }
 
+    /**
+     * Path of a file in [attachmentDir] (inside vault), relative to vault root.
+     * Uses forward slashes for Obsidian wiki links.
+     */
+    private fun pathRelativeToVaultRoot(inboxPath: String, attachmentDir: File, fileName: String): String {
+        val vaultRoot = resolveExternalStoragePath(inboxPath).parentFile?.absolutePath ?: return fileName
+        val filePath = File(attachmentDir, fileName).absolutePath
+        return if (filePath.startsWith(vaultRoot)) {
+            filePath.removePrefix(vaultRoot).trimStart(File.separatorChar).replace(File.separatorChar, '/')
+        } else {
+            fileName
+        }
+    }
+
     private fun generateMarkdown(
         createdDate: String,
         tags: List<String>,
-        content: String
+        content: String,
+        pdfRelativeLink: String? = null
     ): String {
         val sb = StringBuilder()
         sb.appendLine("---")
@@ -274,6 +343,10 @@ object InboxSyncEngine {
         }
         sb.appendLine("---")
         sb.appendLine()
+        if (pdfRelativeLink != null) {
+            sb.appendLine("PDF: [[$pdfRelativeLink]]")
+            sb.appendLine()
+        }
         sb.appendLine(content.trim())
         return sb.toString()
     }
@@ -281,13 +354,7 @@ object InboxSyncEngine {
     private fun writeMarkdownFile(markdown: String, createdAt: Date, inboxPath: String) {
         val timestamp = SimpleDateFormat("yyyy-MM-dd-HH-mm-ss", Locale.US).format(createdAt)
         val fileName = "$timestamp.md"
-
-        val dir = if (inboxPath.startsWith("/")) {
-            File(inboxPath)
-        } else {
-            File(Environment.getExternalStorageDirectory(), inboxPath)
-        }
-
+        val dir = resolveExternalStoragePath(inboxPath)
         dir.mkdirs()
         val file = File(dir, fileName)
         file.writeText(markdown)

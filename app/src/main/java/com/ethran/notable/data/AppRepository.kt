@@ -128,9 +128,13 @@ class AppRepository @Inject constructor(
     }
 
     suspend fun createNewQuickPage(parentFolderId: String? = null) : String? {
+        val defaultBg = GlobalAppSettings.current.defaultNativeTemplate
+        // Quick pages with inbox path set become capture notes (Save & Exit toolbar shown by EditorView
+        // based on notebookId == null + inboxPath set). Visual background uses the user's default template.
+        val background = if (defaultBg.isNotBlank()) defaultBg else "blank"
         val page = Page(
             notebookId = null,
-            background = "inbox",
+            background = background,
             backgroundType = BackgroundType.Native.key,
             parentFolderId = parentFolderId
         )

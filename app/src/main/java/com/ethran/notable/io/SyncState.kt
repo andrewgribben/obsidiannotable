@@ -3,6 +3,7 @@ package com.ethran.notable.io
 import android.content.Context
 import androidx.compose.runtime.mutableStateListOf
 import com.ethran.notable.data.AppRepository
+import com.ethran.notable.io.ExportEngine
 import com.ethran.notable.ui.SnackConf
 import com.ethran.notable.ui.SnackState
 import io.shipbook.shipbooksdk.ShipBook
@@ -21,14 +22,15 @@ object SyncState {
         appRepository: AppRepository,
         pageId: String,
         tags: List<String>,
-        context: Context
+        context: Context,
+        exportEngine: ExportEngine
     ) {
         if (pageId in syncingPageIds) return
         syncingPageIds.add(pageId)
 
         scope.launch {
             try {
-                InboxSyncEngine.syncInboxPage(appRepository, pageId, tags, context)
+                InboxSyncEngine.syncInboxPage(appRepository, pageId, tags, context, exportEngine)
                 log.i("Background sync complete for page $pageId")
             } catch (e: Exception) {
                 log.e("Background sync failed for page $pageId: ${e.message}", e)

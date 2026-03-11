@@ -35,6 +35,7 @@ import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
+import androidx.compose.material.Checkbox
 import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
@@ -106,11 +107,17 @@ fun BackgroundSelector(
     notebookId: String? = null,
     pageNumberInBook: Int = -1,
     onChange: (backgroundType: String, background: String?) -> Unit,
-    onClose: () -> Unit
+    onClose: () -> Unit,
+    onSetAsDefault: ((backgroundType: String, background: String?) -> Unit)? = null
 ) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     var pageBackground by remember { mutableStateOf(initialPageBackground) }
+    var setAsDefaultForNewNotes by remember { mutableStateOf(false) }
+    val applyChange: (String, String?) -> Unit = { type, bg ->
+        onChange(type, bg)
+        if (setAsDefaultForNewNotes && type == "native" && bg != null) onSetAsDefault?.invoke(type, bg)
+    }
     var maxPages: Int? by remember { mutableStateOf(getPdfPageCount(pageBackground)) }
     val currentPage: Int? by remember { mutableIntStateOf(initialPageNumberInPdf) }
 
@@ -161,7 +168,7 @@ fun BackgroundSelector(
                     val copiedFile = copyBackgroundToDatabase(context, uri, currentType.folderName)
 
                     log.i("PickVisualMedia: copied -> ${copiedFile.absolutePath}")
-                    onChange(currentType.key, copiedFile.toString())
+                    applyChange(currentType.key, copiedFile.toString())
                     scope.launch { CanvasEventBus.refreshUi.emit(Unit) }
                     pageBackground = copiedFile.toString()
                     log.d("PickVisualMedia: UI updated, pageBackground=$pageBackground, type=${currentType.key}")
@@ -188,7 +195,7 @@ fun BackgroundSelector(
         scope.launch(Dispatchers.IO) {
             try {
                 val copiedFile = copyBackgroundToDatabase(context, uri, currentType.folderName)
-                onChange(currentType.key, copiedFile.toString())
+                applyChange(currentType.key, copiedFile.toString())
                 scope.launch { CanvasEventBus.refreshUi.emit(Unit) }
                 pageBackground = copiedFile.toString()
                 pageBackgroundType = currentType
@@ -253,7 +260,7 @@ fun BackgroundSelector(
                             currentBackground = pageBackground,
                             currentBackgroundType = currentBackgroundType,
                             onBackgroundChange = { background, type ->
-                                onChange(type.key, background)
+                                applyChange(type.key, background)
                                 pageBackground = background
                                 pageBackgroundType = type
                             },
@@ -273,7 +280,7 @@ fun BackgroundSelector(
                                         pageBackgroundType =
                                             if (isChecked) BackgroundType.ImageRepeating else BackgroundType.Image
 
-                                        onChange(pageBackgroundType.key, null)
+                                        applyChange(pageBackgroundType.key, null)
                                     }
                                 )
                             }
@@ -285,7 +292,7 @@ fun BackgroundSelector(
                             currentBackground = pageBackground,
                             currentBackgroundType = BackgroundType.CoverImage,
                             onBackgroundChange = { background, type ->
-                                onChange(type.key, background)
+                                applyChange(type.key, background)
                                 pageBackground = background
                                 log.e("onBackgroundChange: $type")
                                 pageBackgroundType = type
@@ -302,7 +309,7 @@ fun BackgroundSelector(
                             currentBackground = pageBackground,
                             currentBackgroundType = BackgroundType.Native,
                             onBackgroundChange = { background, type ->
-                                onChange(type.key, background)
+                                applyChange(type.key, background)
                                 pageBackground = background
                                 pageBackgroundType = type
                             },
@@ -315,7 +322,7 @@ fun BackgroundSelector(
                                 pageBackgroundType else BackgroundType.Pdf(1)
 
                         fun onBackgroundChange(type: BackgroundType, background: String) {
-                            onChange(type.key, background)
+                            applyChange(type.key, background)
                             pageBackground = background
                             pageBackgroundType = type
                             maxPages = getPdfPageCount(background)
@@ -342,6 +349,22 @@ fun BackgroundSelector(
 
                     }
 
+                }
+                if (onSetAsDefault != null) {
+                    Spacer(Modifier.height(12.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Checkbox(
+                            checked = setAsDefaultForNewNotes,
+                            onCheckedChange = { setAsDefaultForNewNotes = it }
+                        )
+                        Text(
+                            stringResource(R.string.set_as_default_for_new_notes),
+                            modifier = Modifier.padding(start = 8.dp)
+                        )
+                    }
                 }
             }
         }

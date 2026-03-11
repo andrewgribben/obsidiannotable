@@ -51,6 +51,7 @@ data class AppSettings(
 
     // Inbox Capture
     val obsidianInboxPath: String = "Documents/primary/inbox",
+    val obsidianAttachmentPath: String = "Documents/primary/attachments",
 
     // Debug
     val showWelcome: Boolean = true,

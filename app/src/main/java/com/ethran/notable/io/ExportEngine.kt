@@ -23,16 +23,20 @@ import com.ethran.notable.data.db.Image
 import com.ethran.notable.data.db.Page
 import com.ethran.notable.data.db.PageRepository
 import com.ethran.notable.data.db.Stroke
+import com.ethran.notable.data.PageDataManager
 import com.ethran.notable.data.db.getBackgroundType
 import com.ethran.notable.data.model.BackgroundType.Native
 import com.ethran.notable.editor.drawing.drawBg
 import com.ethran.notable.editor.drawing.drawImage
 import com.ethran.notable.editor.drawing.drawStroke
+import com.ethran.notable.io.resolveExternalStoragePath
+import com.ethran.notable.io.resolveVaultAttachmentDir
 import com.ethran.notable.ui.components.getFolderList
 import com.ethran.notable.utils.ensureNotMainThread
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.shipbook.shipbooksdk.ShipBook
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -73,6 +77,11 @@ class ExportEngine @Inject constructor(
     suspend fun export(
         target: ExportTarget, format: ExportFormat, options: ExportOptions = ExportOptions()
     ): String {
+        // When exporting a page, flush persist layer and give DB time to receive latest strokes so content isn't blank
+        if (target is ExportTarget.Page) {
+            PageDataManager.saveTopic.tryEmit(target.pageId)
+            delay(500)
+        }
         // prepare file name and folder
         val (folderUri, baseFileName) = createFileNameAndFolder(target, format, options)
         // TODO: Retrieve all necessary data from the target, so that specific format exporter does not need to handle reading from db.
@@ -114,13 +123,10 @@ class ExportEngine @Inject constructor(
                         doc.writeTo(out)
                     }
                 }
-                if (options.copyToClipboard) copyPagePngLink(
-                    context, target.pageId
-                ) // You may want a separate PDF variant
             }
         }
 
-        return saveStream(
+        val result = saveStream(
             folderUri = folderUri,
             fileName = baseFileName,
             extension = "pdf",
@@ -128,6 +134,17 @@ class ExportEngine @Inject constructor(
             writer = writeAction,
             overwrite = options.overwrite
         )
+        if (result.startsWith("Saved ") && !result.contains("(app storage)") && options.copyToClipboard) {
+            when (target) {
+                is ExportTarget.Page -> copyPagePdfLink(
+                    context, folderUri, baseFileName, target.pageId
+                )
+                is ExportTarget.Book -> bookRepo.getById(target.bookId)?.let {
+                    copyBookPdfLink(context, folderUri, target.bookId, it.title)
+                }
+            }
+        }
+        return result
     }
 
     /* -------------------- IMAGE EXPORT (PNG / JPEG) -------------------- */
@@ -149,17 +166,18 @@ class ExportEngine @Inject constructor(
             is ExportTarget.Page -> {
                 val pageId = target.pageId
                 val bitmap = renderBitmapForPage(pageId)
+                var saveResult: String? = null
                 bitmap.useAndRecycle { bmp ->
                     val bytes = bmp.toBytes(compressFormat)
-                    saveBytes(
+                    saveResult = saveBytes(
                         folderUri, baseFileName,
                         ext, mime, options.overwrite, bytes
                     )
                 }
-                if (options.copyToClipboard && format == ExportFormat.PNG) {
-                    copyPagePngLink(context, pageId)
+                if (saveResult != null && saveResult.startsWith("Saved ") && options.copyToClipboard && format == ExportFormat.PNG) {
+                    copyPagePngLink(context, folderUri, baseFileName, pageId)
                 }
-                return "Page exported: $baseFileName.$ext"
+                return saveResult ?: "Error saving $baseFileName.$ext"
             }
 
             is ExportTarget.Book -> {
@@ -237,7 +255,15 @@ class ExportEngine @Inject constructor(
             return provided to fileName
         }
 
-        // Default export directory under Documents/notable/<subfolder>
+        // Simplified: use vault inbox folder for all exports (same as Save & Exit PDF) so we can confirm PDF creation works.
+        val inboxPath = GlobalAppSettings.current.obsidianInboxPath
+        if (inboxPath.isNotBlank()) {
+            val exportDir = resolveExternalStoragePath(inboxPath)
+            exportDir.mkdirs()
+            return exportDir.toUri() to fileName
+        }
+
+        // Fallback: vault attachment (if set) under .singularity/Export, else Documents/Singularity
         val subfolderPath = createSubfolderName(target, format)
         val folderUri = getDefaultExportDirectoryUri(subfolderPath)
         return folderUri to fileName
@@ -303,13 +329,20 @@ class ExportEngine @Inject constructor(
     }
 
 
-    // Create a default directory Uri under Documents/notable/<subfolderPath> using file:// scheme.
+    // Default export directory: vault attachment/.singularity/Export/<subfolder> when set, else Documents/Singularity/<subfolder>.
     private fun getDefaultExportDirectoryUri(subfolderPath: String): Uri {
-        val documentsDir =
-            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS)
+        val inboxPath = GlobalAppSettings.current.obsidianInboxPath
+        val attachmentPath = GlobalAppSettings.current.obsidianAttachmentPath
+        val vaultBase = resolveVaultAttachmentDir(inboxPath, attachmentPath)
 
-        val targetPath = listOfNotBlank("notable", subfolderPath).joinToString(File.separator)
-        val dir = File(documentsDir, targetPath)
+        val baseDir = if (vaultBase != null) {
+            File(File(vaultBase, ".singularity"), "Export")
+        } else {
+            val documentsDir =
+                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS)
+            File(documentsDir, "Singularity")
+        }
+        val dir = if (subfolderPath.isNotEmpty()) File(baseDir, subfolderPath) else baseDir
         if (!dir.exists()) dir.mkdirs()
         return dir.toUri()
     }
@@ -533,50 +566,97 @@ class ExportEngine @Inject constructor(
         writer: suspend (OutputStream) -> Unit
     ): String = withContext(Dispatchers.IO) {
         val displayName = if (extension.isBlank()) fileName else "$fileName.$extension"
-        try {
-            val dest = createOrGetFileInDir(folderUri, displayName, mimeType, overwrite)
-                ?: throw IOException(
-                    "Unable to create or access destination file in target directory, $folderUri, file: $displayName"
-                )
-
-            when (dest.scheme) {
+        suspend fun doSave(dirUri: Uri, isFallback: Boolean): String? {
+            val dest = createOrGetFileInDir(dirUri, displayName, mimeType, overwrite) ?: return null
+            return when (dest.scheme) {
                 ContentResolver.SCHEME_CONTENT -> {
                     val resolver = context.contentResolver
                     resolver.openOutputStream(dest, "w")?.use { out -> writer(out) }
-                        ?: throw IOException("Failed to open output stream for $displayName")
+                        ?: return null
+                    val loc = if (isFallback) " (app storage; grant All files access to save to vault)" else ""
+                    "Saved $displayName$loc"
                 }
-
                 "file" -> {
                     val file = File(requireNotNull(dest.path) { "Missing file path" })
                     FileOutputStream(file, false).use { out -> writer(out) }
+                    val locationHint = if (isFallback) " (app storage; grant All files access to save to vault)" else " to ${file.parentFile?.path ?: ""}"
+                    "Saved $displayName$locationHint"
                 }
-
-                else -> throw IOException("Unsupported Uri scheme: ${dest.scheme}")
+                else -> null
             }
-
-            "Saved $displayName"
+        }
+        try {
+            val result = doSave(folderUri, isFallback = false)
+                ?: throw IOException("Unable to create or access destination file in target directory, $folderUri, file: $displayName")
+            result
         } catch (e: Exception) {
-            log.e("Save error: ${e.message}")
-            "Error saving $displayName"
+            log.e("Save error: ${e.message}", e)
+            if (folderUri.scheme == "file") {
+                val fallbackDir = File(context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS), "SingularityExport").apply { mkdirs() }
+                try {
+                    doSave(fallbackDir.toUri(), isFallback = true)
+                        ?: "Error saving $displayName"
+                } catch (e2: Exception) {
+                    log.e("Fallback save error: ${e2.message}", e2)
+                    "Error saving $displayName"
+                }
+            } else {
+                "Error saving $displayName"
+            }
         }
     }
 
 
     /* -------------------- Clipboard Helpers -------------------- */
 
-    private fun copyPagePngLink(context: Context, pageId: String) {
+    /**
+     * Path of the saved file relative to vault root (inbox folder's parent).
+     * Uses forward slashes for Obsidian. Falls back to filename only if attachment dir is not under vault root.
+     */
+    private fun getPathRelativeToVaultRoot(folderUri: Uri, fileNameWithExt: String): String {
+        if (folderUri.scheme != "file") return fileNameWithExt
+        val folderPath = folderUri.path ?: return fileNameWithExt
+        val inboxPath = GlobalAppSettings.current.obsidianInboxPath
+        val vaultRoot = resolveExternalStoragePath(inboxPath).parentFile?.absolutePath ?: return fileNameWithExt
+        val filePath = File(File(folderPath), fileNameWithExt).absolutePath
+        return if (filePath.startsWith(vaultRoot)) {
+            filePath.removePrefix(vaultRoot).trimStart(File.separatorChar).replace(File.separatorChar, '/')
+        } else {
+            fileNameWithExt
+        }
+    }
+
+    private fun copyPagePdfLink(
+        context: Context, folderUri: Uri, baseFileName: String, pageId: String
+    ) {
+        val linkPath = getPathRelativeToVaultRoot(folderUri, "$baseFileName.pdf")
         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         val text = """
-            [[../attachments/Notable/Pages/notable-page-$pageId.png]]
+            [[$linkPath]]
+            [[Notable Link][notable://page-$pageId]]
+        """.trimIndent()
+        clipboard.setPrimaryClip(ClipData.newPlainText("Notable Page PDF Link", text))
+    }
+
+    private fun copyPagePngLink(
+        context: Context, folderUri: Uri, baseFileName: String, pageId: String
+    ) {
+        val linkPath = getPathRelativeToVaultRoot(folderUri, "$baseFileName.png")
+        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        val text = """
+            [[$linkPath]]
             [[Notable Link][notable://page-$pageId]]
         """.trimIndent()
         clipboard.setPrimaryClip(ClipData.newPlainText("Notable Page Link", text))
     }
 
-    private fun copyBookPdfLink(context: Context, bookId: String, bookName: String) {
+    private fun copyBookPdfLink(
+        context: Context, folderUri: Uri, bookId: String, bookName: String
+    ) {
+        val linkPath = getPathRelativeToVaultRoot(folderUri, "$bookName.pdf")
         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         val text = """
-            [[../attachments/Notable/Notebooks/$bookName.pdf]]
+            [[$linkPath]]
             [[Notable Book Link][notable://book-$bookId]]
         """.trimIndent()
         clipboard.setPrimaryClip(ClipData.newPlainText("Notable Book PDF Link", text))
@@ -663,7 +743,7 @@ class ExportEngine @Inject constructor(
                     if (!target.exists()) target.createNewFile()
                     target.toUri()
                 } catch (e: Exception) {
-                    log.e("File create failed: ${e.message}")
+                    log.e("File create failed: ${e.message}", e)
                     null
                 }
             }

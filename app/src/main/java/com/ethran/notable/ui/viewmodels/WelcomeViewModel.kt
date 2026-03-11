@@ -8,14 +8,12 @@ import javax.inject.Inject
 
 @HiltViewModel
 class WelcomeViewModel @Inject constructor(
-    private val kvProxy: KvProxy,
+    private val kvProxy: dagger.Lazy<KvProxy>,
 ) : ViewModel() {
 
     suspend fun removeWelcome() {
-        kvProxy.setAppSettings(
+        kvProxy.get().setAppSettings(
             GlobalAppSettings.current.copy(showWelcome = false)
         )
     }
-
-
 }

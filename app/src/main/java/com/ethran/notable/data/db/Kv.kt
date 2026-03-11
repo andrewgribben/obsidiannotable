@@ -12,6 +12,7 @@ import androidx.room.Query
 import com.ethran.notable.APP_SETTINGS_KEY
 import com.ethran.notable.data.datastore.AppSettings
 import com.ethran.notable.data.datastore.GlobalAppSettings
+import com.ethran.notable.data.datastore.VaultPathBootstrap
 import com.ethran.notable.utils.hasFilePermission
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.shipbook.shipbooksdk.ShipBook
@@ -94,7 +95,8 @@ class KvRepository @Inject constructor(
  */
 @Singleton
 class KvProxy @Inject constructor(
-    private val kvRepository: KvRepository
+    private val kvRepository: KvRepository,
+    @param:ApplicationContext private val context: Context
 ) {
     private val log = ShipBook.getLogger("KvProxy")
 
@@ -123,6 +125,7 @@ class KvProxy @Inject constructor(
     suspend fun setAppSettings(value: AppSettings) {
         setKv(APP_SETTINGS_KEY, value, AppSettings.serializer())
         GlobalAppSettings.update(value)
+        VaultPathBootstrap.save(context, value.obsidianInboxPath, value.obsidianAttachmentPath)
     }
 
 }

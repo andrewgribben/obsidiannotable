@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name" translatable="false">Notable</string>
+    <string name="app_name" translatable="false">Singularity</string>
     <string name="home_quick_pages">Quick pages</string>
     <string name="home_notebooks">Notebooks</string>
     <string name="home_add_new_folder">Add new folder</string>
@@ -68,6 +68,12 @@
     <string name="welcome_view_permissions_button">Grant Permission</string>
     <string name="welcome_view_continue">Continue</string>
     <string name="welcome_view_complete_setup_first">Complete Setup First</string>
+    <string name="welcome_view_vault_inbox">Vault inbox folder</string>
+    <string name="welcome_view_vault_inbox_pick">Pick inbox folder</string>
+    <string name="welcome_view_vault_inbox_hint">Where markdown notes are saved</string>
+    <string name="welcome_view_vault_attachments">Vault attachments folder</string>
+    <string name="welcome_view_vault_attachments_pick">Pick attachments folder</string>
+    <string name="welcome_view_vault_attachments_hint">Where PDFs and exports are saved</string>
     <string name="welcome_view_prevent_frozen">⚠️ Prevent Notable from Being Frozen (Onyx Devices)</string>
     <string name="welcome_view_prevent_frozen_details">"Onyx devices may automatically freeze (kill) apps in the background to save battery. If you do not disable this feature, Notable will be constantly closed when in the background, which can be very annoying and may cause loss of work or interruptions. "</string>
     <string name="welcome_view_prevent_frozen_instructions_title">How to prevent freezing:</string>
@@ -97,6 +103,7 @@
     </plurals>
     <string name="repeat_background">Repeat background</string>
     <string name="choose_native_template">Choose Native Template</string>
+    <string name="set_as_default_for_new_notes">Set as default for new notes</string>
     <string name="select_pdf_page">Select PDF Page</string>
     <string name="page_number">Page number</string>
     <string name="observe_pdf">Observe PDF</string>

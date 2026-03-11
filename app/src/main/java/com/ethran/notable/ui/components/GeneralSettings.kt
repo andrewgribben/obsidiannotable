@@ -17,6 +17,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -35,6 +36,7 @@ import androidx.compose.ui.unit.sp
 import com.ethran.notable.R
 import com.ethran.notable.data.datastore.AppSettings
 import com.ethran.notable.io.VaultTagScanner
+import com.ethran.notable.io.isAttachmentPathSet
 
 
 @Composable
@@ -185,6 +187,11 @@ private fun InboxCaptureSettings(
 ) {
     val focusManager = LocalFocusManager.current
     var pathInput by remember { mutableStateOf(settings.obsidianInboxPath) }
+    var attachmentPathInput by remember { mutableStateOf(settings.obsidianAttachmentPath) }
+    LaunchedEffect(settings.obsidianInboxPath, settings.obsidianAttachmentPath) {
+        pathInput = settings.obsidianInboxPath
+        attachmentPathInput = settings.obsidianAttachmentPath
+    }
 
     Column(
         modifier = Modifier
@@ -202,7 +209,8 @@ private fun InboxCaptureSettings(
 
         Text(
             "Handwritten captures are recognized and saved as markdown to your Obsidian vault. " +
-                    "Tags are loaded from existing notes in this folder.",
+                    "Tags are loaded from existing notes in the inbox folder. " +
+                    "Exports (PDF, images) are saved to the attachment folder; clipboard links are relative to vault root.",
             style = MaterialTheme.typography.body2,
             color = Color.Gray
         )
@@ -229,7 +237,8 @@ private fun InboxCaptureSettings(
                 cursorBrush = SolidColor(Color.Black),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(onDone = {
-                    onSettingsChange(settings.copy(obsidianInboxPath = pathInput))
+                    val attachment = attachmentPathInput.trim().takeIf { isAttachmentPathSet(it) }.orEmpty()
+                    onSettingsChange(settings.copy(obsidianInboxPath = pathInput, obsidianAttachmentPath = attachment))
                     VaultTagScanner.refreshCache(pathInput)
                     focusManager.clearFocus()
                 }),
@@ -244,6 +253,48 @@ private fun InboxCaptureSettings(
 
         Text(
             "Relative to /storage/emulated/0/. Press Done to save.",
+            style = MaterialTheme.typography.caption,
+            color = Color.Gray
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            "Vault attachment folder",
+            style = MaterialTheme.typography.body1,
+            fontWeight = FontWeight.Medium
+        )
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            BasicTextField(
+                value = attachmentPathInput,
+                onValueChange = { attachmentPathInput = it },
+                textStyle = TextStyle(fontSize = 16.sp, color = Color.Black),
+                singleLine = true,
+                cursorBrush = SolidColor(Color.Black),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = {
+                    val attachment = attachmentPathInput.trim().takeIf { isAttachmentPathSet(it) }.orEmpty()
+                    onSettingsChange(settings.copy(obsidianInboxPath = pathInput, obsidianAttachmentPath = attachment))
+                    VaultTagScanner.refreshCache(pathInput)
+                    focusManager.clearFocus()
+                }),
+                modifier = Modifier
+                    .weight(1f)
+                    .border(1.dp, Color.Gray, RoundedCornerShape(6.dp))
+                    .padding(horizontal = 12.dp, vertical = 10.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        Text(
+            "Full path (e.g. Documents/primary/attachments) as from the folder picker, or relative to inbox (e.g. Attachments). Leave blank to save PDF next to the note.",
             style = MaterialTheme.typography.caption,
             color = Color.Gray
         )

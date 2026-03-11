@@ -16,6 +16,7 @@ import android.provider.OpenableColumns
 import androidx.core.net.toUri
 import com.ethran.notable.SCREEN_HEIGHT
 import com.ethran.notable.SCREEN_WIDTH
+import com.ethran.notable.data.datastore.GlobalAppSettings
 import com.ethran.notable.utils.logCallStack
 import com.onyx.android.sdk.utils.UriUtils.getDataColumn
 import io.shipbook.shipbooksdk.ShipBook
@@ -34,13 +35,134 @@ private val fileUtilsLog = ShipBook.getLogger("FileUtilsLogger")
 fun getLinkedFilesDir(): File {
     val documentsDir =
         Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS)
-    val dbDir = File(documentsDir, "/notable/Linked")
-    if (!dbDir.exists()) {
-        dbDir.mkdirs()
+    val legacyLinkedDir = File(documentsDir, "notable/Linked")
+
+    val inboxPath = GlobalAppSettings.current.obsidianInboxPath
+    val attachmentPath = GlobalAppSettings.current.obsidianAttachmentPath
+    val vaultBase = resolveVaultAttachmentDir(inboxPath, attachmentPath)
+
+    val linkedDir = if (vaultBase != null) {
+        val targetDir = File(File(vaultBase, ".singularity"), "Linked")
+        if (!targetDir.exists() && legacyLinkedDir.exists()) {
+            copyDirectoryRecursively(legacyLinkedDir, targetDir)
+        }
+        targetDir
+    } else {
+        legacyLinkedDir
     }
-    return dbDir
+
+    if (!linkedDir.exists()) linkedDir.mkdirs()
+    return linkedDir
 }
 
+/**
+ * True when the vault attachment path is set to a valid directory (not blank and not "/").
+ * Use this so we never try to write to filesystem root.
+ */
+fun isAttachmentPathSet(path: String): Boolean {
+    val t = path.trim()
+    return t.isNotBlank() && t != "/"
+}
+
+/**
+ * Resolves the attachment directory for Save & Exit PDF (and exports).
+ * - [attachmentPath] blank or "/" → inbox folder (PDF next to the .md).
+ * - [attachmentPath] starting with "/" or "Documents" → resolved as absolute storage path.
+ * - [attachmentPath] containing "/" but not starting with ".." → full storage path from the folder picker
+ *   (e.g. "Notes/Vault/Attachments") → resolved as absolute storage path.
+ * - [attachmentPath] single-segment ("Attachments") or ".."-relative ("../Attachments") → relative to inbox.
+ * Returns null if [inboxPath] is blank.
+ */
+fun resolveVaultAttachmentDir(inboxPath: String, attachmentPath: String): File? {
+    if (inboxPath.isBlank()) return null
+    val inboxDir = resolveExternalStoragePath(inboxPath)
+    val trimmed = attachmentPath.trim().trim('/')
+    return when {
+        trimmed.isEmpty() -> inboxDir
+        trimmed.startsWith("/") || trimmed.startsWith("Documents") ->
+            resolveExternalStoragePath(attachmentPath.trim())
+        // Multi-segment path not starting with ".." = absolute path from file picker
+        trimmed.contains('/') && !trimmed.startsWith("..") ->
+            resolveExternalStoragePath(attachmentPath.trim())
+        // Single name ("Attachments") or relative ("../Attachments") = relative to inbox
+        else -> File(inboxDir, trimmed)
+    }
+}
+
+/**
+ * Returns the path of [attachmentFullPath] relative to [inboxPath], so that
+ * File(resolveExternalStoragePath(inboxPath), result) equals resolveExternalStoragePath(attachmentFullPath).
+ * Both paths use "/" (e.g. "Documents/V/inbox", "Documents/V/attachments").
+ * Optional: for manual entry of a path relative to inbox instead of using the folder picker.
+ */
+fun pathRelativeToInbox(inboxPath: String, attachmentFullPath: String): String {
+    val inboxSegments = inboxPath.trim().trim('/').split('/').filter { it.isNotBlank() }
+    val attachmentSegments = attachmentFullPath.trim().trim('/').split('/').filter { it.isNotBlank() }
+    var common = 0
+    while (common < inboxSegments.size && common < attachmentSegments.size && inboxSegments[common] == attachmentSegments[common]) {
+        common++
+    }
+    val ups = List(inboxSegments.size - common) { ".." }
+    val rest = attachmentSegments.drop(common)
+    return (ups + rest).joinToString("/")
+}
+
+/**
+ * Converts a tree URI from [Intent.ACTION_OPEN_DOCUMENT_TREE] to the path string format
+ * used in settings (e.g. "Documents/MyVault/inbox"). Returns null if the URI cannot be
+ * resolved (e.g. non-primary storage or unsupported provider).
+ */
+fun pathFromTreeUri(context: Context, uri: Uri): String? {
+    if (!DocumentsContract.isTreeUri(uri)) return null
+    val docId = runCatching { DocumentsContract.getTreeDocumentId(uri) }.getOrNull() ?: return null
+    if (docId.isBlank()) return null
+    // docId format for external storage: "primary:Documents/MyVault/inbox" or "0000-0000:path"
+    val colon = docId.indexOf(':')
+    if (colon < 0) return null
+    val volume = docId.substring(0, colon)
+    val relative = docId.substring(colon + 1).trimStart('/').replace('\\', '/')
+    if (relative.isEmpty()) return null
+    return when {
+        volume.equals("primary", ignoreCase = true) || volume.equals("home", ignoreCase = true) ->
+            relative
+        else -> {
+            fileUtilsLog.w("pathFromTreeUri: non-primary volume '$volume' - path may not resolve; docId=$docId")
+            relative
+        }
+    }
+}
+
+/**
+ * Resolves a path string to a File for external storage.
+ * - "/" or blank → do not use for attachment dir; call [isAttachmentPathSet] first.
+ * - Absolute paths ("/storage/...") → File(path)
+ * - Paths under "Documents" → public Documents directory + rest (matches getDefaultExportDirectoryUri)
+ * - Other relative paths → getExternalStorageDirectory() + path
+ * Use this so writes go to the same Documents tree that works for export on Android 10+.
+ */
+fun resolveExternalStoragePath(path: String): File {
+    return when {
+        path.trim() == "/" || path.isBlank() -> File(Environment.getExternalStorageDirectory(), "Documents")
+        path.startsWith("/") -> File(path)
+        path.startsWith("Documents") || path.startsWith("Documents/") -> {
+            val documentsDir =
+                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS)
+            val rest = path.removePrefix("Documents").trimStart('/', File.separatorChar)
+            if (rest.isEmpty()) documentsDir else File(documentsDir, rest)
+        }
+        else -> File(Environment.getExternalStorageDirectory(), path)
+    }
+}
+
+/** Copies contents of [source] directory into [target]. Creates [target] if needed. Uses overwrite = true. */
+fun copyDirectoryRecursively(source: File, target: File) {
+    if (!source.isDirectory) return
+    target.mkdirs()
+    source.listFiles()?.forEach { file ->
+        val dest = File(target, file.name)
+        if (file.isDirectory) copyDirectoryRecursively(file, dest) else file.copyTo(dest, overwrite = true)
+    }
+}
 
 fun saveImageFromContentUri(context: Context, fileUri: Uri, outputDir: File): File {
     val fileName = getFileNameFromUri(context, fileUri)

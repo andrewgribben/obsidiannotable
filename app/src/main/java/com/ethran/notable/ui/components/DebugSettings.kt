@@ -1,8 +1,14 @@
 package com.ethran.notable.ui.components
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import com.ethran.notable.data.datastore.AppSettings
+import com.ethran.notable.data.getDbDir
 
 @Composable
 fun DebugSettings(
@@ -12,6 +18,13 @@ fun DebugSettings(
     goToSystemInfo: () -> Unit
 ) {
     Column {
+        SelectionContainer {
+            Text(
+                text = "Database & app data: ${runCatching { getDbDir().absolutePath }.getOrElse { it.message ?: "unavailable" }}",
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                style = androidx.compose.material.MaterialTheme.typography.caption
+            )
+        }
         SettingToggleRow(
             label = "Show welcome screen",
             value = settings.showWelcome,

@@ -152,7 +152,7 @@ fun LibraryContent(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Notable",
+                text = "Singularity",
                 style = androidx.compose.material.MaterialTheme.typography.h5,
                 fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
             )

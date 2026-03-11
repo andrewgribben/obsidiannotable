@@ -5,8 +5,11 @@ import android.net.Uri
 import android.os.Environment
 import com.ethran.notable.APP_SETTINGS_KEY
 import com.ethran.notable.data.datastore.AppSettings
+import com.ethran.notable.data.datastore.GlobalAppSettings
+import com.ethran.notable.io.copyDirectoryRecursively
 import com.ethran.notable.io.createFileFromContentUri
 import com.ethran.notable.io.isImageUri
+import com.ethran.notable.io.resolveVaultAttachmentDir
 import com.ethran.notable.io.saveImageFromContentUri
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
@@ -14,16 +17,29 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 
+private const val APP_DATA_SUBFOLDER = ".singularity"
+
 fun getDbDir(): File {
     val documentsDir =
         Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS)
-    val dbDir = File(documentsDir, "notabledb")
-    if (!dbDir.exists()) {
-        dbDir.mkdirs()
+    val legacyDbDir = File(documentsDir, "notabledb")
+
+    val inboxPath = GlobalAppSettings.current.obsidianInboxPath
+    val attachmentPath = GlobalAppSettings.current.obsidianAttachmentPath
+    val vaultBase = resolveVaultAttachmentDir(inboxPath, attachmentPath)
+
+    val dbDir = if (vaultBase != null) {
+        val targetDir = File(File(vaultBase, APP_DATA_SUBFOLDER), "notabledb")
+        if (!targetDir.exists() && legacyDbDir.exists()) {
+            copyDirectoryRecursively(legacyDbDir, targetDir)
+        }
+        targetDir
+    } else {
+        legacyDbDir
     }
-    if (!dbDir.canWrite()) {
-        throw IllegalStateException("Database directory is not writable")
-    }
+
+    if (!dbDir.exists()) dbDir.mkdirs()
+    if (!dbDir.canWrite()) throw IllegalStateException("Database directory is not writable")
     return dbDir
 }
 

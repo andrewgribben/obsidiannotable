@@ -30,6 +30,7 @@ import com.ethran.notable.data.PageDataManager
 import com.ethran.notable.data.datastore.AppSettings
 import com.ethran.notable.data.datastore.EditorSettingCacheManager
 import com.ethran.notable.data.datastore.GlobalAppSettings
+import com.ethran.notable.data.datastore.VaultPathBootstrap
 import com.ethran.notable.data.db.KvProxy
 import com.ethran.notable.data.db.StrokeMigrationHelper
 import com.ethran.notable.editor.canvas.CanvasEventBus
@@ -39,6 +40,7 @@ import com.ethran.notable.ui.LocalSnackContext
 import com.ethran.notable.ui.SnackState
 import com.ethran.notable.ui.components.NotableApp
 import com.ethran.notable.ui.theme.InkaTheme
+import com.ethran.notable.ui.views.WelcomeView
 import com.ethran.notable.utils.hasFilePermission
 import com.onyx.android.sdk.api.device.epd.EpdController
 import dagger.hilt.android.AndroidEntryPoint
@@ -95,41 +97,79 @@ class MainActivity : ComponentActivity() {
         snackState.registerCancelGlobalSnackObserver()
         PageDataManager.registerComponentCallbacks(this)
 
+        // Load vault paths from app-private storage so getDbDir() uses the correct path
+        // before we open the DB (which holds the full settings).
+        val hasBootstrap = VaultPathBootstrap.load(applicationContext)?.let { (inbox, attachment) ->
+            GlobalAppSettings.update(
+                GlobalAppSettings.current.copy(
+                    obsidianInboxPath = inbox,
+                    obsidianAttachmentPath = attachment
+                )
+            )
+            true
+        } ?: false
+
         setContent {
             var isInitialized by remember { mutableStateOf(false) }
+            var fullInitDone by remember { mutableStateOf(false) }
+            var deferredInitDone by remember { mutableStateOf(false) }
+            val firstLaunchCompleteState = remember { mutableStateOf(false) }
 
             LaunchedEffect(Unit) {
                 if (hasFilePermission(this@MainActivity)) {
-                    withContext(Dispatchers.IO) {
-                        // Init app settings, also do migration
-                        val savedSettings =
-                            kvProxy.get().get(APP_SETTINGS_KEY, AppSettings.serializer())
-                                ?: AppSettings(version = 1)
+                    if (hasBootstrap) {
+                        withContext(Dispatchers.IO) {
+                            val savedSettings =
+                                kvProxy.get().get(APP_SETTINGS_KEY, AppSettings.serializer())
+                                    ?: AppSettings(version = 1)
 
-                        GlobalAppSettings.update(savedSettings)
+                            GlobalAppSettings.update(savedSettings)
+                            VaultPathBootstrap.save(
+                                this@MainActivity,
+                                savedSettings.obsidianInboxPath,
+                                savedSettings.obsidianAttachmentPath
+                            )
 
-                        editorSettingCacheManager.get().init()
-                        strokeMigrationHelper.get().reencodeStrokePointsToSB1()
-
-                        // Pre-populate inbox tag cache
-                        VaultTagScanner.refreshCache(savedSettings.obsidianInboxPath)
+                            editorSettingCacheManager.get().init()
+                            strokeMigrationHelper.get().reencodeStrokePointsToSB1()
+                            VaultTagScanner.refreshCache(savedSettings.obsidianInboxPath)
+                        }
+                        fullInitDone = true
                     }
                 }
                 isInitialized = true
             }
 
+            LaunchedEffect(firstLaunchCompleteState.value) {
+                if (firstLaunchCompleteState.value && hasFilePermission(this@MainActivity)) {
+                    withContext(Dispatchers.IO) {
+                        editorSettingCacheManager.get().init()
+                        strokeMigrationHelper.get().reencodeStrokePointsToSB1()
+                        VaultTagScanner.refreshCache(GlobalAppSettings.current.obsidianInboxPath)
+                    }
+                    deferredInitDone = true
+                }
+            }
+
+            val showMainApp = (hasBootstrap && fullInitDone) || (firstLaunchCompleteState.value && deferredInitDone)
+            val showFirstLaunchWelcome = isInitialized && !hasBootstrap && !firstLaunchCompleteState.value
+
             InkaTheme {
                 CompositionLocalProvider(LocalSnackContext provides snackState) {
-                    if (isInitialized) {
-                        NotableApp(
-                            // Call .get() here so they are only instantiated AFTER the permission check runs
+                    when {
+                        !isInitialized -> ShowInitMessage()
+                        showMainApp -> NotableApp(
                             exportEngine = exportEngineLazy.get(),
                             editorSettingCacheManager = editorSettingCacheManager.get(),
                             snackState = snackState,
                             appRepository = appRepositoryLazy.get()
                         )
-                    } else {
-                        ShowInitMessage()
+                        showFirstLaunchWelcome -> WelcomeView(
+                            requireVaultPaths = true,
+                            onFirstLaunchComplete = { firstLaunchCompleteState.value = true },
+                            goToLibrary = {}
+                        )
+                        else -> ShowInitMessage()
                     }
                 }
             }
