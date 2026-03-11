@@ -1,0 +1,1683 @@
+--------- beginning of main
+03-10 18:15:30.986 D/CompatChangeReporter(12164): Compat change id reported: 270674727; UID 10145; state: ENABLED
+03-10 18:15:31.327 D/QuickSettings(12164): App is paused - maybe quick settings opened?
+03-10 18:15:31.368 I/MainActivity(12164): Notable started
+--------- beginning of system
+03-10 18:15:31.407 V/ActivityThread(12164): reportTopResumedActivityChanged - > onActivityTopResumed
+03-10 18:15:31.410 D/VRI[MainActivity](12164): visibilityChanged oldVisibility=true newVisibility=false
+03-10 18:15:31.413 D/MainActivity(12164): OnWindowFocusChanged: false
+03-10 18:15:31.415 I/HWUI    (12164): Davey! duration=1122ms; Flags=0, FrameTimelineVsyncId=1595173, IntendedVsync=60447148390387, Vsync=60447596900350, InputEventId=0, HandleInputStart=60447601775950, AnimationStart=60447601778242, PerformTraversalsStart=60447973101523, DrawStart=60448121293606, FrameDeadline=60447623944321, FrameInterval=60447601493919, FrameStartTime=26382939, SyncQueued=60448153835481, SyncStart=60448153939336, IssueDrawCommandsStart=60448154190377, SwapBuffers=60448266127929, FrameCompleted=60448270506106, DequeueBufferDuration=5856771, QueueBufferDuration=452656, GpuCompleted=60448270506106, SwapBuffersCompleted=60448266985377, DisplayPresentTime=144115222452437076, CommandSubmissionCompleted=60448266127929, 
+03-10 18:15:31.561 W/.ethran.notable(12164): type=1400 audit(0.0:20942): avc:  denied  { read } for  name="u:object_r:vendor_display_prop:s0" dev="tmpfs" ino=10756 scontext=u:r:untrusted_app:s0:c145,c256,c512,c768 tcontext=u:object_r:vendor_display_prop:s0 tclass=file permissive=0 app=com.tailscale.ipn
+03-10 18:15:31.566 W/libc    (12164): Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+03-10 18:15:31.747 I/.ethran.notable(12164): Compiler allocated 5318KB to compile void android.view.ViewRootImpl.performTraversals()
+03-10 18:15:32.018 D/MainActivity(12164): OnWindowFocusChanged: true
+03-10 18:15:35.509 D/ProfileInstaller(12164): Installing profile for com.ethran.notable
+03-10 18:15:36.902 D/QuickSettings(12164): App is paused - maybe quick settings opened?
+03-10 18:15:37.010 D/MainActivity(12164): OnWindowFocusChanged: false
+03-10 18:15:37.153 D/VRI[MainActivity](12164): visibilityChanged oldVisibility=true newVisibility=false
+03-10 18:15:37.218 D/PageDataManager(12164): onTrimMemory: 20, currentCacheSizeMB: 0
+03-10 18:15:37.222 D/PageDataManager(12164): freeMemory(10)
+03-10 18:15:37.224 D/PageDataManager(12164): after trim currentCacheSizeMB: 0
+03-10 18:15:37.227 D/PageDataManager(12164): onTrimMemory: 20, currentCacheSizeMB: 0
+03-10 18:15:37.228 D/PageDataManager(12164): freeMemory(10)
+03-10 18:15:37.230 D/PageDataManager(12164): after trim currentCacheSizeMB: 0
+03-10 18:15:38.942 I/FA      (12164): Application backgrounded at: timestamp_millis: 1773166536937
+03-10 18:15:40.127 D/CompatChangeReporter(12164): Compat change id reported: 312399441; UID 10145; state: ENABLED
+03-10 18:15:40.619 I/.ethran.notable(12164): Background concurrent copying GC freed 6272KB AllocSpace bytes, 45(1540KB) LOS objects, 49% free, 7063KB/13MB, paused 164us,75us total 531.216ms
+03-10 18:15:42.351 V/ActivityThread(12164): reportTopResumedActivityChanged - > onActivityTopResumed
+03-10 18:15:42.381 W/.ethran.notable(12164): type=1400 audit(0.0:20945): avc:  denied  { read } for  name="u:object_r:vendor_display_prop:s0" dev="tmpfs" ino=10756 scontext=u:r:untrusted_app:s0:c145,c256,c512,c768 tcontext=u:object_r:vendor_display_prop:s0 tclass=file permissive=0 app=com.tailscale.ipn
+03-10 18:15:42.383 W/libc    (12164): Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+03-10 18:15:42.561 D/MainActivity(12164): OnWindowFocusChanged: true
+03-10 18:15:44.141 I/KvProxy (12164): Setting APP_SETTINGS to AppSettings(version=1, monitorBgFiles=false, defaultNativeTemplate=blank, quickNavPages=[], neoTools=false, scribbleToEraseEnabled=false, toolbarPosition=Top, smoothScroll=true, continuousZoom=false, continuousStrokeSlider=false, monochromeMode=false, paginatePdf=true, visualizePdfPagination=false, doubleTapAction=Undo, twoFingerTapAction=ChangeTool, swipeLeftAction=NextPage, swipeRightAction=PreviousPage, twoFingerSwipeLeftAction=ToggleZen, twoFingerSwipeRightAction=ToggleZen, holdAction=Select, enableQuickNav=true, obsidianInboxPath=Documents/primary/inbox, obsidianAttachmentPath=Documents/primary/attachments, showWelcome=false, debugMode=false, simpleRendering=false, openGLRendering=true, muPdfRendering=true, destructiveMigrations=false)
+03-10 18:15:44.157 W/WindowOnBackDispatcher(12164): OnBackInvokedCallback is not enabled for the application.
+03-10 18:15:44.157 W/WindowOnBackDispatcher(12164): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+03-10 18:15:44.268 D/TrafficStats(12164): tagSocket(128) with statsTag=0xffffffff, statsUid=-1
+03-10 18:15:44.315 D/PageDataManager(12164): Cancelling loading pages, ignoring: []
+03-10 18:15:51.150 D/PageDataManager(12164): Cancelling loading pages, ignoring: []
+03-10 18:15:55.160 W/WindowOnBackDispatcher(12164): OnBackInvokedCallback is not enabled for the application.
+03-10 18:15:55.160 W/WindowOnBackDispatcher(12164): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+03-10 18:15:55.193 W/libc    (12164): Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+03-10 18:15:55.189 W/.ethran.notable(12164): type=1400 audit(0.0:20946): avc:  denied  { read } for  name="u:object_r:vendor_display_prop:s0" dev="tmpfs" ino=10756 scontext=u:r:untrusted_app:s0:c145,c256,c512,c768 tcontext=u:object_r:vendor_display_prop:s0 tclass=file permissive=0 app=com.tailscale.ipn
+03-10 18:15:55.241 D/MainActivity(12164): OnWindowFocusChanged: false
+03-10 18:15:55.925 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:15:55.927 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:15:55.944 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:15:55.972 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:15:55.997 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:15:56.024 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:15:56.050 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:15:56.078 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:15:56.684 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:15:56.711 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:15:56.736 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:15:56.762 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:15:56.789 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:15:56.815 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:15:56.842 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:15:56.868 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:15:56.895 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:15:56.921 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:15:56.947 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:15:56.974 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:15:57.001 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:15:57.027 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:15:57.053 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:15:57.079 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:15:57.106 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:15:57.132 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:15:57.158 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:15:57.185 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:15:57.212 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:15:57.239 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:15:57.264 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:15:57.291 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:15:57.317 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:15:57.343 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:15:57.369 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:15:57.396 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:15:57.423 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:15:57.449 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:15:57.475 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:15:57.502 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:15:57.528 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:15:57.554 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:15:57.580 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:15:57.607 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:15:57.621 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:15:57.645 W/WindowOnBackDispatcher(12164): sendCancelIfRunning: isInProgress=false callback=android.view.ViewRootImpl$$ExternalSyntheticLambda12@a6f9a53
+03-10 18:15:57.724 D/MainActivity(12164): OnWindowFocusChanged: true
+03-10 18:15:59.631 W/WindowOnBackDispatcher(12164): OnBackInvokedCallback is not enabled for the application.
+03-10 18:15:59.631 W/WindowOnBackDispatcher(12164): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+03-10 18:15:59.659 W/libc    (12164): Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+03-10 18:15:59.657 W/.ethran.notable(12164): type=1400 audit(0.0:20947): avc:  denied  { read } for  name="u:object_r:vendor_display_prop:s0" dev="tmpfs" ino=10756 scontext=u:r:untrusted_app:s0:c145,c256,c512,c768 tcontext=u:object_r:vendor_display_prop:s0 tclass=file permissive=0 app=com.tailscale.ipn
+03-10 18:15:59.703 D/MainActivity(12164): OnWindowFocusChanged: false
+03-10 18:16:00.026 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:00.034 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:00.060 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:00.087 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:00.113 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:00.140 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:00.165 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:00.932 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:00.958 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:00.984 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:01.010 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:01.036 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:01.064 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:01.089 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:01.116 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:01.142 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:01.168 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:01.195 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:01.221 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:01.248 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:01.274 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:01.300 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:01.326 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:01.353 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:01.379 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:01.406 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:01.433 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:01.459 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:01.485 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:01.512 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:01.538 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:01.564 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:01.591 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:01.617 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:01.643 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:01.670 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:01.696 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:01.722 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:01.749 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:01.775 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:01.802 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:01.828 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:01.855 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:01.881 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:01.907 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:01.934 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:01.960 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:01.986 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:02.013 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:02.039 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:02.066 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:02.092 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:02.118 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:02.145 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:02.171 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:02.197 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:02.224 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:02.727 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:02.751 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:02.778 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:02.804 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:02.831 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:02.857 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:02.883 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:02.911 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:02.937 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:02.962 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:02.989 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:03.015 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:03.041 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:03.068 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:03.094 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:03.121 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:03.147 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:03.173 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:03.200 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:03.226 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:03.253 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:03.279 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:03.305 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:03.333 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:03.358 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:03.384 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:03.940 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:03.964 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:03.992 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:04.017 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:04.043 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:04.069 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:04.096 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:04.123 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:04.149 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:04.176 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:04.203 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:04.228 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:04.255 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:04.281 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:04.308 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:04.334 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:04.360 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:04.387 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:04.413 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:04.440 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:04.465 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:04.492 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:04.519 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:04.545 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:04.572 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:04.598 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:04.624 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:04.651 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:04.677 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:04.703 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:04.730 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:04.757 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:04.782 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:04.810 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:04.835 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:04.862 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:04.889 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:04.914 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:04.941 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:04.956 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:04.979 W/WindowOnBackDispatcher(12164): sendCancelIfRunning: isInProgress=false callback=android.view.ViewRootImpl$$ExternalSyntheticLambda12@e220a99
+03-10 18:16:05.058 D/MainActivity(12164): OnWindowFocusChanged: true
+03-10 18:16:06.868 W/WindowOnBackDispatcher(12164): OnBackInvokedCallback is not enabled for the application.
+03-10 18:16:06.868 W/WindowOnBackDispatcher(12164): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+03-10 18:16:06.889 W/libc    (12164): Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+03-10 18:16:06.885 W/.ethran.notable(12164): type=1400 audit(0.0:20948): avc:  denied  { read } for  name="u:object_r:vendor_display_prop:s0" dev="tmpfs" ino=10756 scontext=u:r:untrusted_app:s0:c145,c256,c512,c768 tcontext=u:object_r:vendor_display_prop:s0 tclass=file permissive=0 app=com.tailscale.ipn
+03-10 18:16:06.929 D/MainActivity(12164): OnWindowFocusChanged: false
+03-10 18:16:07.960 W/WindowOnBackDispatcher(12164): sendCancelIfRunning: isInProgress=false callback=android.view.ViewRootImpl$$ExternalSyntheticLambda12@b735be1
+03-10 18:16:08.013 D/MainActivity(12164): OnWindowFocusChanged: true
+03-10 18:16:10.358 I/PageView(12164): PageView init
+03-10 18:16:10.359 I/PageView(12164): PageView.init: creating new bitmap
+03-10 18:16:10.375 I/bitmapUtils(12164): loadPersistBitmap: no exact-match cache (expected f753a57f-bed9-4981-9f4c-8c26a71963b2-sy0.png)
+03-10 18:16:10.375 D/PageView(12164): Drawing initial background.
+03-10 18:16:10.417 I/.ethran.notable(12164): Waiting for a blocking GC ProfileSaver
+03-10 18:16:10.427 W/.ethran.notable(12164): Cleared Reference was only reachable from finalizer (only reported once)
+03-10 18:16:10.432 I/.ethran.notable(12164): WaitForGcToComplete blocked ProfileSaver on NativeAlloc for 14.864ms
+03-10 18:16:10.445 I/EditorSurface(12164): recompose surface
+03-10 18:16:10.475 I/.ethran.notable(12164): Compiler allocated 5380KB to compile void com.ethran.notable.editor.ui.EditorSidebarKt.EditorSidebar(com.ethran.notable.io.ExportEngine, androidx.navigation.NavController, com.ethran.notable.data.AppRepository, com.ethran.notable.editor.state.EditorState, com.ethran.notable.editor.EditorControlTower, int, androidx.compose.runtime.Composer, int, int)
+03-10 18:16:10.517 D/nativeloader(12164): Load /data/app/~~SBsymqBjiaBDoXyZMfj9Jw==/com.ethran.notable-sBJ3g9_dgyT7F6m5Vez8fg==/base.apk!/lib/arm64-v8a/libonyx_pen_touch_reader.so using ns clns-7 from class loader (caller=/data/app/~~SBsymqBjiaBDoXyZMfj9Jw==/com.ethran.notable-sBJ3g9_dgyT7F6m5Vez8fg==/base.apk!classes19.dex): ok
+03-10 18:16:10.524 I/DrawCanvas(12164): Initializing Canvas
+03-10 18:16:10.525 D/OpenGLRenderer(12164): Releasing renderer
+03-10 18:16:10.530 V/GLThread(12164): starting thread...
+03-10 18:16:10.531 E/Gralloc4(12164): buffer descriptor contains invalid usage bits 0x100000000
+03-10 18:16:10.553 D/GLFrontBufferedRenderer(12164): Supports KHR_FENCE_SYNC: true
+03-10 18:16:10.553 D/GLFrontBufferedRenderer(12164): Supports ANDROID_NATIVE_FENCE_SYNC: true
+03-10 18:16:10.574 I/EditorView(12164): EditorView: saving
+03-10 18:16:10.581 I/PageViewCache(12164): Init from persist layer, pageId: f753a57f-bed9-4981-9f4c-8c26a71963b2
+03-10 18:16:10.583 D/PageView(12164): Page loaded (Init with id: f753a57f-bed9-4981-9f4c-8c26a71963b2)
+03-10 18:16:10.584 V/CanvasObservers(12164): Refreshing UI!
+03-10 18:16:10.585 D/DrawCanvas(12164): refreshUi: scroll: Offset(0.0, 0.0), zoom: 1.0
+03-10 18:16:10.588 D/PageViewCache(12164): Start page, id f753a57f-bed9-4981-9f4c-8c26a71963b2
+03-10 18:16:10.588 D/PageDataManager(12164): requestPageLoadJoin(f753a57f-bed9-4981-9f4c-8c26a71963b2)
+03-10 18:16:10.588 D/PageDataManager(12164): getOrStartLoadingJob(f753a57f-bed9-4981-9f4c-8c26a71963b2)
+03-10 18:16:10.589 D/PageDataManager(12164): starting loading of the Page(f753a57f-bed9-4981-9f4c-8c26a71963b2)
+03-10 18:16:10.589 D/PageDataManager(12164): page(f753a57f-bed9-4981-9f4c-8c26a71963b2)areListInitialized, false, false, null
+03-10 18:16:10.591 D/PageDataManager(12164): Loading page f753a57f-bed9-4981-9f4c-8c26a71963b2
+03-10 18:16:10.593 D/PageDataManager(12164): Preloading background for page f753a57f-bed9-4981-9f4c-8c26a71963b2
+03-10 18:16:10.609 D/PageDataManager(12164): Loaded page f753a57f-bed9-4981-9f4c-8c26a71963b2
+03-10 18:16:10.612 D/PageViewCache(12164): Got page data (PageView.loadPage). id f753a57f-bed9-4981-9f4c-8c26a71963b2
+03-10 18:16:10.613 D/PageViewCache(12164): All strokes loaded in 25 ms
+03-10 18:16:10.613 W/.ethran.notable(12164): type=1400 audit(0.0:20949): avc:  denied  { read } for  name="u:object_r:vendor_display_prop:s0" dev="tmpfs" ino=10756 scontext=u:r:untrusted_app:s0:c145,c256,c512,c768 tcontext=u:object_r:vendor_display_prop:s0 tclass=file permissive=0 app=com.tailscale.ipn
+03-10 18:16:10.616 W/libc    (12164): Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+03-10 18:16:10.617 I/DrawCanvas(12164): surface created android.view.SurfaceView$2@16cc448
+03-10 18:16:10.617 D/SnackState(12164): Removing snack 376d4283-82fc-44a8-8ddb-6b4127efd70a
+03-10 18:16:10.617 I/DrawCanvas(12164): Update editable surface
+03-10 18:16:10.626 E/Gralloc4(12164): buffer descriptor contains invalid usage bits 0x100000000
+03-10 18:16:10.627 V/DrawCanvas(12164): Surface dimension changed!
+03-10 18:16:10.627 D/PageView(12164): Updating dimensions: 1766 x 2480
+03-10 18:16:10.628 I/bitmapUtils(12164): loadPersistBitmap: no exact-match cache (expected f753a57f-bed9-4981-9f4c-8c26a71963b2-sy0.png)
+03-10 18:16:10.629 D/PageView(12164): Drawing initial background.
+03-10 18:16:10.641 I/DrawCanvas(12164): Update editable surface
+03-10 18:16:10.642 V/GLThread(12164): dispatching request to render for token: 0
+03-10 18:16:10.643 V/GLThread(12164): requesting render for token: 0
+03-10 18:16:10.651 D/nativeloader(12164): Load /data/app/~~SBsymqBjiaBDoXyZMfj9Jw==/com.ethran.notable-sBJ3g9_dgyT7F6m5Vez8fg==/base.apk!/lib/arm64-v8a/libgraphics-core.so using ns clns-7 from class loader (caller=/data/app/~~SBsymqBjiaBDoXyZMfj9Jw==/com.ethran.notable-sBJ3g9_dgyT7F6m5Vez8fg==/base.apk!classes18.dex): ok
+03-10 18:16:10.652 E/ASurfaceControlTest(12164): GraphicsCore JNI_OnLoad start
+03-10 18:16:10.656 V/einkHelper(12164): onSurfaceInit, (0, 0 - 1766, 2480)
+03-10 18:16:10.657 D/PageViewCache(12164): Loaded page from persistent layer f753a57f-bed9-4981-9f4c-8c26a71963b2
+03-10 18:16:10.657 D/einkHelper(12164): Set update mode HAND_WRITING_REPAINT_MODE
+03-10 18:16:10.658 D/PageDataManager(12164): page(f753a57f-bed9-4981-9f4c-8c26a71963b2)areListInitialized, true, true, 17
+03-10 18:16:10.659 I/einkHelper(12164): Setup editable surface
+03-10 18:16:10.661 D/EGL     (12164): eglDupNativeFence returned 154
+03-10 18:16:10.672 D/PageDataManager(12164): reduceCache(20)
+03-10 18:16:10.795 I/RawInputReader$a(12164): submitJob nativeRawReader raw_input-134
+03-10 18:16:10.796 I/lib_touch_reader(12164): find path /dev/input/event1 result name onyx_emp_Wacom I2C Digitizer
+03-10 18:16:10.837 I/einkHelper(12164): Setup editable surface completed
+03-10 18:16:10.838 I/DrawCanvas(12164): Update pen and stroke: pen=FOUNTAIN, mode=Draw
+03-10 18:16:10.846 V/CanvasObservers(12164): Force update, zone: null, Strokes to draw: 0
+03-10 18:16:10.852 D/PageDrawingLog(12164): drawOnCanvasFromPage, zoom: 1.0, background: inbox, type: Native
+03-10 18:16:10.861 V/DrawCanvas(12164): refreshUiSuspend() is called from the non-main thread.
+03-10 18:16:10.862 D/DrawCanvas.waitForDrawing(12164): waiting
+03-10 18:16:10.866 D/DrawCanvas.waitForDrawing(12164): Finished waiting in 3 ms
+03-10 18:16:10.870 V/einkHelper(12164): onSurfaceInit, (0, 0 - 1766, 2480)
+03-10 18:16:10.871 D/einkHelper(12164): Set update mode HAND_WRITING_REPAINT_MODE
+03-10 18:16:10.872 I/einkHelper(12164): Setup editable surface
+03-10 18:16:10.901 I/RawInputReader$a(12164): submitJob finally closeRawInput raw_input-134
+03-10 18:16:10.921 I/RawInputReader$a(12164): submitJob nativeRawReader raw_input-134
+03-10 18:16:10.921 I/lib_touch_reader(12164): find path /dev/input/event1 result name onyx_emp_Wacom I2C Digitizer
+03-10 18:16:10.953 I/einkHelper(12164): Setup editable surface completed
+03-10 18:16:10.954 I/DrawCanvas(12164): Update pen and stroke: pen=FOUNTAIN, mode=Draw
+03-10 18:16:10.966 V/CanvasObservers(12164): Force update, zone: null, Strokes to draw: 0
+03-10 18:16:10.967 D/PageDrawingLog(12164): drawOnCanvasFromPage, zoom: 1.0, background: inbox, type: Native
+03-10 18:16:10.973 V/DrawCanvas(12164): refreshUiSuspend() is called from the non-main thread.
+03-10 18:16:10.974 D/DrawCanvas.waitForDrawing(12164): waiting
+03-10 18:16:10.976 D/DrawCanvas.waitForDrawing(12164): Finished waiting in 2 ms
+03-10 18:16:11.583 I/PageDataManager(12164): Persisting batch of bitmaps for pages: [f753a57f-bed9-4981-9f4c-8c26a71963b2]
+03-10 18:16:11.886 D/bitmapUtils(12164): persistBitmapFull: cached preview saved as f753a57f-bed9-4981-9f4c-8c26a71963b2-sy0.png (scrollY=0)
+03-10 18:16:12.637 D/DrawCanvas(12164): lock obtained in 4 ms
+03-10 18:16:12.650 D/DrawCanvas(12164): Drawing...
+03-10 18:16:12.654 D/PageDrawingLog(12164): drawOnCanvasFromPage, zoom: 1.0, background: inbox, type: Native
+03-10 18:16:12.661 D/nativeloader(12164): Load /data/app/~~SBsymqBjiaBDoXyZMfj9Jw==/com.ethran.notable-sBJ3g9_dgyT7F6m5Vez8fg==/base.apk!/lib/arm64-v8a/libink.so using ns clns-7 from class loader (caller=/data/app/~~SBsymqBjiaBDoXyZMfj9Jw==/com.ethran.notable-sBJ3g9_dgyT7F6m5Vez8fg==/base.apk!classes18.dex): ok
+03-10 18:16:12.746 I/PageDataManager(12164): Persisting batch of bitmaps for pages: [f753a57f-bed9-4981-9f4c-8c26a71963b2]
+03-10 18:16:12.935 D/DrawCanvas(12164): lock obtained in 0 ms
+03-10 18:16:12.935 D/DrawCanvas(12164): Drawing...
+03-10 18:16:12.940 D/PageDrawingLog(12164): drawOnCanvasFromPage, zoom: 1.0, background: inbox, type: Native
+03-10 18:16:13.043 D/bitmapUtils(12164): persistBitmapFull: cached preview saved as f753a57f-bed9-4981-9f4c-8c26a71963b2-sy0.png (scrollY=0)
+03-10 18:16:13.379 D/DrawCanvas(12164): lock obtained in 0 ms
+03-10 18:16:13.382 D/DrawCanvas(12164): Drawing...
+03-10 18:16:13.385 D/PageDrawingLog(12164): drawOnCanvasFromPage, zoom: 1.0, background: inbox, type: Native
+03-10 18:16:13.738 D/DrawCanvas(12164): lock obtained in 0 ms
+03-10 18:16:13.738 D/DrawCanvas(12164): Drawing...
+03-10 18:16:13.742 D/PageDrawingLog(12164): drawOnCanvasFromPage, zoom: 1.0, background: inbox, type: Native
+03-10 18:16:13.746 I/PageDataManager(12164): Persisting batch of bitmaps for pages: [f753a57f-bed9-4981-9f4c-8c26a71963b2]
+03-10 18:16:14.015 D/DrawCanvas(12164): lock obtained in 1 ms
+03-10 18:16:14.017 D/DrawCanvas(12164): Drawing...
+03-10 18:16:14.024 D/PageDrawingLog(12164): drawOnCanvasFromPage, zoom: 1.0, background: inbox, type: Native
+03-10 18:16:14.036 D/bitmapUtils(12164): persistBitmapFull: cached preview saved as f753a57f-bed9-4981-9f4c-8c26a71963b2-sy0.png (scrollY=0)
+03-10 18:16:14.144 I/.ethran.notable(12164): NativeAlloc concurrent copying GC freed 3526KB AllocSpace bytes, 13(1604KB) LOS objects, 49% free, 9957KB/19MB, paused 54us,56us total 106.694ms
+03-10 18:16:14.370 D/DrawCanvas(12164): lock obtained in 0 ms
+03-10 18:16:14.371 D/DrawCanvas(12164): Drawing...
+03-10 18:16:14.374 D/PageDrawingLog(12164): drawOnCanvasFromPage, zoom: 1.0, background: inbox, type: Native
+03-10 18:16:14.746 I/PageDataManager(12164): Persisting batch of bitmaps for pages: [f753a57f-bed9-4981-9f4c-8c26a71963b2]
+03-10 18:16:14.887 V/CanvasObservers(12164): Commiting to history
+03-10 18:16:14.921 D/DrawCanvas(12164): lock obtained in 0 ms
+03-10 18:16:14.923 D/DrawCanvas(12164): Drawing...
+03-10 18:16:14.925 D/PageDrawingLog(12164): drawOnCanvasFromPage, zoom: 1.0, background: inbox, type: Native
+03-10 18:16:15.042 D/bitmapUtils(12164): persistBitmapFull: cached preview saved as f753a57f-bed9-4981-9f4c-8c26a71963b2-sy0.png (scrollY=0)
+03-10 18:16:15.334 D/DrawCanvas(12164): lock obtained in 0 ms
+03-10 18:16:15.335 D/DrawCanvas(12164): Drawing...
+03-10 18:16:15.337 D/PageDrawingLog(12164): drawOnCanvasFromPage, zoom: 1.0, background: inbox, type: Native
+03-10 18:16:15.746 I/PageDataManager(12164): Persisting batch of bitmaps for pages: [f753a57f-bed9-4981-9f4c-8c26a71963b2]
+03-10 18:16:15.831 D/DrawCanvas(12164): lock obtained in 1 ms
+03-10 18:16:15.835 D/DrawCanvas(12164): Drawing...
+03-10 18:16:15.838 D/PageDrawingLog(12164): drawOnCanvasFromPage, zoom: 1.0, background: inbox, type: Native
+03-10 18:16:15.856 V/CanvasObservers(12164): Commiting to history
+03-10 18:16:16.040 D/bitmapUtils(12164): persistBitmapFull: cached preview saved as f753a57f-bed9-4981-9f4c-8c26a71963b2-sy0.png (scrollY=0)
+03-10 18:16:16.376 V/CanvasObservers(12164): Commiting to history
+03-10 18:16:16.746 I/PageDataManager(12164): Persisting batch of bitmaps for pages: [f753a57f-bed9-4981-9f4c-8c26a71963b2]
+03-10 18:16:17.040 D/bitmapUtils(12164): persistBitmapFull: cached preview saved as f753a57f-bed9-4981-9f4c-8c26a71963b2-sy0.png (scrollY=0)
+03-10 18:16:17.066 I/InboxSyncEngine(12164): Starting inbox sync for page f753a57f-bed9-4981-9f4c-8c26a71963b2 with tags: []
+03-10 18:16:17.138 I/OECServiceUtils(12164): Suspicious time-consuming check OECService debug status,false, takes: 7 ms!
+03-10 18:16:17.143 D/PageDataManager(12164): Cancelling loading pages, ignoring: []
+03-10 18:16:17.163 W/GestureReceiver(12164): Gesture coroutine canceled
+03-10 18:16:17.163 W/GestureReceiver(12164): androidx.compose.ui.input.pointer.PointerInputResetException: Pointer input was reset
+03-10 18:16:17.164 V/GLThread(12164): dispatching request to detach surface w/ token: 0
+03-10 18:16:17.164 V/GLThread(12164): dispatching request to detach surface w/ token: 1
+03-10 18:16:17.165 I/DrawCanvas(12164): surface destroyed 228067491 - ref 74247363
+03-10 18:16:17.166 V/einkHelper(12164): onSurfaceDestroy, (0, 0 - 1766, 2480)
+03-10 18:16:17.345 E/BufferQueueProducer(12164): [SurfaceView[com.ethran.notable/com.ethran.notable.MainActivity]#6(BLAST Consumer)6](id:2f8400000006,api:0,p:-1,c:12164) disconnect: not connected (req=2)
+03-10 18:16:17.360 D/PageView(12164): Dispose old page
+03-10 18:16:17.362 D/PageDataManager(12164): page(f753a57f-bed9-4981-9f4c-8c26a71963b2)areListInitialized, true, true, 17
+03-10 18:16:17.362 I/PageDataManager(12164): Page exit, is page loaded: true
+03-10 18:16:17.363 D/PageDataManager(12164): page(f753a57f-bed9-4981-9f4c-8c26a71963b2)areListInitialized, true, true, 17
+03-10 18:16:17.366 D/PageDataManager(12164): Cancelling loading page: pageId=f753a57f-bed9-4981-9f4c-8c26a71963b2
+03-10 18:16:17.388 I/OnyxHWREngine(12164): OnyxHWR service connected
+03-10 18:16:17.388 I/InboxSyncEngine(12164): Recognizing all 9 strokes
+03-10 18:16:17.389 I/OnyxHWREngine(12164): Initializing OnyxHWR recognizer...
+03-10 18:16:17.447 I/OnyxHWREngine(12164): OnyxHWR init: recognizerActivated=true, compileSuccess=false
+03-10 18:16:17.448 I/OnyxHWREngine(12164): OnyxHWR initialized=true
+03-10 18:16:17.839 I/OnyxHWREngine(12164): OnyxHWR recognized 7 chars
+03-10 18:16:17.841 I/InboxSyncEngine(12164): Full recognized text: 'Testing'
+03-10 18:16:17.868 I/InboxSyncEngine(12164): Inbox sync: exporting page to PDF at /storage/emulated/0/Documents/primary/inbox, file 2026-03-10-18-16-10.pdf
+03-10 18:16:18.009 I/InboxSyncEngine(12164): Inbox sync: PDF saved, link added: inbox/2026-03-10-18-16-10.pdf
+03-10 18:16:18.026 I/InboxSyncEngine(12164): Written inbox note to /storage/emulated/0/Documents/primary/inbox/2026-03-10-18-16-10.md
+03-10 18:16:18.027 I/InboxSyncEngine(12164): Inbox sync complete for page f753a57f-bed9-4981-9f4c-8c26a71963b2
+03-10 18:16:18.027 I/SyncState(12164): Background sync complete for page f753a57f-bed9-4981-9f4c-8c26a71963b2
+03-10 18:16:19.724 I/PageView(12164): PageView init
+03-10 18:16:19.724 I/PageView(12164): PageView.init: creating new bitmap
+03-10 18:16:19.726 I/bitmapUtils(12164): loadPersistBitmap: no exact-match cache (expected 397281f7-6bca-4a6d-a93c-632392fde7db-sy0.png)
+03-10 18:16:19.726 D/PageView(12164): Drawing initial background.
+03-10 18:16:19.738 I/EditorSurface(12164): recompose surface
+03-10 18:16:19.744 I/DrawCanvas(12164): Initializing Canvas
+03-10 18:16:19.745 D/OpenGLRenderer(12164): Releasing renderer
+03-10 18:16:19.745 V/GLThread(12164): starting thread...
+03-10 18:16:19.747 E/Gralloc4(12164): buffer descriptor contains invalid usage bits 0x100000000
+03-10 18:16:19.757 D/GLFrontBufferedRenderer(12164): Supports KHR_FENCE_SYNC: true
+03-10 18:16:19.757 D/GLFrontBufferedRenderer(12164): Supports ANDROID_NATIVE_FENCE_SYNC: true
+03-10 18:16:19.764 V/CanvasObservers(12164): Refreshing UI!
+03-10 18:16:19.764 D/DrawCanvas(12164): refreshUi: scroll: Offset(0.0, 0.0), zoom: 1.0
+03-10 18:16:19.767 I/EditorView(12164): EditorView: saving
+03-10 18:16:19.770 I/PageViewCache(12164): Init from persist layer, pageId: 397281f7-6bca-4a6d-a93c-632392fde7db
+03-10 18:16:19.772 D/PageView(12164): Page loaded (Init with id: 397281f7-6bca-4a6d-a93c-632392fde7db)
+03-10 18:16:19.773 V/CanvasObservers(12164): Refreshing UI!
+03-10 18:16:19.773 D/DrawCanvas(12164): refreshUi: scroll: Offset(0.0, 0.0), zoom: 1.0
+03-10 18:16:19.867 D/PageViewCache(12164): Start page, id 397281f7-6bca-4a6d-a93c-632392fde7db
+03-10 18:16:19.868 D/PageDataManager(12164): requestPageLoadJoin(397281f7-6bca-4a6d-a93c-632392fde7db)
+03-10 18:16:19.868 D/PageDataManager(12164): getOrStartLoadingJob(397281f7-6bca-4a6d-a93c-632392fde7db)
+03-10 18:16:19.868 D/PageDataManager(12164): starting loading of the Page(397281f7-6bca-4a6d-a93c-632392fde7db)
+03-10 18:16:19.869 D/PageDataManager(12164): page(397281f7-6bca-4a6d-a93c-632392fde7db)areListInitialized, false, false, null
+03-10 18:16:19.871 D/PageDataManager(12164): Loading page 397281f7-6bca-4a6d-a93c-632392fde7db
+03-10 18:16:19.875 D/PageDataManager(12164): Preloading background for page 397281f7-6bca-4a6d-a93c-632392fde7db
+03-10 18:16:19.886 D/PageDataManager(12164): Loaded page 397281f7-6bca-4a6d-a93c-632392fde7db
+03-10 18:16:19.887 D/PageViewCache(12164): Got page data (PageView.loadPage). id 397281f7-6bca-4a6d-a93c-632392fde7db
+03-10 18:16:19.887 D/PageViewCache(12164): All strokes loaded in 20 ms
+03-10 18:16:19.888 D/SnackState(12164): Removing snack aa04084a-2464-43a1-8a15-2ccc4defd5ed
+03-10 18:16:19.906 W/libc    (12164): Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+03-10 18:16:19.905 W/.ethran.notable(12164): type=1400 audit(0.0:20950): avc:  denied  { read } for  name="u:object_r:vendor_display_prop:s0" dev="tmpfs" ino=10756 scontext=u:r:untrusted_app:s0:c145,c256,c512,c768 tcontext=u:object_r:vendor_display_prop:s0 tclass=file permissive=0 app=com.tailscale.ipn
+03-10 18:16:19.907 I/DrawCanvas(12164): surface created android.view.SurfaceView$2@7c32a11
+03-10 18:16:19.907 I/DrawCanvas(12164): Update editable surface
+03-10 18:16:19.910 E/Gralloc4(12164): buffer descriptor contains invalid usage bits 0x100000000
+03-10 18:16:19.911 V/DrawCanvas(12164): Surface dimension changed!
+03-10 18:16:19.912 D/PageView(12164): Updating dimensions: 1766 x 2480
+03-10 18:16:19.915 I/bitmapUtils(12164): loadPersistBitmap: no exact-match cache (expected 397281f7-6bca-4a6d-a93c-632392fde7db-sy0.png)
+03-10 18:16:19.916 D/PageView(12164): Drawing initial background.
+03-10 18:16:19.928 I/DrawCanvas(12164): Update editable surface
+03-10 18:16:19.929 V/GLThread(12164): dispatching request to render for token: 2
+03-10 18:16:19.930 V/GLThread(12164): requesting render for token: 2
+03-10 18:16:19.935 D/EGL     (12164): eglDupNativeFence returned 155
+03-10 18:16:19.945 D/PageViewCache(12164): Loaded page from persistent layer 397281f7-6bca-4a6d-a93c-632392fde7db
+03-10 18:16:19.945 D/PageDataManager(12164): page(397281f7-6bca-4a6d-a93c-632392fde7db)areListInitialized, true, true, 17
+03-10 18:16:19.947 V/einkHelper(12164): onSurfaceInit, (0, 0 - 1766, 2480)
+03-10 18:16:19.947 D/einkHelper(12164): Set update mode HAND_WRITING_REPAINT_MODE
+03-10 18:16:19.948 I/einkHelper(12164): Setup editable surface
+03-10 18:16:19.952 I/.ethran.notable(12164): Compiler allocated 8485KB to compile void com.ethran.notable.editor.ui.InboxToolbarKt.InboxToolbar(java.util.List, java.util.List, boolean, boolean, kotlin.jvm.functions.Function0, kotlin.jvm.functions.Function0, kotlin.jvm.functions.Function1, kotlin.jvm.functions.Function1, kotlin.jvm.functions.Function0, kotlin.jvm.functions.Function0, androidx.compose.runtime.Composer, int)
+03-10 18:16:19.958 D/PageDataManager(12164): reduceCache(20)
+03-10 18:16:19.961 I/RawInputReader$a(12164): submitJob finally closeRawInput raw_input-134
+03-10 18:16:19.986 I/RawInputReader$a(12164): submitJob nativeRawReader raw_input-134
+03-10 18:16:19.988 I/lib_touch_reader(12164): find path /dev/input/event1 result name onyx_emp_Wacom I2C Digitizer
+03-10 18:16:20.025 I/einkHelper(12164): Setup editable surface completed
+03-10 18:16:20.026 I/DrawCanvas(12164): Update pen and stroke: pen=FOUNTAIN, mode=Draw
+03-10 18:16:20.033 V/CanvasObservers(12164): Force update, zone: null, Strokes to draw: 0
+03-10 18:16:20.034 D/PageDrawingLog(12164): drawOnCanvasFromPage, zoom: 1.0, background: inbox, type: Native
+03-10 18:16:20.043 V/DrawCanvas(12164): refreshUiSuspend() is called from the non-main thread.
+03-10 18:16:20.043 D/DrawCanvas.waitForDrawing(12164): waiting
+03-10 18:16:20.044 V/einkHelper(12164): onSurfaceInit, (0, 0 - 1766, 2480)
+03-10 18:16:20.045 D/einkHelper(12164): Set update mode HAND_WRITING_REPAINT_MODE
+03-10 18:16:20.046 D/DrawCanvas.waitForDrawing(12164): Finished waiting in 3 ms
+03-10 18:16:20.051 I/einkHelper(12164): Setup editable surface
+03-10 18:16:20.080 I/RawInputReader$a(12164): submitJob finally closeRawInput raw_input-134
+03-10 18:16:20.100 I/RawInputReader$a(12164): submitJob nativeRawReader raw_input-134
+03-10 18:16:20.100 I/lib_touch_reader(12164): find path /dev/input/event1 result name onyx_emp_Wacom I2C Digitizer
+03-10 18:16:20.137 I/einkHelper(12164): Setup editable surface completed
+03-10 18:16:20.137 I/DrawCanvas(12164): Update pen and stroke: pen=FOUNTAIN, mode=Draw
+03-10 18:16:20.145 V/CanvasObservers(12164): Force update, zone: null, Strokes to draw: 0
+03-10 18:16:20.145 D/PageDrawingLog(12164): drawOnCanvasFromPage, zoom: 1.0, background: inbox, type: Native
+03-10 18:16:20.151 V/DrawCanvas(12164): refreshUiSuspend() is called from the non-main thread.
+03-10 18:16:20.151 D/DrawCanvas.waitForDrawing(12164): waiting
+03-10 18:16:20.155 D/DrawCanvas.waitForDrawing(12164): Finished waiting in 3 ms
+03-10 18:16:20.773 I/PageDataManager(12164): Persisting batch of bitmaps for pages: [397281f7-6bca-4a6d-a93c-632392fde7db]
+03-10 18:16:21.077 D/bitmapUtils(12164): persistBitmapFull: cached preview saved as 397281f7-6bca-4a6d-a93c-632392fde7db-sy0.png (scrollY=0)
+03-10 18:16:21.340 D/DrawCanvas(12164): lock obtained in 0 ms
+03-10 18:16:21.341 D/DrawCanvas(12164): Drawing...
+03-10 18:16:21.348 D/PageDrawingLog(12164): drawOnCanvasFromPage, zoom: 1.0, background: inbox, type: Native
+03-10 18:16:21.597 D/DrawCanvas(12164): lock obtained in 0 ms
+03-10 18:16:21.600 D/DrawCanvas(12164): Drawing...
+03-10 18:16:21.603 D/PageDrawingLog(12164): drawOnCanvasFromPage, zoom: 1.0, background: inbox, type: Native
+03-10 18:16:21.773 I/PageDataManager(12164): Persisting batch of bitmaps for pages: [397281f7-6bca-4a6d-a93c-632392fde7db]
+03-10 18:16:22.062 D/bitmapUtils(12164): persistBitmapFull: cached preview saved as 397281f7-6bca-4a6d-a93c-632392fde7db-sy0.png (scrollY=0)
+03-10 18:16:22.118 V/CanvasObservers(12164): Commiting to history
+03-10 18:16:22.219 D/TrafficStats(12164): tagSocket(103) with statsTag=0xffffffff, statsUid=-1
+03-10 18:16:22.275 D/DrawCanvas(12164): lock obtained in 0 ms
+03-10 18:16:22.277 D/DrawCanvas(12164): Drawing...
+03-10 18:16:22.284 D/PageDrawingLog(12164): drawOnCanvasFromPage, zoom: 1.0, background: inbox, type: Native
+03-10 18:16:22.495 D/DrawCanvas(12164): lock obtained in 0 ms
+03-10 18:16:22.495 D/DrawCanvas(12164): Drawing...
+03-10 18:16:22.500 D/PageDrawingLog(12164): drawOnCanvasFromPage, zoom: 1.0, background: inbox, type: Native
+03-10 18:16:22.692 D/DrawCanvas(12164): lock obtained in 0 ms
+03-10 18:16:22.693 D/DrawCanvas(12164): Drawing...
+03-10 18:16:22.697 D/PageDrawingLog(12164): drawOnCanvasFromPage, zoom: 1.0, background: inbox, type: Native
+03-10 18:16:22.773 I/PageDataManager(12164): Persisting batch of bitmaps for pages: [397281f7-6bca-4a6d-a93c-632392fde7db]
+03-10 18:16:23.066 D/bitmapUtils(12164): persistBitmapFull: cached preview saved as 397281f7-6bca-4a6d-a93c-632392fde7db-sy0.png (scrollY=0)
+03-10 18:16:23.105 D/DrawCanvas(12164): lock obtained in 1 ms
+03-10 18:16:23.106 D/DrawCanvas(12164): Drawing...
+03-10 18:16:23.110 D/PageDrawingLog(12164): drawOnCanvasFromPage, zoom: 1.0, background: inbox, type: Native
+03-10 18:16:23.263 D/DrawCanvas(12164): lock obtained in 0 ms
+03-10 18:16:23.263 D/DrawCanvas(12164): Drawing...
+03-10 18:16:23.265 D/PageDrawingLog(12164): drawOnCanvasFromPage, zoom: 1.0, background: inbox, type: Native
+03-10 18:16:23.590 D/DrawCanvas(12164): lock obtained in 0 ms
+03-10 18:16:23.591 D/DrawCanvas(12164): Drawing...
+03-10 18:16:23.593 D/PageDrawingLog(12164): drawOnCanvasFromPage, zoom: 1.0, background: inbox, type: Native
+03-10 18:16:23.773 I/PageDataManager(12164): Persisting batch of bitmaps for pages: [397281f7-6bca-4a6d-a93c-632392fde7db]
+03-10 18:16:23.966 D/DrawCanvas(12164): lock obtained in 0 ms
+03-10 18:16:23.966 D/DrawCanvas(12164): Drawing...
+03-10 18:16:23.968 D/PageDrawingLog(12164): drawOnCanvasFromPage, zoom: 1.0, background: inbox, type: Native
+03-10 18:16:24.065 D/bitmapUtils(12164): persistBitmapFull: cached preview saved as 397281f7-6bca-4a6d-a93c-632392fde7db-sy0.png (scrollY=0)
+03-10 18:16:24.139 D/DrawCanvas(12164): lock obtained in 0 ms
+03-10 18:16:24.140 D/DrawCanvas(12164): Drawing...
+03-10 18:16:24.142 D/PageDrawingLog(12164): drawOnCanvasFromPage, zoom: 1.0, background: inbox, type: Native
+03-10 18:16:24.656 V/CanvasObservers(12164): Commiting to history
+03-10 18:16:24.769 V/CanvasObservers(12164): istoolbaropen change: true
+03-10 18:16:24.770 I/DrawCanvas(12164): Update editable surface
+03-10 18:16:24.770 D/DrawCanvas(12164): refreshUi: scroll: Offset(0.0, 0.0), zoom: 1.0
+03-10 18:16:24.773 I/PageDataManager(12164): Persisting batch of bitmaps for pages: [397281f7-6bca-4a6d-a93c-632392fde7db]
+03-10 18:16:24.985 V/einkHelper(12164): onSurfaceInit, (0, 0 - 1766, 2480)
+03-10 18:16:24.985 D/einkHelper(12164): Set update mode HAND_WRITING_REPAINT_MODE
+03-10 18:16:24.989 I/einkHelper(12164): Setup editable surface
+03-10 18:16:25.016 I/RawInputReader$a(12164): submitJob finally closeRawInput raw_input-134
+03-10 18:16:25.034 I/RawInputReader$a(12164): submitJob nativeRawReader raw_input-134
+03-10 18:16:25.035 I/lib_touch_reader(12164): find path /dev/input/event1 result name onyx_emp_Wacom I2C Digitizer
+03-10 18:16:25.068 D/bitmapUtils(12164): persistBitmapFull: cached preview saved as 397281f7-6bca-4a6d-a93c-632392fde7db-sy0.png (scrollY=0)
+03-10 18:16:25.080 I/einkHelper(12164): Setup editable surface completed
+03-10 18:16:25.080 I/DrawCanvas(12164): Update pen and stroke: pen=FOUNTAIN, mode=Draw
+03-10 18:16:25.115 V/GLThread(12164): dispatching request to detach surface w/ token: 2
+03-10 18:16:25.115 V/GLThread(12164): dispatching request to detach surface w/ token: 3
+03-10 18:16:25.118 E/Gralloc4(12164): buffer descriptor contains invalid usage bits 0x100000000
+03-10 18:16:25.119 V/DrawCanvas(12164): Surface dimension changed!
+03-10 18:16:25.120 D/PageView(12164): Updating dimensions: 1755 x 2480
+03-10 18:16:25.173 D/bitmapUtils(12164): loadPersistBitmap: loaded cached preview '397281f7-6bca-4a6d-a93c-632392fde7db-sy0.png'
+03-10 18:16:25.173 I/PageView(12164): Image preview does not fit canvas area - redrawing
+03-10 18:16:25.174 D/PageView(12164): Drawing initial background.
+03-10 18:16:25.184 I/DrawCanvas(12164): Update editable surface
+03-10 18:16:25.186 V/GLThread(12164): dispatching request to render for token: 4
+03-10 18:16:25.186 V/GLThread(12164): requesting render for token: 4
+03-10 18:16:25.189 D/EGL     (12164): eglDupNativeFence returned 140
+03-10 18:16:25.211 I/EditorView(12164): EditorView: saving
+03-10 18:16:25.215 V/CanvasObservers(12164): Force update, zone: null, Strokes to draw: 10
+03-10 18:16:25.215 D/PageDrawingLog(12164): drawOnCanvasFromPage, zoom: 1.0, background: inbox, type: Native
+03-10 18:16:25.243 V/einkHelper(12164): onSurfaceInit, (0, 0 - 1755, 2480)
+03-10 18:16:25.243 D/einkHelper(12164): Set update mode HAND_WRITING_REPAINT_MODE
+03-10 18:16:25.243 V/DrawCanvas(12164): refreshUiSuspend() is called from the non-main thread.
+03-10 18:16:25.244 D/DrawCanvas.waitForDrawing(12164): waiting
+03-10 18:16:25.247 I/einkHelper(12164): Setup editable surface
+03-10 18:16:25.249 D/DrawCanvas.waitForDrawing(12164): Finished waiting in 4 ms
+03-10 18:16:25.275 I/RawInputReader$a(12164): submitJob finally closeRawInput raw_input-134
+03-10 18:16:25.294 I/RawInputReader$a(12164): submitJob nativeRawReader raw_input-134
+03-10 18:16:25.296 I/lib_touch_reader(12164): find path /dev/input/event1 result name onyx_emp_Wacom I2C Digitizer
+03-10 18:16:25.328 I/einkHelper(12164): Setup editable surface completed
+03-10 18:16:25.329 I/DrawCanvas(12164): Update pen and stroke: pen=FOUNTAIN, mode=Draw
+03-10 18:16:25.773 I/PageDataManager(12164): Persisting batch of bitmaps for pages: [397281f7-6bca-4a6d-a93c-632392fde7db]
+03-10 18:16:26.066 D/bitmapUtils(12164): persistBitmapFull: cached preview saved as 397281f7-6bca-4a6d-a93c-632392fde7db-sy0.png (scrollY=0)
+03-10 18:16:27.268 W/WindowOnBackDispatcher(12164): OnBackInvokedCallback is not enabled for the application.
+03-10 18:16:27.268 W/WindowOnBackDispatcher(12164): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+03-10 18:16:27.310 W/libc    (12164): Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+03-10 18:16:27.309 W/.ethran.notable(12164): type=1400 audit(0.0:20951): avc:  denied  { read } for  name="u:object_r:vendor_display_prop:s0" dev="tmpfs" ino=10756 scontext=u:r:untrusted_app:s0:c145,c256,c512,c768 tcontext=u:object_r:vendor_display_prop:s0 tclass=file permissive=0 app=com.tailscale.ipn
+03-10 18:16:27.324 D/EditorState(12164): Drawing state should be: false (menus open: true, selection active: false)
+03-10 18:16:27.334 V/CanvasObservers(12164): isDrawing change to false
+03-10 18:16:27.334 I/DrawCanvas(12164): Update is drawing: false
+03-10 18:16:27.335 D/DrawCanvas.waitForDrawing(12164): waiting
+03-10 18:16:27.350 D/MainActivity(12164): OnWindowFocusChanged: false
+03-10 18:16:27.352 D/DrawCanvas.waitForDrawing(12164): Finished waiting in 17 ms
+03-10 18:16:27.387 V/CanvasObservers(12164): App has focus: false
+03-10 18:16:27.388 V/CanvasObservers(12164): drawing state changed to false!
+03-10 18:16:27.394 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:27.395 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:27.416 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:27.441 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:27.468 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:27.494 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:27.521 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:27.546 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:27.574 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:27.599 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:27.626 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:27.652 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:27.678 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:27.705 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:27.732 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:27.758 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:27.784 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:27.811 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:27.837 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:27.864 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:27.891 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:27.916 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:27.943 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:27.969 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:27.996 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:28.022 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:28.048 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:28.075 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:28.101 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:28.127 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:28.154 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:28.180 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:28.207 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:28.233 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:28.259 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:28.286 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:28.312 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:28.338 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:28.365 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:28.391 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:28.417 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:28.444 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:16:28.980 W/WindowOnBackDispatcher(12164): sendCancelIfRunning: isInProgress=false callback=android.view.ViewRootImpl$$ExternalSyntheticLambda12@efddc93
+03-10 18:16:28.985 D/showSnackDuring(12164): Task cancelled
+03-10 18:16:28.985 D/SnackState(12164): Removing snack 93ee058e-62a3-4b38-94b4-498afbcb414c
+03-10 18:16:29.010 D/EditorState(12164): Drawing state should be: true (menus open: false, selection active: false)
+03-10 18:16:29.017 V/CanvasObservers(12164): isDrawing change to true
+03-10 18:16:29.020 D/einkHelper(12164): Waiting for screen, Update mode: NORMAL
+03-10 18:16:29.034 D/MainActivity(12164): OnWindowFocusChanged: true
+03-10 18:16:29.037 V/CanvasObservers(12164): App has focus: true
+03-10 18:16:29.038 I/DrawCanvas(12164): Update pen and stroke: pen=FOUNTAIN, mode=Draw
+03-10 18:16:29.213 I/DrawCanvas(12164): Update is drawing: true
+03-10 18:16:31.681 I/InboxSyncEngine(12164): Starting inbox sync for page 397281f7-6bca-4a6d-a93c-632392fde7db with tags: []
+03-10 18:16:31.719 I/InboxSyncEngine(12164): Recognizing all 10 strokes
+03-10 18:16:31.782 D/PageDataManager(12164): Cancelling loading pages, ignoring: []
+03-10 18:16:31.802 W/GestureReceiver(12164): Gesture coroutine canceled
+03-10 18:16:31.802 W/GestureReceiver(12164): androidx.compose.ui.input.pointer.PointerInputResetException: Pointer input was reset
+03-10 18:16:31.803 V/GLThread(12164): dispatching request to detach surface w/ token: 4
+03-10 18:16:31.804 V/GLThread(12164): dispatching request to detach surface w/ token: 5
+03-10 18:16:31.804 I/DrawCanvas(12164): surface destroyed 54655888 - ref 183724616
+03-10 18:16:31.805 V/einkHelper(12164): onSurfaceDestroy, (0, 0 - 1755, 2480)
+03-10 18:16:31.829 E/BufferQueueProducer(12164): [SurfaceView[com.ethran.notable/com.ethran.notable.MainActivity]#7(BLAST Consumer)7](id:2f8400000007,api:0,p:-1,c:12164) disconnect: not connected (req=2)
+03-10 18:16:31.837 D/PageView(12164): Dispose old page
+03-10 18:16:31.838 D/PageDataManager(12164): page(397281f7-6bca-4a6d-a93c-632392fde7db)areListInitialized, true, true, 17
+03-10 18:16:31.838 I/PageDataManager(12164): Page exit, is page loaded: true
+03-10 18:16:31.839 D/PageDataManager(12164): page(397281f7-6bca-4a6d-a93c-632392fde7db)areListInitialized, true, true, 17
+03-10 18:16:31.841 D/PageDataManager(12164): Cancelling loading page: pageId=397281f7-6bca-4a6d-a93c-632392fde7db
+03-10 18:16:32.010 I/OnyxHWREngine(12164): OnyxHWR recognized 8 chars
+03-10 18:16:32.012 I/InboxSyncEngine(12164): Full recognized text: 'Test PDF'
+03-10 18:16:32.017 I/InboxSyncEngine(12164): Inbox sync: exporting page to PDF at /storage/emulated/0/Documents/primary/inbox, file 2026-03-10-18-16-19.pdf
+03-10 18:16:32.121 I/InboxSyncEngine(12164): Inbox sync: PDF saved, link added: inbox/2026-03-10-18-16-19.pdf
+03-10 18:16:32.135 I/InboxSyncEngine(12164): Written inbox note to /storage/emulated/0/Documents/primary/inbox/2026-03-10-18-16-19.md
+03-10 18:16:32.136 I/InboxSyncEngine(12164): Inbox sync complete for page 397281f7-6bca-4a6d-a93c-632392fde7db
+03-10 18:16:32.136 I/SyncState(12164): Background sync complete for page 397281f7-6bca-4a6d-a93c-632392fde7db
+03-10 18:16:35.692 D/QuickSettings(12164): App is paused - maybe quick settings opened?
+03-10 18:16:35.738 D/MainActivity(12164): OnWindowFocusChanged: false
+03-10 18:16:35.789 D/VRI[MainActivity](12164): visibilityChanged oldVisibility=true newVisibility=false
+03-10 18:16:35.913 D/PageDataManager(12164): onTrimMemory: 20, currentCacheSizeMB: 34
+03-10 18:16:35.916 D/PageDataManager(12164): freeMemory(10)
+03-10 18:16:35.918 D/PageDataManager(12164): Clearing page (all except current) f753a57f-bed9-4981-9f4c-8c26a71963b2, requested by freeMemory
+03-10 18:16:35.921 D/PageDataManager(12164): Removing page f753a57f-bed9-4981-9f4c-8c26a71963b2
+03-10 18:16:35.925 D/PageDataManager(12164): after trim currentCacheSizeMB: 18
+03-10 18:16:35.927 D/PageDataManager(12164): onTrimMemory: 20, currentCacheSizeMB: 18
+03-10 18:16:35.930 D/PageDataManager(12164): freeMemory(10)
+03-10 18:16:35.931 D/PageDataManager(12164): after trim currentCacheSizeMB: 18
+03-10 18:16:37.732 I/FA      (12164): Application backgrounded at: timestamp_millis: 1773166595727
+03-10 18:16:58.545 W/WindowOnBackDispatcher(12164): OnBackInvokedCallback is not enabled for the application.
+03-10 18:16:58.545 W/WindowOnBackDispatcher(12164): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+03-10 18:16:58.548 V/ActivityThread(12164): reportTopResumedActivityChanged - > onActivityTopResumed
+03-10 18:16:58.581 W/.ethran.notable(12164): type=1400 audit(0.0:20988): avc:  denied  { read } for  name="u:object_r:vendor_display_prop:s0" dev="tmpfs" ino=10756 scontext=u:r:untrusted_app:s0:c145,c256,c512,c768 tcontext=u:object_r:vendor_display_prop:s0 tclass=file permissive=0 app=com.tailscale.ipn
+03-10 18:16:58.582 W/libc    (12164): Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+03-10 18:16:58.690 D/MainActivity(12164): OnWindowFocusChanged: true
+03-10 18:17:01.303 W/WindowOnBackDispatcher(12164): OnBackInvokedCallback is not enabled for the application.
+03-10 18:17:01.303 W/WindowOnBackDispatcher(12164): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+03-10 18:17:01.330 W/libc    (12164): Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+03-10 18:17:01.329 W/.ethran.notable(12164): type=1400 audit(0.0:20989): avc:  denied  { read } for  name="u:object_r:vendor_display_prop:s0" dev="tmpfs" ino=10756 scontext=u:r:untrusted_app:s0:c145,c256,c512,c768 tcontext=u:object_r:vendor_display_prop:s0 tclass=file permissive=0 app=com.tailscale.ipn
+03-10 18:17:01.379 D/MainActivity(12164): OnWindowFocusChanged: false
+03-10 18:17:01.656 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:01.658 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:01.659 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:01.685 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:01.711 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:01.737 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:01.764 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:01.790 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:01.817 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:01.842 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:01.871 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:01.895 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:01.922 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:01.948 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:01.975 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:02.001 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:02.027 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:02.054 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:02.080 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:02.107 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:02.134 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:02.159 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:02.186 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:02.212 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:02.239 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:02.265 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:02.292 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:02.846 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:02.871 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:02.898 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:02.925 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:02.951 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:02.977 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:03.003 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:03.029 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:03.056 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:03.082 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:03.109 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:03.135 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:03.161 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:03.188 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:03.214 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:03.241 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:03.267 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:03.294 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:03.320 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:03.346 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:03.373 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:03.399 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:03.425 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:03.452 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:03.478 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:03.504 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:03.531 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:04.297 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:04.323 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:04.349 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:04.376 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:04.403 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:04.428 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:04.455 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:04.482 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:04.507 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:04.534 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:04.561 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:04.587 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:04.613 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:04.640 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:04.666 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:04.692 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:04.718 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:04.745 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:04.771 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:04.797 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:04.824 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:04.850 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:04.877 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:04.903 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:04.924 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:04.939 W/WindowOnBackDispatcher(12164): sendCancelIfRunning: isInProgress=false callback=android.view.ViewRootImpl$$ExternalSyntheticLambda12@4a3ddca
+03-10 18:17:05.019 D/MainActivity(12164): OnWindowFocusChanged: true
+03-10 18:17:06.484 W/WindowOnBackDispatcher(12164): OnBackInvokedCallback is not enabled for the application.
+03-10 18:17:06.484 W/WindowOnBackDispatcher(12164): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+03-10 18:17:06.508 W/libc    (12164): Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+03-10 18:17:06.505 W/.ethran.notable(12164): type=1400 audit(0.0:20990): avc:  denied  { read } for  name="u:object_r:vendor_display_prop:s0" dev="tmpfs" ino=10756 scontext=u:r:untrusted_app:s0:c145,c256,c512,c768 tcontext=u:object_r:vendor_display_prop:s0 tclass=file permissive=0 app=com.tailscale.ipn
+03-10 18:17:06.547 D/MainActivity(12164): OnWindowFocusChanged: false
+03-10 18:17:06.805 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:06.806 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:06.829 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:06.856 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:06.883 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:06.909 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:06.934 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:06.961 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:06.987 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:07.014 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:07.040 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:07.067 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:07.093 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:07.119 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:07.146 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:07.172 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:07.199 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:07.225 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:07.251 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:07.278 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:07.305 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:07.330 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:07.357 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:17:10.985 W/WindowOnBackDispatcher(12164): sendCancelIfRunning: isInProgress=false callback=android.view.ViewRootImpl$$ExternalSyntheticLambda12@9c4f754
+03-10 18:17:11.061 D/MainActivity(12164): OnWindowFocusChanged: true
+03-10 18:17:16.625 D/InsetsController(12164): show(ime(), fromIme=false)
+03-10 18:17:16.630 I/ImeTracker(12164): com.ethran.notable:576a8b18: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT_BY_INSETS_API fromUser false
+03-10 18:17:16.633 D/InputMethodManager(12164): showSoftInput() view=androidx.compose.ui.platform.AndroidComposeView{faa721b VFED..... .F....ID 0,0-1860,2480 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT_BY_INSETS_API
+03-10 18:17:16.679 I/AssistStructure(12164): Flattened final assist data: 1908 bytes, containing 1 windows, 12 views
+03-10 18:17:16.731 W/RemoteInputConnectionImpl(12164): getTextBeforeCursor on inactive InputConnection
+03-10 18:17:16.732 I/ImeTracker(12164): com.ethran.notable:84d023b5: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser false
+03-10 18:17:16.733 D/InputMethodManager(12164): showSoftInput() view=androidx.compose.ui.platform.AndroidComposeView{faa721b VFED..... .F...... 0,0-1860,2480 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+03-10 18:17:16.749 D/InsetsController(12164): show(ime(), fromIme=true)
+03-10 18:17:16.752 D/InsetsController(12164): show(ime(), fromIme=true)
+03-10 18:17:16.755 I/ImeTracker(12164): com.ethran.notable:84d023b5: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+03-10 18:17:16.777 W/InteractionJankMonitor(12164): Initializing without READ_DEVICE_CONFIG permission. enabled=false, interval=1, missedFrameThreshold=3, frameTimeThreshold=64, package=com.ethran.notable
+03-10 18:17:17.332 I/ImeTracker(12164): com.ethran.notable:576a8b18: onShown
+03-10 18:17:20.012 D/InsetsController(12164): show(ime(), fromIme=false)
+03-10 18:17:20.013 I/ImeTracker(12164): com.ethran.notable:b3689def: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT_BY_INSETS_API fromUser false
+03-10 18:17:20.013 I/ImeTracker(12164): com.ethran.notable:b3689def: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+03-10 18:17:20.038 I/ImeTracker(12164): com.ethran.notable:712b5c13: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser false
+03-10 18:17:20.039 D/InputMethodManager(12164): showSoftInput() view=androidx.compose.ui.platform.AndroidComposeView{faa721b VFED..... .F....ID 0,0-1860,2480 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+03-10 18:17:20.080 W/WindowOnBackDispatcher(12164): OnBackInvokedCallback is not enabled for the application.
+03-10 18:17:20.080 W/WindowOnBackDispatcher(12164): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+03-10 18:17:20.093 W/.ethran.notable(12164): type=1400 audit(0.0:20991): avc:  denied  { read } for  name="u:object_r:vendor_display_prop:s0" dev="tmpfs" ino=10756 scontext=u:r:untrusted_app:s0:c145,c256,c512,c768 tcontext=u:object_r:vendor_display_prop:s0 tclass=file permissive=0 app=com.tailscale.ipn
+03-10 18:17:20.094 W/libc    (12164): Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+03-10 18:17:20.126 D/InsetsController(12164): show(ime(), fromIme=true)
+03-10 18:17:20.126 I/ImeTracker(12164): com.ethran.notable:712b5c13: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+03-10 18:17:22.057 W/WindowOnBackDispatcher(12164): sendCancelIfRunning: isInProgress=false callback=android.view.ViewRootImpl$$ExternalSyntheticLambda12@67238b4
+03-10 18:17:37.269 D/InsetsController(12164): show(ime(), fromIme=false)
+03-10 18:17:37.269 I/ImeTracker(12164): com.ethran.notable:68ed1d6f: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT_BY_INSETS_API fromUser false
+03-10 18:17:37.270 I/ImeTracker(12164): com.ethran.notable:68ed1d6f: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+03-10 18:17:37.290 I/ImeTracker(12164): com.ethran.notable:12c13260: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser false
+03-10 18:17:37.291 D/InputMethodManager(12164): showSoftInput() view=androidx.compose.ui.platform.AndroidComposeView{faa721b VFED..... .F....ID 0,0-1860,2480 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+03-10 18:17:37.317 W/WindowOnBackDispatcher(12164): OnBackInvokedCallback is not enabled for the application.
+03-10 18:17:37.317 W/WindowOnBackDispatcher(12164): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+03-10 18:17:37.330 W/libc    (12164): Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+03-10 18:17:37.329 W/.ethran.notable(12164): type=1400 audit(0.0:20992): avc:  denied  { read } for  name="u:object_r:vendor_display_prop:s0" dev="tmpfs" ino=10756 scontext=u:r:untrusted_app:s0:c145,c256,c512,c768 tcontext=u:object_r:vendor_display_prop:s0 tclass=file permissive=0 app=com.tailscale.ipn
+03-10 18:17:37.340 D/InsetsController(12164): show(ime(), fromIme=true)
+03-10 18:17:37.341 I/ImeTracker(12164): com.ethran.notable:6541fd53: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+03-10 18:17:37.357 D/InsetsController(12164): show(ime(), fromIme=true)
+03-10 18:17:37.358 I/ImeTracker(12164): com.ethran.notable:12c13260: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+03-10 18:17:39.759 W/WindowOnBackDispatcher(12164): sendCancelIfRunning: isInProgress=false callback=android.view.ViewRootImpl$$ExternalSyntheticLambda12@504b8d2
+03-10 18:17:39.780 D/InsetsController(12164): show(ime(), fromIme=false)
+03-10 18:17:39.780 I/ImeTracker(12164): com.ethran.notable:52aded43: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT_BY_INSETS_API fromUser false
+03-10 18:17:39.781 I/ImeTracker(12164): com.ethran.notable:52aded43: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+03-10 18:17:39.797 W/WindowOnBackDispatcher(12164): OnBackInvokedCallback is not enabled for the application.
+03-10 18:17:39.797 W/WindowOnBackDispatcher(12164): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+03-10 18:17:39.815 W/libc    (12164): Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+03-10 18:17:39.813 W/.ethran.notable(12164): type=1400 audit(0.0:20993): avc:  denied  { read } for  name="u:object_r:vendor_display_prop:s0" dev="tmpfs" ino=10756 scontext=u:r:untrusted_app:s0:c145,c256,c512,c768 tcontext=u:object_r:vendor_display_prop:s0 tclass=file permissive=0 app=com.tailscale.ipn
+03-10 18:17:39.853 I/ImeTracker(12164): com.ethran.notable:42036b33: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser false
+03-10 18:17:39.853 D/InputMethodManager(12164): showSoftInput() view=androidx.compose.ui.platform.AndroidComposeView{faa721b VFED..... .F...... 0,0-1860,2480 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+03-10 18:17:39.856 D/InsetsController(12164): show(ime(), fromIme=true)
+03-10 18:17:39.856 I/ImeTracker(12164): com.ethran.notable:1de04d5d: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+03-10 18:17:39.871 D/InsetsController(12164): show(ime(), fromIme=true)
+03-10 18:17:39.871 I/ImeTracker(12164): com.ethran.notable:42036b33: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+03-10 18:17:40.687 D/InsetsController(12164): show(ime(), fromIme=false)
+03-10 18:17:40.688 I/ImeTracker(12164): com.ethran.notable:577d1127: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT_BY_INSETS_API fromUser false
+03-10 18:17:40.689 I/ImeTracker(12164): com.ethran.notable:577d1127: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+03-10 18:17:40.724 I/ImeTracker(12164): com.ethran.notable:60aabea4: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser false
+03-10 18:17:40.724 D/InputMethodManager(12164): showSoftInput() view=androidx.compose.ui.platform.AndroidComposeView{faa721b VFED..... .F...... 0,0-1860,2480 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+03-10 18:17:40.741 D/InsetsController(12164): show(ime(), fromIme=true)
+03-10 18:17:40.741 I/ImeTracker(12164): com.ethran.notable:60aabea4: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+03-10 18:17:40.778 W/libc    (12164): Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+03-10 18:17:40.777 W/.ethran.notable(12164): type=1400 audit(0.0:20994): avc:  denied  { read } for  name="u:object_r:vendor_display_prop:s0" dev="tmpfs" ino=10756 scontext=u:r:untrusted_app:s0:c145,c256,c512,c768 tcontext=u:object_r:vendor_display_prop:s0 tclass=file permissive=0 app=com.tailscale.ipn
+03-10 18:17:40.809 W/WindowOnBackDispatcher(12164): sendCancelIfRunning: isInProgress=false callback=android.view.ViewRootImpl$$ExternalSyntheticLambda12@1e733c0
+03-10 18:17:40.898 D/CompatChangeReporter(12164): Compat change id reported: 63938206; UID 10145; state: ENABLED
+03-10 18:17:40.977 W/libc    (12164): Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+03-10 18:17:40.973 W/.ethran.notable(12164): type=1400 audit(0.0:20995): avc:  denied  { read } for  name="u:object_r:vendor_display_prop:s0" dev="tmpfs" ino=10756 scontext=u:r:untrusted_app:s0:c145,c256,c512,c768 tcontext=u:object_r:vendor_display_prop:s0 tclass=file permissive=0 app=com.tailscale.ipn
+03-10 18:17:40.984 I/.ethran.notable(12164): Compiler allocated 4267KB to compile void android.widget.TextView.<init>(android.content.Context, android.util.AttributeSet, int, int)
+03-10 18:17:41.021 W/WindowOnBackDispatcher(12164): OnBackInvokedCallback is not enabled for the application.
+03-10 18:17:41.021 W/WindowOnBackDispatcher(12164): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+03-10 18:17:41.033 W/.ethran.notable(12164): type=1400 audit(0.0:20996): avc:  denied  { read } for  name="u:object_r:vendor_display_prop:s0" dev="tmpfs" ino=10756 scontext=u:r:untrusted_app:s0:c145,c256,c512,c768 tcontext=u:object_r:vendor_display_prop:s0 tclass=file permissive=0 app=com.tailscale.ipn
+03-10 18:17:41.035 W/libc    (12164): Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+03-10 18:17:42.129 W/WindowOnBackDispatcher(12164): sendCancelIfRunning: isInProgress=false callback=android.view.ViewRootImpl$$ExternalSyntheticLambda12@e4a1b8
+03-10 18:17:42.155 W/WindowOnBackDispatcher(12164): sendCancelIfRunning: isInProgress=false callback=android.view.ViewRootImpl$$ExternalSyntheticLambda12@37a363
+03-10 18:17:42.192 W/libc    (12164): Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+03-10 18:17:42.189 W/.ethran.notable(12164): type=1400 audit(0.0:20997): avc:  denied  { read } for  name="u:object_r:vendor_display_prop:s0" dev="tmpfs" ino=10756 scontext=u:r:untrusted_app:s0:c145,c256,c512,c768 tcontext=u:object_r:vendor_display_prop:s0 tclass=file permissive=0 app=com.tailscale.ipn
+03-10 18:17:42.258 W/WindowOnBackDispatcher(12164): OnBackInvokedCallback is not enabled for the application.
+03-10 18:17:42.258 W/WindowOnBackDispatcher(12164): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+03-10 18:17:42.281 W/libc    (12164): Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+03-10 18:17:42.277 W/.ethran.notable(12164): type=1400 audit(0.0:20998): avc:  denied  { read } for  name="u:object_r:vendor_display_prop:s0" dev="tmpfs" ino=10756 scontext=u:r:untrusted_app:s0:c145,c256,c512,c768 tcontext=u:object_r:vendor_display_prop:s0 tclass=file permissive=0 app=com.tailscale.ipn
+03-10 18:17:42.299 W/WindowOnBackDispatcher(12164): OnBackInvokedCallback is not enabled for the application.
+03-10 18:17:42.299 W/WindowOnBackDispatcher(12164): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+03-10 18:17:42.313 W/.ethran.notable(12164): type=1400 audit(0.0:20999): avc:  denied  { read } for  name="u:object_r:vendor_display_prop:s0" dev="tmpfs" ino=10756 scontext=u:r:untrusted_app:s0:c145,c256,c512,c768 tcontext=u:object_r:vendor_display_prop:s0 tclass=file permissive=0 app=com.tailscale.ipn
+03-10 18:17:42.317 W/libc    (12164): Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+03-10 18:17:43.332 W/WindowOnBackDispatcher(12164): sendCancelIfRunning: isInProgress=false callback=android.view.ViewRootImpl$$ExternalSyntheticLambda12@9c03f21
+03-10 18:17:43.348 W/WindowOnBackDispatcher(12164): sendCancelIfRunning: isInProgress=false callback=android.view.ViewRootImpl$$ExternalSyntheticLambda12@eebdb12
+03-10 18:17:43.378 W/WindowOnBackDispatcher(12164): sendCancelIfRunning: isInProgress=false callback=android.view.ViewRootImpl$$ExternalSyntheticLambda12@2e83f16
+03-10 18:17:44.299 D/InsetsController(12164): show(ime(), fromIme=false)
+03-10 18:17:44.299 I/ImeTracker(12164): com.ethran.notable:f2d70deb: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT_BY_INSETS_API fromUser false
+03-10 18:17:44.301 I/ImeTracker(12164): com.ethran.notable:f2d70deb: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+03-10 18:17:44.318 W/WindowOnBackDispatcher(12164): OnBackInvokedCallback is not enabled for the application.
+03-10 18:17:44.318 W/WindowOnBackDispatcher(12164): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+03-10 18:17:44.339 W/libc    (12164): Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+03-10 18:17:44.337 W/.ethran.notable(12164): type=1400 audit(0.0:21000): avc:  denied  { read } for  name="u:object_r:vendor_display_prop:s0" dev="tmpfs" ino=10756 scontext=u:r:untrusted_app:s0:c145,c256,c512,c768 tcontext=u:object_r:vendor_display_prop:s0 tclass=file permissive=0 app=com.tailscale.ipn
+03-10 18:17:44.374 I/ImeTracker(12164): com.ethran.notable:26f305: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser false
+03-10 18:17:44.374 D/InputMethodManager(12164): showSoftInput() view=androidx.compose.ui.platform.AndroidComposeView{faa721b VFED..... .F...... 0,0-1860,2480 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+03-10 18:17:44.376 D/InsetsController(12164): show(ime(), fromIme=true)
+03-10 18:17:44.376 I/ImeTracker(12164): com.ethran.notable:654be701: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+03-10 18:17:44.390 D/InsetsController(12164): show(ime(), fromIme=true)
+03-10 18:17:44.391 I/ImeTracker(12164): com.ethran.notable:26f305: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+03-10 18:17:45.120 D/InsetsController(12164): show(ime(), fromIme=false)
+03-10 18:17:45.121 I/ImeTracker(12164): com.ethran.notable:30276858: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT_BY_INSETS_API fromUser false
+03-10 18:17:45.123 I/ImeTracker(12164): com.ethran.notable:30276858: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+03-10 18:17:45.158 I/ImeTracker(12164): com.ethran.notable:a766496a: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser false
+03-10 18:17:45.159 D/InputMethodManager(12164): showSoftInput() view=androidx.compose.ui.platform.AndroidComposeView{faa721b VFED..... .F...... 0,0-1860,2480 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+03-10 18:17:45.177 D/InsetsController(12164): show(ime(), fromIme=true)
+03-10 18:17:45.178 I/ImeTracker(12164): com.ethran.notable:a766496a: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+03-10 18:17:45.197 W/libc    (12164): Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+03-10 18:17:45.193 W/.ethran.notable(12164): type=1400 audit(0.0:21001): avc:  denied  { read } for  name="u:object_r:vendor_display_prop:s0" dev="tmpfs" ino=10756 scontext=u:r:untrusted_app:s0:c145,c256,c512,c768 tcontext=u:object_r:vendor_display_prop:s0 tclass=file permissive=0 app=com.tailscale.ipn
+03-10 18:17:45.213 W/WindowOnBackDispatcher(12164): sendCancelIfRunning: isInProgress=false callback=android.view.ViewRootImpl$$ExternalSyntheticLambda12@585e5f0
+03-10 18:17:45.331 W/libc    (12164): Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+03-10 18:17:45.329 W/.ethran.notable(12164): type=1400 audit(0.0:21002): avc:  denied  { read } for  name="u:object_r:vendor_display_prop:s0" dev="tmpfs" ino=10756 scontext=u:r:untrusted_app:s0:c145,c256,c512,c768 tcontext=u:object_r:vendor_display_prop:s0 tclass=file permissive=0 app=com.tailscale.ipn
+03-10 18:17:45.351 W/WindowOnBackDispatcher(12164): OnBackInvokedCallback is not enabled for the application.
+03-10 18:17:45.351 W/WindowOnBackDispatcher(12164): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+03-10 18:17:45.369 W/libc    (12164): Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+03-10 18:17:45.365 W/.ethran.notable(12164): type=1400 audit(0.0:21003): avc:  denied  { read } for  name="u:object_r:vendor_display_prop:s0" dev="tmpfs" ino=10756 scontext=u:r:untrusted_app:s0:c145,c256,c512,c768 tcontext=u:object_r:vendor_display_prop:s0 tclass=file permissive=0 app=com.tailscale.ipn
+03-10 18:17:46.412 W/WindowOnBackDispatcher(12164): sendCancelIfRunning: isInProgress=false callback=android.view.ViewRootImpl$$ExternalSyntheticLambda12@87ade36
+03-10 18:17:46.449 W/WindowOnBackDispatcher(12164): sendCancelIfRunning: isInProgress=false callback=android.view.ViewRootImpl$$ExternalSyntheticLambda12@dc3e859
+03-10 18:17:46.488 W/libc    (12164): Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+03-10 18:17:46.485 W/.ethran.notable(12164): type=1400 audit(0.0:21004): avc:  denied  { read } for  name="u:object_r:vendor_display_prop:s0" dev="tmpfs" ino=10756 scontext=u:r:untrusted_app:s0:c145,c256,c512,c768 tcontext=u:object_r:vendor_display_prop:s0 tclass=file permissive=0 app=com.tailscale.ipn
+03-10 18:17:46.563 W/WindowOnBackDispatcher(12164): OnBackInvokedCallback is not enabled for the application.
+03-10 18:17:46.563 W/WindowOnBackDispatcher(12164): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+03-10 18:17:46.583 W/libc    (12164): Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+03-10 18:17:46.581 W/.ethran.notable(12164): type=1400 audit(0.0:21005): avc:  denied  { read } for  name="u:object_r:vendor_display_prop:s0" dev="tmpfs" ino=10756 scontext=u:r:untrusted_app:s0:c145,c256,c512,c768 tcontext=u:object_r:vendor_display_prop:s0 tclass=file permissive=0 app=com.tailscale.ipn
+03-10 18:17:46.599 W/WindowOnBackDispatcher(12164): OnBackInvokedCallback is not enabled for the application.
+03-10 18:17:46.599 W/WindowOnBackDispatcher(12164): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+03-10 18:17:46.613 W/.ethran.notable(12164): type=1400 audit(0.0:21006): avc:  denied  { read } for  name="u:object_r:vendor_display_prop:s0" dev="tmpfs" ino=10756 scontext=u:r:untrusted_app:s0:c145,c256,c512,c768 tcontext=u:object_r:vendor_display_prop:s0 tclass=file permissive=0 app=com.tailscale.ipn
+03-10 18:17:46.617 W/libc    (12164): Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+03-10 18:17:48.010 W/WindowOnBackDispatcher(12164): sendCancelIfRunning: isInProgress=false callback=android.view.ViewRootImpl$$ExternalSyntheticLambda12@efbcac8
+03-10 18:17:48.025 W/WindowOnBackDispatcher(12164): sendCancelIfRunning: isInProgress=false callback=android.view.ViewRootImpl$$ExternalSyntheticLambda12@4a80252
+03-10 18:17:48.033 W/WindowOnBackDispatcher(12164): sendCancelIfRunning: isInProgress=false callback=android.view.ViewRootImpl$$ExternalSyntheticLambda12@55fe256
+03-10 18:17:48.078 D/InsetsController(12164): show(ime(), fromIme=true)
+03-10 18:17:48.078 I/ImeTracker(12164): com.ethran.notable:c58e3ca8: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+03-10 18:17:49.526 I/KvProxy (12164): Setting APP_SETTINGS to AppSettings(version=1, monitorBgFiles=false, defaultNativeTemplate=blank, quickNavPages=[], neoTools=false, scribbleToEraseEnabled=false, toolbarPosition=Top, smoothScroll=true, continuousZoom=false, continuousStrokeSlider=false, monochromeMode=false, paginatePdf=true, visualizePdfPagination=false, doubleTapAction=Undo, twoFingerTapAction=ChangeTool, swipeLeftAction=NextPage, swipeRightAction=PreviousPage, twoFingerSwipeLeftAction=ToggleZen, twoFingerSwipeRightAction=ToggleZen, holdAction=Select, enableQuickNav=true, obsidianInboxPath=Notes/Study/Study, obsidianAttachmentPath=Notes/Study/Study, showWelcome=false, debugMode=false, simpleRendering=false, openGLRendering=true, muPdfRendering=true, destructiveMigrations=false)
+03-10 18:17:49.536 I/VaultTagScanner(12164): Scanning 4 markdown files for tags
+03-10 18:17:49.549 I/VaultTagScanner(12164): Tag cache refreshed: 0 tags
+03-10 18:17:49.568 D/InsetsController(12164): hide(ime(), fromIme=false)
+03-10 18:17:49.569 I/ImeTracker(12164): com.ethran.notable:83214056: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT_BY_INSETS_API fromUser false
+03-10 18:17:49.570 I/ImeTracker(12164): com.ethran.notable:5e01fcbb: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT_REQUEST_HIDE_WITH_CONTROL fromUser false
+03-10 18:17:49.592 D/InsetsController(12164): hide(ime(), fromIme=true)
+03-10 18:17:49.593 I/ImeTracker(12164): com.ethran.notable:5e01fcbb: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+03-10 18:17:50.127 I/ImeTracker(12164): com.ethran.notable:db5d50e7: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT_ON_ANIMATION_STATE_CHANGED fromUser false
+03-10 18:17:50.129 I/ImeTracker(12164): com.ethran.notable:83214056: onHidden
+03-10 18:17:50.842 D/InsetsController(12164): show(ime(), fromIme=false)
+03-10 18:17:50.843 I/ImeTracker(12164): com.ethran.notable:ffa93801: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT_BY_INSETS_API fromUser false
+03-10 18:17:50.844 D/InputMethodManager(12164): showSoftInput() view=androidx.compose.ui.platform.AndroidComposeView{faa721b VFED..... .F....ID 0,0-1860,2480 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT_BY_INSETS_API
+03-10 18:17:50.871 I/ImeTracker(12164): com.ethran.notable:ae4e65: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser false
+03-10 18:17:50.872 D/InputMethodManager(12164): showSoftInput() view=androidx.compose.ui.platform.AndroidComposeView{faa721b VFED..... .F....ID 0,0-1860,2480 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+03-10 18:17:50.915 W/WindowOnBackDispatcher(12164): OnBackInvokedCallback is not enabled for the application.
+03-10 18:17:50.915 W/WindowOnBackDispatcher(12164): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+03-10 18:17:50.932 W/libc    (12164): Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+03-10 18:17:50.929 W/.ethran.notable(12164): type=1400 audit(0.0:21007): avc:  denied  { read } for  name="u:object_r:vendor_display_prop:s0" dev="tmpfs" ino=10756 scontext=u:r:untrusted_app:s0:c145,c256,c512,c768 tcontext=u:object_r:vendor_display_prop:s0 tclass=file permissive=0 app=com.tailscale.ipn
+03-10 18:17:51.012 D/InsetsController(12164): show(ime(), fromIme=true)
+03-10 18:17:51.579 I/ImeTracker(12164): com.ethran.notable:ae4e65: onShown
+03-10 18:17:52.661 I/KvProxy (12164): Setting APP_SETTINGS to AppSettings(version=1, monitorBgFiles=false, defaultNativeTemplate=blank, quickNavPages=[], neoTools=false, scribbleToEraseEnabled=false, toolbarPosition=Top, smoothScroll=true, continuousZoom=false, continuousStrokeSlider=false, monochromeMode=false, paginatePdf=true, visualizePdfPagination=false, doubleTapAction=Undo, twoFingerTapAction=ChangeTool, swipeLeftAction=NextPage, swipeRightAction=PreviousPage, twoFingerSwipeLeftAction=ToggleZen, twoFingerSwipeRightAction=ToggleZen, holdAction=Select, enableQuickNav=true, obsidianInboxPath=Notes/Study/Study, obsidianAttachmentPath=Notes/Study/Study, showWelcome=false, debugMode=false, simpleRendering=false, openGLRendering=true, muPdfRendering=true, destructiveMigrations=false)
+03-10 18:17:52.674 I/VaultTagScanner(12164): Scanning 4 markdown files for tags
+03-10 18:17:52.695 I/VaultTagScanner(12164): Tag cache refreshed: 0 tags
+03-10 18:17:52.704 W/WindowOnBackDispatcher(12164): sendCancelIfRunning: isInProgress=false callback=android.view.ViewRootImpl$$ExternalSyntheticLambda12@7460cf4
+03-10 18:17:52.710 D/InsetsController(12164): hide(ime(), fromIme=false)
+03-10 18:17:52.710 I/ImeTracker(12164): com.ethran.notable:84884747: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT_BY_INSETS_API fromUser false
+03-10 18:17:52.712 I/ImeTracker(12164): com.ethran.notable:869ab4ee: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT_REQUEST_HIDE_WITH_CONTROL fromUser false
+03-10 18:17:52.735 D/InsetsController(12164): hide(ime(), fromIme=true)
+03-10 18:17:52.736 I/ImeTracker(12164): com.ethran.notable:869ab4ee: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+03-10 18:17:53.264 I/ImeTracker(12164): com.ethran.notable:ddc0f93f: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT_ON_ANIMATION_STATE_CHANGED fromUser false
+03-10 18:17:53.265 I/ImeTracker(12164): com.ethran.notable:84884747: onHidden
+03-10 18:17:55.049 D/PageDataManager(12164): Cancelling loading pages, ignoring: []
+03-10 18:17:58.893 D/PageDataManager(12164): Cancelling loading pages, ignoring: []
+03-10 18:18:00.105 I/PageView(12164): PageView init
+03-10 18:18:00.105 I/PageView(12164): PageView.init: creating new bitmap
+03-10 18:18:00.107 I/bitmapUtils(12164): loadPersistBitmap: no exact-match cache (expected ebfdc42e-8b6c-4c32-84c0-a6b92a618462-sy0.png)
+03-10 18:18:00.107 D/PageView(12164): Drawing initial background.
+03-10 18:18:00.129 I/EditorSurface(12164): recompose surface
+03-10 18:18:00.133 I/DrawCanvas(12164): Initializing Canvas
+03-10 18:18:00.134 D/OpenGLRenderer(12164): Releasing renderer
+03-10 18:18:00.134 V/GLThread(12164): starting thread...
+03-10 18:18:00.135 E/Gralloc4(12164): buffer descriptor contains invalid usage bits 0x100000000
+03-10 18:18:00.136 D/GLFrontBufferedRenderer(12164): Supports KHR_FENCE_SYNC: true
+03-10 18:18:00.136 D/GLFrontBufferedRenderer(12164): Supports ANDROID_NATIVE_FENCE_SYNC: true
+03-10 18:18:00.157 V/CanvasObservers(12164): Refreshing UI!
+03-10 18:18:00.157 D/DrawCanvas(12164): refreshUi: scroll: Offset(0.0, 0.0), zoom: 1.0
+03-10 18:18:00.159 I/EditorView(12164): EditorView: saving
+03-10 18:18:00.162 I/PageViewCache(12164): Init from persist layer, pageId: ebfdc42e-8b6c-4c32-84c0-a6b92a618462
+03-10 18:18:00.163 D/PageView(12164): Page loaded (Init with id: ebfdc42e-8b6c-4c32-84c0-a6b92a618462)
+03-10 18:18:00.165 V/CanvasObservers(12164): Refreshing UI!
+03-10 18:18:00.165 D/DrawCanvas(12164): refreshUi: scroll: Offset(0.0, 0.0), zoom: 1.0
+03-10 18:18:00.261 D/PageViewCache(12164): Start page, id ebfdc42e-8b6c-4c32-84c0-a6b92a618462
+03-10 18:18:00.263 D/PageDataManager(12164): requestPageLoadJoin(ebfdc42e-8b6c-4c32-84c0-a6b92a618462)
+03-10 18:18:00.264 D/PageDataManager(12164): getOrStartLoadingJob(ebfdc42e-8b6c-4c32-84c0-a6b92a618462)
+03-10 18:18:00.265 D/PageDataManager(12164): starting loading of the Page(ebfdc42e-8b6c-4c32-84c0-a6b92a618462)
+03-10 18:18:00.267 D/PageDataManager(12164): page(ebfdc42e-8b6c-4c32-84c0-a6b92a618462)areListInitialized, false, false, null
+03-10 18:18:00.272 D/PageDataManager(12164): Loading page ebfdc42e-8b6c-4c32-84c0-a6b92a618462
+03-10 18:18:00.275 D/PageDataManager(12164): Preloading background for page ebfdc42e-8b6c-4c32-84c0-a6b92a618462
+03-10 18:18:00.289 D/PageDataManager(12164): Loaded page ebfdc42e-8b6c-4c32-84c0-a6b92a618462
+03-10 18:18:00.290 D/PageViewCache(12164): Got page data (PageView.loadPage). id ebfdc42e-8b6c-4c32-84c0-a6b92a618462
+03-10 18:18:00.295 D/PageViewCache(12164): All strokes loaded in 30 ms
+03-10 18:18:00.297 D/SnackState(12164): Removing snack 2500e4ca-2641-4774-9450-b7e1b016be34
+03-10 18:18:00.297 W/.ethran.notable(12164): type=1400 audit(0.0:21008): avc:  denied  { read } for  name="u:object_r:vendor_display_prop:s0" dev="tmpfs" ino=10756 scontext=u:r:untrusted_app:s0:c145,c256,c512,c768 tcontext=u:object_r:vendor_display_prop:s0 tclass=file permissive=0 app=com.tailscale.ipn
+03-10 18:18:00.301 W/libc    (12164): Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+03-10 18:18:00.302 I/DrawCanvas(12164): surface created android.view.SurfaceView$2@9b4158e
+03-10 18:18:00.302 I/DrawCanvas(12164): Update editable surface
+03-10 18:18:00.305 E/Gralloc4(12164): buffer descriptor contains invalid usage bits 0x100000000
+03-10 18:18:00.306 V/DrawCanvas(12164): Surface dimension changed!
+03-10 18:18:00.306 D/PageView(12164): Updating dimensions: 1755 x 2480
+03-10 18:18:00.308 I/bitmapUtils(12164): loadPersistBitmap: no exact-match cache (expected ebfdc42e-8b6c-4c32-84c0-a6b92a618462-sy0.png)
+03-10 18:18:00.308 D/PageView(12164): Drawing initial background.
+03-10 18:18:00.323 I/DrawCanvas(12164): Update editable surface
+03-10 18:18:00.325 V/GLThread(12164): dispatching request to render for token: 6
+03-10 18:18:00.325 V/GLThread(12164): requesting render for token: 6
+03-10 18:18:00.335 D/EGL     (12164): eglDupNativeFence returned 172
+03-10 18:18:00.338 D/PageViewCache(12164): Loaded page from persistent layer ebfdc42e-8b6c-4c32-84c0-a6b92a618462
+03-10 18:18:00.338 D/PageDataManager(12164): page(ebfdc42e-8b6c-4c32-84c0-a6b92a618462)areListInitialized, true, true, 17
+03-10 18:18:00.339 V/einkHelper(12164): onSurfaceInit, (0, 0 - 1755, 2480)
+03-10 18:18:00.339 D/einkHelper(12164): Set update mode HAND_WRITING_REPAINT_MODE
+03-10 18:18:00.342 I/einkHelper(12164): Setup editable surface
+03-10 18:18:00.350 D/PageDataManager(12164): reduceCache(20)
+03-10 18:18:00.450 I/RawInputReader$a(12164): submitJob finally closeRawInput raw_input-134
+03-10 18:18:00.463 I/RawInputReader$a(12164): submitJob nativeRawReader raw_input-134
+03-10 18:18:00.463 I/lib_touch_reader(12164): find path /dev/input/event1 result name onyx_emp_Wacom I2C Digitizer
+03-10 18:18:00.512 I/einkHelper(12164): Setup editable surface completed
+03-10 18:18:00.512 I/DrawCanvas(12164): Update pen and stroke: pen=FOUNTAIN, mode=Draw
+03-10 18:18:00.520 V/CanvasObservers(12164): Force update, zone: null, Strokes to draw: 0
+03-10 18:18:00.521 D/PageDrawingLog(12164): drawOnCanvasFromPage, zoom: 1.0, background: inbox, type: Native
+03-10 18:18:00.531 V/einkHelper(12164): onSurfaceInit, (0, 0 - 1755, 2480)
+03-10 18:18:00.531 V/DrawCanvas(12164): refreshUiSuspend() is called from the non-main thread.
+03-10 18:18:00.531 D/einkHelper(12164): Set update mode HAND_WRITING_REPAINT_MODE
+03-10 18:18:00.531 D/DrawCanvas.waitForDrawing(12164): waiting
+03-10 18:18:00.534 I/einkHelper(12164): Setup editable surface
+03-10 18:18:00.535 D/DrawCanvas.waitForDrawing(12164): Finished waiting in 3 ms
+03-10 18:18:00.561 I/RawInputReader$a(12164): submitJob finally closeRawInput raw_input-134
+03-10 18:18:00.580 I/RawInputReader$a(12164): submitJob nativeRawReader raw_input-134
+03-10 18:18:00.581 I/lib_touch_reader(12164): find path /dev/input/event1 result name onyx_emp_Wacom I2C Digitizer
+03-10 18:18:00.616 I/einkHelper(12164): Setup editable surface completed
+03-10 18:18:00.617 I/DrawCanvas(12164): Update pen and stroke: pen=FOUNTAIN, mode=Draw
+03-10 18:18:00.630 V/CanvasObservers(12164): Force update, zone: null, Strokes to draw: 0
+03-10 18:18:00.630 D/PageDrawingLog(12164): drawOnCanvasFromPage, zoom: 1.0, background: inbox, type: Native
+03-10 18:18:00.640 V/DrawCanvas(12164): refreshUiSuspend() is called from the non-main thread.
+03-10 18:18:00.641 D/DrawCanvas.waitForDrawing(12164): waiting
+03-10 18:18:00.644 D/DrawCanvas.waitForDrawing(12164): Finished waiting in 2 ms
+03-10 18:18:01.164 I/PageDataManager(12164): Persisting batch of bitmaps for pages: [ebfdc42e-8b6c-4c32-84c0-a6b92a618462]
+03-10 18:18:01.473 D/bitmapUtils(12164): persistBitmapFull: cached preview saved as ebfdc42e-8b6c-4c32-84c0-a6b92a618462-sy0.png (scrollY=0)
+03-10 18:18:01.532 I/GestureReceiver(12164): GestureReceiver got touch at (1344.0, 1502.0), type=Touch, consumed=false
+03-10 18:18:01.597 I/GestureReceiver(12164): Canceling gesture - already consumed
+03-10 18:18:01.858 I/GestureReceiver(12164): GestureReceiver got touch at (328.9004, 774.84375), type=Stylus, consumed=false
+03-10 18:18:01.866 E/GestureReceiver(12164): Unexpected error in gesture handling
+03-10 18:18:01.866 E/GestureReceiver(12164): java.lang.IllegalArgumentException: Failed requirement.
+03-10 18:18:01.866 E/GestureReceiver(12164): 	at com.ethran.notable.gestures.EditorGestureReceiverKt$EditorGestureReceiver$1$1$1.invokeSuspend(EditorGestureReceiver.kt:58)
+03-10 18:18:01.866 E/GestureReceiver(12164): 	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+03-10 18:18:01.866 E/GestureReceiver(12164): 	at kotlinx.coroutines.DispatchedTaskKt.resume(DispatchedTask.kt:165)
+03-10 18:18:01.866 E/GestureReceiver(12164): 	at kotlinx.coroutines.DispatchedTaskKt.dispatch(DispatchedTask.kt:154)
+03-10 18:18:01.866 E/GestureReceiver(12164): 	at kotlinx.coroutines.CancellableContinuationImpl.dispatchResume(CancellableContinuationImpl.kt:470)
+03-10 18:18:01.866 E/GestureReceiver(12164): 	at kotlinx.coroutines.CancellableContinuationImpl.resumeImpl$kotlinx_coroutines_core(CancellableContinuationImpl.kt:504)
+03-10 18:18:01.866 E/GestureReceiver(12164): 	at kotlinx.coroutines.CancellableContinuationImpl.resumeImpl$kotlinx_coroutines_core$default(CancellableContinuationImpl.kt:493)
+03-10 18:18:01.866 E/GestureReceiver(12164): 	at kotlinx.coroutines.CancellableContinuationImpl.resumeWith(CancellableContinuationImpl.kt:359)
+03-10 18:18:01.866 E/GestureReceiver(12164): 	at androidx.compose.ui.input.pointer.SuspendingPointerInputModifierNodeImpl$PointerEventHandlerCoroutine.offerPointerEvent(SuspendingPointerInputFilter.kt:829)
+03-10 18:18:01.866 E/GestureReceiver(12164): 	at androidx.compose.ui.input.pointer.SuspendingPointerInputModifierNodeImpl.dispatchPointerEvent(SuspendingPointerInputFilter.kt:699)
+03-10 18:18:01.866 E/GestureReceiver(12164): 	at androidx.compose.ui.input.pointer.SuspendingPointerInputModifierNodeImpl.onPointerEvent-H0pRuoY(SuspendingPointerInputFilter.kt:725)
+03-10 18:18:01.866 E/GestureReceiver(12164): 	at androidx.compose.ui.input.pointer.Node.dispatchMainEventPass(HitPathTracker.kt:446)
+03-10 18:18:01.866 E/GestureReceiver(12164): 	at androidx.compose.ui.input.pointer.Node.dispatchMainEventPass(HitPathTracker.kt:432)
+03-10 18:18:01.866 E/GestureReceiver(12164): 	at androidx.compose.ui.input.pointer.Node.dispatchMainEventPass(HitPathTracker.kt:432)
+03-10 18:18:01.866 E/GestureReceiver(12164): 	at androidx.compose.ui.input.pointer.NodeParent.dispatchMainEventPass(HitPathTracker.kt:285)
+03-10 18:18:01.866 E/GestureReceiver(12164): 	at androidx.compose.ui.input.pointer.HitPathTracker.dispatchChanges(HitPathTracker.kt:181)
+03-10 18:18:01.866 E/GestureReceiver(12164): 	at androidx.compose.ui.input.pointer.PointerInputEventProcessor.process-BIzXfog(PointerInputEventProcessor.kt:118)
+03-10 18:18:01.866 E/GestureReceiver(12164): 	at androidx.compose.ui.platform.AndroidComposeView.sendMotionEvent-8iAsVTc(AndroidComposeView.android.kt:2685)
+03-10 18:18:01.866 E/GestureReceiver(12164): 	at androidx.compose.ui.platform.AndroidComposeView.handleMotionEvent-8iAsVTc(AndroidComposeView.android.kt:2629)
+03-10 18:18:01.866 E/GestureReceiver(12164): 	at androidx.compose.ui.platform.AndroidComposeView.dispatchTouchEvent(AndroidComposeView.android.kt:2467)
+03-10 18:18:01.866 E/GestureReceiver(12164): 	at android.view.ViewGroup.dispatchTransformedTouchEvent(ViewGroup.java:3123)
+03-10 18:18:01.866 E/GestureReceiver(12164): 	at android.view.ViewGroup.dispatchTouchEvent(ViewGroup.java:2747)
+03-10 18:18:01.866 E/GestureReceiver(12164): 	at android.view.ViewGroup.dispatchTransformedTouchEvent(ViewGroup.java:3123)
+03-10 18:18:01.866 E/GestureReceiver(12164): 	at android.view.ViewGroup.dispatchTouchEvent(ViewGroup.java:2747)
+03-10 18:18:01.866 E/GestureReceiver(12164): 	at android.view.ViewGroup.dispatchTransformedTouchEvent(ViewGroup.java:3123)
+03-10 18:18:01.866 E/GestureReceiver(12164): 	at android.view.ViewGroup.dispatchTouchEvent(ViewGroup.java:2747)
+03-10 18:18:01.866 E/GestureReceiver(12164): 	at android.view.ViewGroup.dispatchTransformedTouchEvent(ViewGroup.java:3123)
+03-10 18:18:01.866 E/GestureReceiver(12164): 	at android.view.ViewGroup.dispatchTouchEvent(ViewGroup.java:2747)
+03-10 18:18:01.866 E/GestureReceiver(12164): 	at com.android.internal.policy.DecorView.superDispatchTouchEvent(DecorView.java:464)
+03-10 18:18:01.866 E/GestureReceiver(12164): 	at com.android.internal.policy.PhoneWindow.superDispatchTouchEvent(PhoneWindow.java:1980)
+03-10 18:18:01.866 E/GestureReceiver(12164): 	at android.app.Activity.dispatchTouchEvent(Activity.java:4533)
+03-10 18:18:01.866 E/GestureReceiver(12164): 	at com.android.internal.policy.DecorView.dispatchTouchEvent(DecorView.java:422)
+03-10 18:18:01.866 E/GestureReceiver(12164): 	at android.view.View.dispatchPointerEvent(View.java:16767)
+03-10 18:18:01.866 E/GestureReceiver(12164): 	at android.view.ViewRootImpl$ViewPostImeInputStage.processPointerEvent(ViewRootImpl.java:8029)
+03-10 18:18:01.866 E/GestureReceiver(12164): 	at android.view.ViewRootImpl$ViewPostImeInputStage.onProcess(ViewRootImpl.java:7795)
+03-10 18:18:01.866 E/GestureReceiver(12164): 	at android.view.ViewRootImpl$InputStage.deliver(ViewRootImpl.java:7191)
+03-10 18:18:01.866 E/GestureReceiver(12164): 	at android.view.ViewRootImpl$InputStage.onDeliverToNext(ViewRootImpl.java:7248)
+03-10 18:18:01.866 E/GestureReceiver(12164): 	at android.view.ViewRootImpl$InputStage.forward(ViewRootImpl.java:7214)
+03-10 18:18:01.866 E/GestureReceiver(12164): 	at android.view.ViewRootImpl$AsyncInputStage.forward(ViewRootImpl.java:7380)
+03-10 18:18:01.866 E/GestureReceiver(12164): 	at android.view.ViewRootImpl$InputStage.apply(ViewRootImpl.java:7222)
+03-10 18:18:01.866 E/GestureReceiver(12164): 	at android.view.ViewRootImpl$AsyncInputStage.apply(ViewRootImpl.java:7437)
+03-10 18:18:01.866 E/GestureReceiver(12164): 	at android.view.ViewRootImpl$InputStage.deliver(ViewRootImpl.java:7195)
+03-10 18:18:01.866 E/GestureReceiver(12164): 	at android.view.ViewRootImpl$InputStage.onDeliverToNext(ViewRootImpl.java:7248)
+03-10 18:18:01.867 E/GestureReceiver(12164): 	at android.view.ViewRootImpl$InputStage.forward(ViewRootImpl.java:7214)
+03-10 18:18:01.867 E/GestureReceiver(12164): 	at android.view.ViewRootImpl$InputStage.apply(ViewRootImpl.java:7222)
+03-10 18:18:01.867 E/GestureReceiver(12164): 	at android.view.ViewRootImpl$InputStage.deliver(ViewRootImpl.java:7195)
+03-10 18:18:01.867 E/GestureReceiver(12164): 	at android.view.ViewRootImpl.deliverInputEvent(ViewRootImpl.java:10340)
+03-10 18:18:01.867 E/GestureReceiver(12164): 	at android.view.ViewRootImpl.doProcessInputEvents(ViewRootImpl.java:10287)
+03-10 18:18:01.867 E/GestureReceiver(12164): 	at android.view.ViewRootImpl.enqueueInputEvent(ViewRootImpl.java:10224)
+03-10 18:18:01.867 E/GestureReceiver(12164): 	at android.view.ViewRootImpl$WindowInputEventReceiver.onInputEvent(ViewRootImpl.java:10482)
+03-10 18:18:01.867 E/GestureReceiver(12164): 	at android.view.InputEventReceiver.dispatchInputEvent(InputEventReceiver.java:295)
+03-10 18:18:01.867 E/GestureReceiver(12164): 	at android.os.MessageQueue.nativePollOnce(Native Method)
+03-10 18:18:01.867 E/GestureReceiver(12164): 	at android.os.MessageQueue.next(MessageQueue.java:346)
+03-10 18:18:01.867 E/GestureReceiver(12164): 	at android.os.Looper.loopOnce(Looper.java:189)
+03-10 18:18:01.867 E/GestureReceiver(12164): 	at android.os.Looper.loop(Looper.java:317)
+03-10 18:18:01.867 E/GestureReceiver(12164): 	at android.app.ActivityThread.main(ActivityThread.java:8842)
+03-10 18:18:01.867 E/GestureReceiver(12164): 	at java.lang.reflect.Method.invoke(Native Method)
+03-10 18:18:01.867 E/GestureReceiver(12164): 	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:580)
+03-10 18:18:01.867 E/GestureReceiver(12164): 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:892)
+03-10 18:18:02.242 D/DrawCanvas(12164): lock obtained in 1 ms
+03-10 18:18:02.245 D/DrawCanvas(12164): Drawing...
+03-10 18:18:02.250 D/PageDrawingLog(12164): drawOnCanvasFromPage, zoom: 1.0, background: inbox, type: Native
+03-10 18:18:02.266 I/PageDataManager(12164): Persisting batch of bitmaps for pages: [ebfdc42e-8b6c-4c32-84c0-a6b92a618462]
+03-10 18:18:02.560 D/bitmapUtils(12164): persistBitmapFull: cached preview saved as ebfdc42e-8b6c-4c32-84c0-a6b92a618462-sy0.png (scrollY=0)
+03-10 18:18:02.577 D/DrawCanvas(12164): lock obtained in 0 ms
+03-10 18:18:02.578 D/DrawCanvas(12164): Drawing...
+03-10 18:18:02.581 D/PageDrawingLog(12164): drawOnCanvasFromPage, zoom: 1.0, background: inbox, type: Native
+03-10 18:18:03.092 V/CanvasObservers(12164): Commiting to history
+03-10 18:18:03.230 D/DrawCanvas(12164): lock obtained in 0 ms
+03-10 18:18:03.231 D/DrawCanvas(12164): Drawing...
+03-10 18:18:03.232 D/PageDrawingLog(12164): drawOnCanvasFromPage, zoom: 1.0, background: inbox, type: Native
+03-10 18:18:03.267 I/PageDataManager(12164): Persisting batch of bitmaps for pages: [ebfdc42e-8b6c-4c32-84c0-a6b92a618462]
+03-10 18:18:03.557 D/bitmapUtils(12164): persistBitmapFull: cached preview saved as ebfdc42e-8b6c-4c32-84c0-a6b92a618462-sy0.png (scrollY=0)
+03-10 18:18:03.637 D/DrawCanvas(12164): lock obtained in 0 ms
+03-10 18:18:03.637 D/DrawCanvas(12164): Drawing...
+03-10 18:18:03.641 D/PageDrawingLog(12164): drawOnCanvasFromPage, zoom: 1.0, background: inbox, type: Native
+03-10 18:18:04.134 D/DrawCanvas(12164): lock obtained in 0 ms
+03-10 18:18:04.135 D/DrawCanvas(12164): Drawing...
+03-10 18:18:04.137 D/PageDrawingLog(12164): drawOnCanvasFromPage, zoom: 1.0, background: inbox, type: Native
+03-10 18:18:04.267 I/PageDataManager(12164): Persisting batch of bitmaps for pages: [ebfdc42e-8b6c-4c32-84c0-a6b92a618462]
+03-10 18:18:04.534 D/DrawCanvas(12164): lock obtained in 0 ms
+03-10 18:18:04.535 D/DrawCanvas(12164): Drawing...
+03-10 18:18:04.537 D/PageDrawingLog(12164): drawOnCanvasFromPage, zoom: 1.0, background: inbox, type: Native
+03-10 18:18:04.558 D/bitmapUtils(12164): persistBitmapFull: cached preview saved as ebfdc42e-8b6c-4c32-84c0-a6b92a618462-sy0.png (scrollY=0)
+03-10 18:18:05.052 V/CanvasObservers(12164): Commiting to history
+03-10 18:18:05.267 I/PageDataManager(12164): Persisting batch of bitmaps for pages: [ebfdc42e-8b6c-4c32-84c0-a6b92a618462]
+03-10 18:18:05.407 I/InboxSyncEngine(12164): Starting inbox sync for page ebfdc42e-8b6c-4c32-84c0-a6b92a618462 with tags: []
+03-10 18:18:05.458 I/InboxSyncEngine(12164): Recognizing all 6 strokes
+03-10 18:18:05.498 D/PageDataManager(12164): Cancelling loading pages, ignoring: []
+03-10 18:18:05.513 W/GestureReceiver(12164): Gesture coroutine canceled
+03-10 18:18:05.513 W/GestureReceiver(12164): androidx.compose.ui.input.pointer.PointerInputResetException: Pointer input was reset
+03-10 18:18:05.513 V/GLThread(12164): dispatching request to detach surface w/ token: 6
+03-10 18:18:05.514 V/GLThread(12164): dispatching request to detach surface w/ token: 7
+03-10 18:18:05.514 I/DrawCanvas(12164): surface destroyed 217878298 - ref 119106432
+03-10 18:18:05.515 V/einkHelper(12164): onSurfaceDestroy, (0, 0 - 1755, 2480)
+03-10 18:18:05.561 D/bitmapUtils(12164): persistBitmapFull: cached preview saved as ebfdc42e-8b6c-4c32-84c0-a6b92a618462-sy0.png (scrollY=0)
+03-10 18:18:05.691 E/BufferQueueProducer(12164): [SurfaceView[com.ethran.notable/com.ethran.notable.MainActivity]#29(BLAST Consumer)29](id:2f840000001d,api:0,p:-1,c:12164) disconnect: not connected (req=2)
+03-10 18:18:05.692 I/OnyxHWREngine(12164): OnyxHWR recognized 8 chars
+03-10 18:18:05.695 I/InboxSyncEngine(12164): Full recognized text: 'Me notes'
+03-10 18:18:05.699 I/InboxSyncEngine(12164): Inbox sync: exporting page to PDF at /storage/emulated/0/Notes/Study/Study, file 2026-03-10-18-18-00.pdf
+03-10 18:18:05.704 D/PageView(12164): Dispose old page
+03-10 18:18:05.705 D/PageDataManager(12164): page(ebfdc42e-8b6c-4c32-84c0-a6b92a618462)areListInitialized, true, true, 17
+03-10 18:18:05.706 I/PageDataManager(12164): Page exit, is page loaded: true
+03-10 18:18:05.707 D/PageDataManager(12164): page(ebfdc42e-8b6c-4c32-84c0-a6b92a618462)areListInitialized, true, true, 17
+03-10 18:18:05.710 D/PageDataManager(12164): Cancelling loading page: pageId=ebfdc42e-8b6c-4c32-84c0-a6b92a618462
+03-10 18:18:05.787 I/InboxSyncEngine(12164): Inbox sync: PDF saved, link added: Study/2026-03-10-18-18-00.pdf
+03-10 18:18:05.803 I/InboxSyncEngine(12164): Written inbox note to /storage/emulated/0/Notes/Study/Study/2026-03-10-18-18-00.md
+03-10 18:18:05.804 I/InboxSyncEngine(12164): Inbox sync complete for page ebfdc42e-8b6c-4c32-84c0-a6b92a618462
+03-10 18:18:05.804 I/SyncState(12164): Background sync complete for page ebfdc42e-8b6c-4c32-84c0-a6b92a618462
+03-10 18:18:06.954 D/TrafficStats(12164): tagSocket(103) with statsTag=0xffffffff, statsUid=-1
+03-10 18:18:08.602 D/QuickSettings(12164): App is paused - maybe quick settings opened?
+03-10 18:18:08.645 D/MainActivity(12164): OnWindowFocusChanged: false
+03-10 18:18:08.707 D/VRI[MainActivity](12164): visibilityChanged oldVisibility=true newVisibility=false
+03-10 18:18:08.801 D/PageDataManager(12164): onTrimMemory: 20, currentCacheSizeMB: 35
+03-10 18:18:08.803 D/PageDataManager(12164): freeMemory(10)
+03-10 18:18:08.805 D/PageDataManager(12164): Clearing page (all except current) 397281f7-6bca-4a6d-a93c-632392fde7db, requested by freeMemory
+03-10 18:18:08.805 D/PageDataManager(12164): Removing page 397281f7-6bca-4a6d-a93c-632392fde7db
+03-10 18:18:08.808 D/PageDataManager(12164): after trim currentCacheSizeMB: 19
+03-10 18:18:08.818 D/PageDataManager(12164): onTrimMemory: 20, currentCacheSizeMB: 19
+03-10 18:18:08.820 D/PageDataManager(12164): freeMemory(10)
+03-10 18:18:08.825 D/PageDataManager(12164): after trim currentCacheSizeMB: 19
+03-10 18:18:10.641 I/FA      (12164): Application backgrounded at: timestamp_millis: 1773166688638
+03-10 18:19:37.458 W/WindowOnBackDispatcher(12164): OnBackInvokedCallback is not enabled for the application.
+03-10 18:19:37.458 W/WindowOnBackDispatcher(12164): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+03-10 18:19:37.460 V/ActivityThread(12164): reportTopResumedActivityChanged - > onActivityTopResumed
+03-10 18:19:37.477 W/.ethran.notable(12164): type=1400 audit(0.0:21064): avc:  denied  { read } for  name="u:object_r:vendor_display_prop:s0" dev="tmpfs" ino=10756 scontext=u:r:untrusted_app:s0:c145,c256,c512,c768 tcontext=u:object_r:vendor_display_prop:s0 tclass=file permissive=0 app=com.tailscale.ipn
+03-10 18:19:37.478 W/libc    (12164): Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+03-10 18:19:37.531 D/MainActivity(12164): OnWindowFocusChanged: true
+03-10 18:19:41.219 W/WindowOnBackDispatcher(12164): OnBackInvokedCallback is not enabled for the application.
+03-10 18:19:41.219 W/WindowOnBackDispatcher(12164): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+03-10 18:19:41.241 W/.ethran.notable(12164): type=1400 audit(0.0:21065): avc:  denied  { read } for  name="u:object_r:vendor_display_prop:s0" dev="tmpfs" ino=10756 scontext=u:r:untrusted_app:s0:c145,c256,c512,c768 tcontext=u:object_r:vendor_display_prop:s0 tclass=file permissive=0 app=com.tailscale.ipn
+03-10 18:19:41.242 W/libc    (12164): Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+03-10 18:19:41.283 D/MainActivity(12164): OnWindowFocusChanged: false
+03-10 18:19:41.598 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:19:41.610 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:19:41.637 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:19:41.663 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:19:41.690 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:19:41.716 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:19:41.743 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:19:41.769 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:19:41.795 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:19:41.822 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:19:41.848 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:19:41.875 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:19:41.901 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:19:41.927 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:19:41.954 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:19:41.980 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:19:42.006 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:19:42.033 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:19:42.059 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:19:42.085 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:19:42.112 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:19:42.138 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:19:42.164 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:19:42.191 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:19:42.217 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:19:42.244 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:19:42.783 W/WindowOnBackDispatcher(12164): sendCancelIfRunning: isInProgress=false callback=android.view.ViewRootImpl$$ExternalSyntheticLambda12@57b3948
+03-10 18:19:42.859 D/MainActivity(12164): OnWindowFocusChanged: true
+03-10 18:19:46.810 D/InsetsController(12164): show(ime(), fromIme=false)
+03-10 18:19:46.810 I/ImeTracker(12164): com.ethran.notable:26495177: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT_BY_INSETS_API fromUser false
+03-10 18:19:46.811 D/InputMethodManager(12164): showSoftInput() view=androidx.compose.ui.platform.AndroidComposeView{faa721b VFED..... .F....ID 0,0-1860,2480 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT_BY_INSETS_API
+03-10 18:19:46.822 I/AssistStructure(12164): Flattened final assist data: 1892 bytes, containing 1 windows, 12 views
+03-10 18:19:46.871 W/WindowOnBackDispatcher(12164): OnBackInvokedCallback is not enabled for the application.
+03-10 18:19:46.871 W/WindowOnBackDispatcher(12164): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+03-10 18:19:46.893 W/.ethran.notable(12164): type=1400 audit(0.0:21066): avc:  denied  { read } for  name="u:object_r:vendor_display_prop:s0" dev="tmpfs" ino=10756 scontext=u:r:untrusted_app:s0:c145,c256,c512,c768 tcontext=u:object_r:vendor_display_prop:s0 tclass=file permissive=0 app=com.tailscale.ipn
+03-10 18:19:46.894 W/libc    (12164): Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+03-10 18:19:46.908 I/ImeTracker(12164): com.ethran.notable:873e85be: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser false
+03-10 18:19:46.908 D/InputMethodManager(12164): showSoftInput() view=androidx.compose.ui.platform.AndroidComposeView{faa721b VFED..... .F...... 0,0-1860,2480 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+03-10 18:19:46.910 W/RemoteInputConnectionImpl(12164): getTextBeforeCursor on inactive InputConnection
+03-10 18:19:46.959 D/InsetsController(12164): show(ime(), fromIme=true)
+03-10 18:19:47.525 I/ImeTracker(12164): com.ethran.notable:873e85be: onShown
+03-10 18:19:49.007 W/WindowOnBackDispatcher(12164): sendCancelIfRunning: isInProgress=false callback=android.view.ViewRootImpl$$ExternalSyntheticLambda12@16b203a
+03-10 18:19:53.838 D/InsetsController(12164): show(ime(), fromIme=false)
+03-10 18:19:53.838 I/ImeTracker(12164): com.ethran.notable:239baeea: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT_BY_INSETS_API fromUser false
+03-10 18:19:53.839 I/ImeTracker(12164): com.ethran.notable:239baeea: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+03-10 18:19:53.895 W/WindowOnBackDispatcher(12164): OnBackInvokedCallback is not enabled for the application.
+03-10 18:19:53.895 W/WindowOnBackDispatcher(12164): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+03-10 18:19:53.909 W/libc    (12164): Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+03-10 18:19:53.905 W/.ethran.notable(12164): type=1400 audit(0.0:21067): avc:  denied  { read } for  name="u:object_r:vendor_display_prop:s0" dev="tmpfs" ino=10756 scontext=u:r:untrusted_app:s0:c145,c256,c512,c768 tcontext=u:object_r:vendor_display_prop:s0 tclass=file permissive=0 app=com.tailscale.ipn
+03-10 18:19:53.921 I/ImeTracker(12164): com.ethran.notable:8b2db50a: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser false
+03-10 18:19:53.921 D/InputMethodManager(12164): showSoftInput() view=androidx.compose.ui.platform.AndroidComposeView{faa721b VFED..... .F...... 0,0-1860,2480 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+03-10 18:19:53.923 D/InsetsController(12164): show(ime(), fromIme=true)
+03-10 18:19:53.924 I/ImeTracker(12164): com.ethran.notable:f46a3586: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+03-10 18:19:53.951 D/InsetsController(12164): show(ime(), fromIme=true)
+03-10 18:19:53.951 I/ImeTracker(12164): com.ethran.notable:8b2db50a: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+03-10 18:19:55.494 W/WindowOnBackDispatcher(12164): sendCancelIfRunning: isInProgress=false callback=android.view.ViewRootImpl$$ExternalSyntheticLambda12@bb63654
+03-10 18:19:55.505 D/InsetsController(12164): show(ime(), fromIme=false)
+03-10 18:19:55.505 I/ImeTracker(12164): com.ethran.notable:7cf1936a: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT_BY_INSETS_API fromUser false
+03-10 18:19:55.506 I/ImeTracker(12164): com.ethran.notable:7cf1936a: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+03-10 18:19:55.530 I/ImeTracker(12164): com.ethran.notable:eda3c17e: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser false
+03-10 18:19:55.530 D/InputMethodManager(12164): showSoftInput() view=androidx.compose.ui.platform.AndroidComposeView{faa721b VFED..... .F....ID 0,0-1860,2480 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+03-10 18:19:55.540 D/InsetsController(12164): show(ime(), fromIme=true)
+03-10 18:19:55.540 I/ImeTracker(12164): com.ethran.notable:8f70e7ee: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+03-10 18:19:55.561 D/InsetsController(12164): show(ime(), fromIme=true)
+03-10 18:19:55.561 I/ImeTracker(12164): com.ethran.notable:eda3c17e: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+03-10 18:19:57.493 W/.ethran.notable(12164): type=1400 audit(0.0:21068): avc:  denied  { read } for  name="u:object_r:vendor_display_prop:s0" dev="tmpfs" ino=10756 scontext=u:r:untrusted_app:s0:c145,c256,c512,c768 tcontext=u:object_r:vendor_display_prop:s0 tclass=file permissive=0 app=com.tailscale.ipn
+03-10 18:19:57.496 W/libc    (12164): Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+03-10 18:19:58.490 W/WindowOnBackDispatcher(12164): sendCancelIfRunning: isInProgress=false callback=android.view.ViewRootImpl$$ExternalSyntheticLambda12@6d82970
+03-10 18:19:58.556 D/InsetsController(12164): show(ime(), fromIme=true)
+03-10 18:19:58.556 I/ImeTracker(12164): com.ethran.notable:ed92b55a: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+03-10 18:20:01.299 D/InsetsController(12164): show(ime(), fromIme=false)
+03-10 18:20:01.299 I/ImeTracker(12164): com.ethran.notable:ca10f596: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT_BY_INSETS_API fromUser false
+03-10 18:20:01.300 I/ImeTracker(12164): com.ethran.notable:ca10f596: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+03-10 18:20:01.320 W/WindowOnBackDispatcher(12164): OnBackInvokedCallback is not enabled for the application.
+03-10 18:20:01.320 W/WindowOnBackDispatcher(12164): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+03-10 18:20:01.339 W/libc    (12164): Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+03-10 18:20:01.337 W/.ethran.notable(12164): type=1400 audit(0.0:21069): avc:  denied  { read } for  name="u:object_r:vendor_display_prop:s0" dev="tmpfs" ino=10756 scontext=u:r:untrusted_app:s0:c145,c256,c512,c768 tcontext=u:object_r:vendor_display_prop:s0 tclass=file permissive=0 app=com.tailscale.ipn
+03-10 18:20:01.384 I/ImeTracker(12164): com.ethran.notable:6b336354: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser false
+03-10 18:20:01.384 D/InputMethodManager(12164): showSoftInput() view=androidx.compose.ui.platform.AndroidComposeView{faa721b VFED..... .F...... 0,0-1860,2480 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+03-10 18:20:01.386 D/InsetsController(12164): show(ime(), fromIme=true)
+03-10 18:20:01.387 I/ImeTracker(12164): com.ethran.notable:77cf80b6: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+03-10 18:20:01.407 D/InsetsController(12164): show(ime(), fromIme=true)
+03-10 18:20:01.408 I/ImeTracker(12164): com.ethran.notable:6b336354: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+03-10 18:20:02.489 D/InsetsController(12164): show(ime(), fromIme=false)
+03-10 18:20:02.491 I/ImeTracker(12164): com.ethran.notable:dc9a8944: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT_BY_INSETS_API fromUser false
+03-10 18:20:02.491 I/ImeTracker(12164): com.ethran.notable:dc9a8944: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+03-10 18:20:02.515 I/ImeTracker(12164): com.ethran.notable:569d7a6f: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser false
+03-10 18:20:02.516 D/InputMethodManager(12164): showSoftInput() view=androidx.compose.ui.platform.AndroidComposeView{faa721b VFED..... .F...... 0,0-1860,2480 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+03-10 18:20:02.525 D/InsetsController(12164): show(ime(), fromIme=true)
+03-10 18:20:02.526 I/ImeTracker(12164): com.ethran.notable:569d7a6f: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+03-10 18:20:02.673 D/InsetsController(12164): show(ime(), fromIme=false)
+03-10 18:20:02.676 I/ImeTracker(12164): com.ethran.notable:6e823705: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT_BY_INSETS_API fromUser false
+03-10 18:20:02.676 I/ImeTracker(12164): com.ethran.notable:6e823705: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+03-10 18:20:02.709 I/ImeTracker(12164): com.ethran.notable:5879814c: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser false
+03-10 18:20:02.711 D/InputMethodManager(12164): showSoftInput() view=androidx.compose.ui.platform.AndroidComposeView{faa721b VFED..... .F...... 0,0-1860,2480 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+03-10 18:20:02.726 D/InsetsController(12164): show(ime(), fromIme=true)
+03-10 18:20:02.727 I/ImeTracker(12164): com.ethran.notable:5879814c: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+03-10 18:20:04.192 W/libc    (12164): Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+03-10 18:20:04.189 W/.ethran.notable(12164): type=1400 audit(0.0:21070): avc:  denied  { read } for  name="u:object_r:vendor_display_prop:s0" dev="tmpfs" ino=10756 scontext=u:r:untrusted_app:s0:c145,c256,c512,c768 tcontext=u:object_r:vendor_display_prop:s0 tclass=file permissive=0 app=com.tailscale.ipn
+03-10 18:20:04.243 W/WindowOnBackDispatcher(12164): sendCancelIfRunning: isInProgress=false callback=android.view.ViewRootImpl$$ExternalSyntheticLambda12@fb71c90
+03-10 18:20:05.013 W/.ethran.notable(12164): type=1400 audit(0.0:21071): avc:  denied  { read } for  name="u:object_r:vendor_display_prop:s0" dev="tmpfs" ino=10756 scontext=u:r:untrusted_app:s0:c145,c256,c512,c768 tcontext=u:object_r:vendor_display_prop:s0 tclass=file permissive=0 app=com.tailscale.ipn
+03-10 18:20:05.016 W/libc    (12164): Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+03-10 18:20:05.041 W/WindowOnBackDispatcher(12164): OnBackInvokedCallback is not enabled for the application.
+03-10 18:20:05.041 W/WindowOnBackDispatcher(12164): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+03-10 18:20:05.060 W/libc    (12164): Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+03-10 18:20:05.057 W/.ethran.notable(12164): type=1400 audit(0.0:21072): avc:  denied  { read } for  name="u:object_r:vendor_display_prop:s0" dev="tmpfs" ino=10756 scontext=u:r:untrusted_app:s0:c145,c256,c512,c768 tcontext=u:object_r:vendor_display_prop:s0 tclass=file permissive=0 app=com.tailscale.ipn
+03-10 18:20:06.076 W/WindowOnBackDispatcher(12164): sendCancelIfRunning: isInProgress=false callback=android.view.ViewRootImpl$$ExternalSyntheticLambda12@b5f0562
+03-10 18:20:06.110 W/WindowOnBackDispatcher(12164): sendCancelIfRunning: isInProgress=false callback=android.view.ViewRootImpl$$ExternalSyntheticLambda12@9643d35
+03-10 18:20:06.165 W/libc    (12164): Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+03-10 18:20:06.161 W/.ethran.notable(12164): type=1400 audit(0.0:21073): avc:  denied  { read } for  name="u:object_r:vendor_display_prop:s0" dev="tmpfs" ino=10756 scontext=u:r:untrusted_app:s0:c145,c256,c512,c768 tcontext=u:object_r:vendor_display_prop:s0 tclass=file permissive=0 app=com.tailscale.ipn
+03-10 18:20:06.245 W/WindowOnBackDispatcher(12164): OnBackInvokedCallback is not enabled for the application.
+03-10 18:20:06.245 W/WindowOnBackDispatcher(12164): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+03-10 18:20:06.263 W/libc    (12164): Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+03-10 18:20:06.261 W/.ethran.notable(12164): type=1400 audit(0.0:21074): avc:  denied  { read } for  name="u:object_r:vendor_display_prop:s0" dev="tmpfs" ino=10756 scontext=u:r:untrusted_app:s0:c145,c256,c512,c768 tcontext=u:object_r:vendor_display_prop:s0 tclass=file permissive=0 app=com.tailscale.ipn
+03-10 18:20:06.279 W/WindowOnBackDispatcher(12164): OnBackInvokedCallback is not enabled for the application.
+03-10 18:20:06.279 W/WindowOnBackDispatcher(12164): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+03-10 18:20:06.296 W/libc    (12164): Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+03-10 18:20:06.293 W/.ethran.notable(12164): type=1400 audit(0.0:21075): avc:  denied  { read } for  name="u:object_r:vendor_display_prop:s0" dev="tmpfs" ino=10756 scontext=u:r:untrusted_app:s0:c145,c256,c512,c768 tcontext=u:object_r:vendor_display_prop:s0 tclass=file permissive=0 app=com.tailscale.ipn
+03-10 18:20:07.605 W/WindowOnBackDispatcher(12164): sendCancelIfRunning: isInProgress=false callback=android.view.ViewRootImpl$$ExternalSyntheticLambda12@55c6014
+03-10 18:20:07.621 W/WindowOnBackDispatcher(12164): sendCancelIfRunning: isInProgress=false callback=android.view.ViewRootImpl$$ExternalSyntheticLambda12@3d7413e
+03-10 18:20:07.633 W/WindowOnBackDispatcher(12164): sendCancelIfRunning: isInProgress=false callback=android.view.ViewRootImpl$$ExternalSyntheticLambda12@cd61b82
+03-10 18:20:08.976 D/InsetsController(12164): show(ime(), fromIme=false)
+03-10 18:20:08.977 I/ImeTracker(12164): com.ethran.notable:f97455af: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT_BY_INSETS_API fromUser false
+03-10 18:20:08.977 I/ImeTracker(12164): com.ethran.notable:f97455af: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+03-10 18:20:08.992 W/WindowOnBackDispatcher(12164): OnBackInvokedCallback is not enabled for the application.
+03-10 18:20:08.992 W/WindowOnBackDispatcher(12164): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+03-10 18:20:09.013 W/.ethran.notable(12164): type=1400 audit(0.0:21076): avc:  denied  { read } for  name="u:object_r:vendor_display_prop:s0" dev="tmpfs" ino=10756 scontext=u:r:untrusted_app:s0:c145,c256,c512,c768 tcontext=u:object_r:vendor_display_prop:s0 tclass=file permissive=0 app=com.tailscale.ipn
+03-10 18:20:09.017 W/libc    (12164): Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+03-10 18:20:09.050 I/ImeTracker(12164): com.ethran.notable:6f2ffd4b: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser false
+03-10 18:20:09.051 D/InputMethodManager(12164): showSoftInput() view=androidx.compose.ui.platform.AndroidComposeView{faa721b VFED..... .F...... 0,0-1860,2480 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+03-10 18:20:09.054 D/InsetsController(12164): show(ime(), fromIme=true)
+03-10 18:20:09.054 I/ImeTracker(12164): com.ethran.notable:a0fb683f: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+03-10 18:20:09.076 D/InsetsController(12164): show(ime(), fromIme=true)
+03-10 18:20:09.076 I/ImeTracker(12164): com.ethran.notable:6f2ffd4b: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+03-10 18:20:10.113 W/.ethran.notable(12164): type=1400 audit(0.0:21077): avc:  denied  { read } for  name="u:object_r:vendor_display_prop:s0" dev="tmpfs" ino=10756 scontext=u:r:untrusted_app:s0:c145,c256,c512,c768 tcontext=u:object_r:vendor_display_prop:s0 tclass=file permissive=0 app=com.tailscale.ipn
+03-10 18:20:10.114 W/libc    (12164): Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+03-10 18:20:17.634 W/WindowOnBackDispatcher(12164): sendCancelIfRunning: isInProgress=false callback=android.view.ViewRootImpl$$ExternalSyntheticLambda12@c3703ef
+03-10 18:20:22.456 I/KvProxy (12164): Setting APP_SETTINGS to AppSettings(version=1, monitorBgFiles=false, defaultNativeTemplate=blank, quickNavPages=[], neoTools=false, scribbleToEraseEnabled=false, toolbarPosition=Top, smoothScroll=true, continuousZoom=false, continuousStrokeSlider=false, monochromeMode=false, paginatePdf=true, visualizePdfPagination=false, doubleTapAction=Undo, twoFingerTapAction=ChangeTool, swipeLeftAction=NextPage, swipeRightAction=PreviousPage, twoFingerSwipeLeftAction=ToggleZen, twoFingerSwipeRightAction=ToggleZen, holdAction=Select, enableQuickNav=true, obsidianInboxPath=Notes/Study/Study, obsidianAttachmentPath=Notes/Study/Study/00 👾 Meta/Attachments, showWelcome=false, debugMode=false, simpleRendering=false, openGLRendering=true, muPdfRendering=true, destructiveMigrations=false)
+03-10 18:20:22.465 I/VaultTagScanner(12164): Scanning 5 markdown files for tags
+03-10 18:20:22.479 I/VaultTagScanner(12164): Tag cache refreshed: 0 tags
+03-10 18:20:22.494 D/InsetsController(12164): hide(ime(), fromIme=false)
+03-10 18:20:22.494 I/ImeTracker(12164): com.ethran.notable:6c4f2c39: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT_BY_INSETS_API fromUser false
+03-10 18:20:22.495 I/ImeTracker(12164): com.ethran.notable:6727d1c6: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT_REQUEST_HIDE_WITH_CONTROL fromUser false
+03-10 18:20:22.516 D/InsetsController(12164): hide(ime(), fromIme=true)
+03-10 18:20:22.516 I/ImeTracker(12164): com.ethran.notable:6727d1c6: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+03-10 18:20:23.033 I/ImeTracker(12164): com.ethran.notable:be4617e6: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT_ON_ANIMATION_STATE_CHANGED fromUser false
+03-10 18:20:23.034 I/ImeTracker(12164): com.ethran.notable:6c4f2c39: onHidden
+03-10 18:20:23.838 D/PageDataManager(12164): Cancelling loading pages, ignoring: []
+03-10 18:20:28.034 D/PageDataManager(12164): Cancelling loading pages, ignoring: []
+03-10 18:20:29.295 I/PageView(12164): PageView init
+03-10 18:20:29.296 I/PageView(12164): PageView.init: creating new bitmap
+03-10 18:20:29.299 I/bitmapUtils(12164): loadPersistBitmap: no exact-match cache (expected ab684a2a-a00a-40ea-8e36-2979d1530fd1-sy0.png)
+03-10 18:20:29.300 D/PageView(12164): Drawing initial background.
+03-10 18:20:29.335 I/EditorSurface(12164): recompose surface
+03-10 18:20:29.342 I/DrawCanvas(12164): Initializing Canvas
+03-10 18:20:29.343 D/OpenGLRenderer(12164): Releasing renderer
+03-10 18:20:29.343 V/GLThread(12164): starting thread...
+03-10 18:20:29.344 E/Gralloc4(12164): buffer descriptor contains invalid usage bits 0x100000000
+03-10 18:20:29.348 D/GLFrontBufferedRenderer(12164): Supports KHR_FENCE_SYNC: true
+03-10 18:20:29.348 D/GLFrontBufferedRenderer(12164): Supports ANDROID_NATIVE_FENCE_SYNC: true
+03-10 18:20:29.371 V/CanvasObservers(12164): Refreshing UI!
+03-10 18:20:29.372 D/DrawCanvas(12164): refreshUi: scroll: Offset(0.0, 0.0), zoom: 1.0
+03-10 18:20:29.374 I/EditorView(12164): EditorView: saving
+03-10 18:20:29.380 I/PageViewCache(12164): Init from persist layer, pageId: ab684a2a-a00a-40ea-8e36-2979d1530fd1
+03-10 18:20:29.380 D/PageView(12164): Page loaded (Init with id: ab684a2a-a00a-40ea-8e36-2979d1530fd1)
+03-10 18:20:29.381 V/CanvasObservers(12164): Refreshing UI!
+03-10 18:20:29.381 D/DrawCanvas(12164): refreshUi: scroll: Offset(0.0, 0.0), zoom: 1.0
+03-10 18:20:29.476 D/PageViewCache(12164): Start page, id ab684a2a-a00a-40ea-8e36-2979d1530fd1
+03-10 18:20:29.477 D/PageDataManager(12164): requestPageLoadJoin(ab684a2a-a00a-40ea-8e36-2979d1530fd1)
+03-10 18:20:29.477 D/PageDataManager(12164): getOrStartLoadingJob(ab684a2a-a00a-40ea-8e36-2979d1530fd1)
+03-10 18:20:29.478 D/PageDataManager(12164): starting loading of the Page(ab684a2a-a00a-40ea-8e36-2979d1530fd1)
+03-10 18:20:29.478 D/PageDataManager(12164): page(ab684a2a-a00a-40ea-8e36-2979d1530fd1)areListInitialized, false, false, null
+03-10 18:20:29.479 D/PageDataManager(12164): Loading page ab684a2a-a00a-40ea-8e36-2979d1530fd1
+03-10 18:20:29.488 D/PageDataManager(12164): Preloading background for page ab684a2a-a00a-40ea-8e36-2979d1530fd1
+03-10 18:20:29.494 D/PageDataManager(12164): Loaded page ab684a2a-a00a-40ea-8e36-2979d1530fd1
+03-10 18:20:29.495 D/PageViewCache(12164): Got page data (PageView.loadPage). id ab684a2a-a00a-40ea-8e36-2979d1530fd1
+03-10 18:20:29.496 D/PageViewCache(12164): All strokes loaded in 19 ms
+03-10 18:20:29.496 D/SnackState(12164): Removing snack f4a301f0-4d5b-4f33-aad6-afece7ab8f5b
+03-10 18:20:29.511 W/libc    (12164): Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+03-10 18:20:29.509 W/.ethran.notable(12164): type=1400 audit(0.0:21078): avc:  denied  { read } for  name="u:object_r:vendor_display_prop:s0" dev="tmpfs" ino=10756 scontext=u:r:untrusted_app:s0:c145,c256,c512,c768 tcontext=u:object_r:vendor_display_prop:s0 tclass=file permissive=0 app=com.tailscale.ipn
+03-10 18:20:29.511 I/DrawCanvas(12164): surface created android.view.SurfaceView$2@e5d724
+03-10 18:20:29.512 I/DrawCanvas(12164): Update editable surface
+03-10 18:20:29.515 E/Gralloc4(12164): buffer descriptor contains invalid usage bits 0x100000000
+03-10 18:20:29.515 V/DrawCanvas(12164): Surface dimension changed!
+03-10 18:20:29.516 D/PageView(12164): Updating dimensions: 1755 x 2480
+03-10 18:20:29.518 I/bitmapUtils(12164): loadPersistBitmap: no exact-match cache (expected ab684a2a-a00a-40ea-8e36-2979d1530fd1-sy0.png)
+03-10 18:20:29.519 D/PageView(12164): Drawing initial background.
+03-10 18:20:29.533 I/DrawCanvas(12164): Update editable surface
+03-10 18:20:29.535 V/GLThread(12164): dispatching request to render for token: 8
+03-10 18:20:29.535 V/GLThread(12164): requesting render for token: 8
+03-10 18:20:29.540 D/EGL     (12164): eglDupNativeFence returned 172
+03-10 18:20:29.555 D/PageViewCache(12164): Loaded page from persistent layer ab684a2a-a00a-40ea-8e36-2979d1530fd1
+03-10 18:20:29.555 D/PageDataManager(12164): page(ab684a2a-a00a-40ea-8e36-2979d1530fd1)areListInitialized, true, true, 17
+03-10 18:20:29.556 V/einkHelper(12164): onSurfaceInit, (0, 0 - 1755, 2480)
+03-10 18:20:29.557 D/einkHelper(12164): Set update mode HAND_WRITING_REPAINT_MODE
+03-10 18:20:29.559 I/einkHelper(12164): Setup editable surface
+03-10 18:20:29.567 D/PageDataManager(12164): reduceCache(20)
+03-10 18:20:29.665 I/RawInputReader$a(12164): submitJob finally closeRawInput raw_input-134
+03-10 18:20:29.676 I/RawInputReader$a(12164): submitJob nativeRawReader raw_input-134
+03-10 18:20:29.678 I/lib_touch_reader(12164): find path /dev/input/event1 result name onyx_emp_Wacom I2C Digitizer
+03-10 18:20:29.720 I/einkHelper(12164): Setup editable surface completed
+03-10 18:20:29.720 I/DrawCanvas(12164): Update pen and stroke: pen=FOUNTAIN, mode=Draw
+03-10 18:20:29.724 V/CanvasObservers(12164): Force update, zone: null, Strokes to draw: 0
+03-10 18:20:29.725 D/PageDrawingLog(12164): drawOnCanvasFromPage, zoom: 1.0, background: inbox, type: Native
+03-10 18:20:29.734 V/einkHelper(12164): onSurfaceInit, (0, 0 - 1755, 2480)
+03-10 18:20:29.735 D/einkHelper(12164): Set update mode HAND_WRITING_REPAINT_MODE
+03-10 18:20:29.738 I/einkHelper(12164): Setup editable surface
+03-10 18:20:29.738 V/DrawCanvas(12164): refreshUiSuspend() is called from the non-main thread.
+03-10 18:20:29.739 D/DrawCanvas.waitForDrawing(12164): waiting
+03-10 18:20:29.741 D/DrawCanvas.waitForDrawing(12164): Finished waiting in 2 ms
+03-10 18:20:29.767 I/RawInputReader$a(12164): submitJob finally closeRawInput raw_input-134
+03-10 18:20:29.785 I/RawInputReader$a(12164): submitJob nativeRawReader raw_input-134
+03-10 18:20:29.786 I/lib_touch_reader(12164): find path /dev/input/event1 result name onyx_emp_Wacom I2C Digitizer
+03-10 18:20:29.820 I/einkHelper(12164): Setup editable surface completed
+03-10 18:20:29.821 I/DrawCanvas(12164): Update pen and stroke: pen=FOUNTAIN, mode=Draw
+03-10 18:20:29.824 V/CanvasObservers(12164): Force update, zone: null, Strokes to draw: 0
+03-10 18:20:29.825 D/PageDrawingLog(12164): drawOnCanvasFromPage, zoom: 1.0, background: inbox, type: Native
+03-10 18:20:29.839 V/DrawCanvas(12164): refreshUiSuspend() is called from the non-main thread.
+03-10 18:20:29.845 D/DrawCanvas.waitForDrawing(12164): waiting
+03-10 18:20:29.847 D/DrawCanvas.waitForDrawing(12164): Finished waiting in 2 ms
+03-10 18:20:30.382 I/PageDataManager(12164): Persisting batch of bitmaps for pages: [ab684a2a-a00a-40ea-8e36-2979d1530fd1]
+03-10 18:20:30.691 D/bitmapUtils(12164): persistBitmapFull: cached preview saved as ab684a2a-a00a-40ea-8e36-2979d1530fd1-sy0.png (scrollY=0)
+03-10 18:20:31.743 D/DrawCanvas(12164): lock obtained in 0 ms
+03-10 18:20:31.745 D/DrawCanvas(12164): Drawing...
+03-10 18:20:31.752 D/PageDrawingLog(12164): drawOnCanvasFromPage, zoom: 1.0, background: inbox, type: Native
+03-10 18:20:31.773 I/PageDataManager(12164): Persisting batch of bitmaps for pages: [ab684a2a-a00a-40ea-8e36-2979d1530fd1]
+03-10 18:20:32.066 D/bitmapUtils(12164): persistBitmapFull: cached preview saved as ab684a2a-a00a-40ea-8e36-2979d1530fd1-sy0.png (scrollY=0)
+03-10 18:20:32.275 V/CanvasObservers(12164): Commiting to history
+03-10 18:20:32.487 D/DrawCanvas(12164): lock obtained in 1 ms
+03-10 18:20:32.491 D/DrawCanvas(12164): Drawing...
+03-10 18:20:32.500 D/PageDrawingLog(12164): drawOnCanvasFromPage, zoom: 1.0, background: inbox, type: Native
+03-10 18:20:32.773 I/PageDataManager(12164): Persisting batch of bitmaps for pages: [ab684a2a-a00a-40ea-8e36-2979d1530fd1]
+03-10 18:20:33.025 V/CanvasObservers(12164): Commiting to history
+03-10 18:20:33.063 D/bitmapUtils(12164): persistBitmapFull: cached preview saved as ab684a2a-a00a-40ea-8e36-2979d1530fd1-sy0.png (scrollY=0)
+03-10 18:20:33.945 I/InboxSyncEngine(12164): Starting inbox sync for page ab684a2a-a00a-40ea-8e36-2979d1530fd1 with tags: []
+03-10 18:20:33.967 I/InboxSyncEngine(12164): Recognizing all 2 strokes
+03-10 18:20:34.031 D/PageDataManager(12164): Cancelling loading pages, ignoring: []
+03-10 18:20:34.042 W/GestureReceiver(12164): Gesture coroutine canceled
+03-10 18:20:34.042 W/GestureReceiver(12164): androidx.compose.ui.input.pointer.PointerInputResetException: Pointer input was reset
+03-10 18:20:34.043 V/GLThread(12164): dispatching request to detach surface w/ token: 8
+03-10 18:20:34.043 V/GLThread(12164): dispatching request to detach surface w/ token: 9
+03-10 18:20:34.044 I/DrawCanvas(12164): surface destroyed 138938384 - ref 57304358
+03-10 18:20:34.044 V/einkHelper(12164): onSurfaceDestroy, (0, 0 - 1755, 2480)
+03-10 18:20:34.115 I/OnyxHWREngine(12164): OnyxHWR recognized 3 chars
+03-10 18:20:34.117 I/InboxSyncEngine(12164): Full recognized text: 'New'
+03-10 18:20:34.120 I/InboxSyncEngine(12164): Inbox sync: exporting page to PDF at /storage/emulated/0/Notes/Study/Study, file 2026-03-10-18-20-29.pdf
+03-10 18:20:34.224 E/BufferQueueProducer(12164): [SurfaceView[com.ethran.notable/com.ethran.notable.MainActivity]#44(BLAST Consumer)44](id:2f840000002c,api:0,p:-1,c:12164) disconnect: not connected (req=2)
+03-10 18:20:34.234 D/PageView(12164): Dispose old page
+03-10 18:20:34.234 I/InboxSyncEngine(12164): Inbox sync: PDF saved, link added: Study/2026-03-10-18-20-29.pdf
+03-10 18:20:34.234 D/PageDataManager(12164): page(ab684a2a-a00a-40ea-8e36-2979d1530fd1)areListInitialized, true, true, 17
+03-10 18:20:34.235 I/PageDataManager(12164): Page exit, is page loaded: true
+03-10 18:20:34.235 D/PageDataManager(12164): page(ab684a2a-a00a-40ea-8e36-2979d1530fd1)areListInitialized, true, true, 17
+03-10 18:20:34.241 D/PageDataManager(12164): Cancelling loading page: pageId=ab684a2a-a00a-40ea-8e36-2979d1530fd1
+03-10 18:20:34.263 I/InboxSyncEngine(12164): Written inbox note to /storage/emulated/0/Notes/Study/Study/2026-03-10-18-20-29.md
+03-10 18:20:34.263 I/InboxSyncEngine(12164): Inbox sync complete for page ab684a2a-a00a-40ea-8e36-2979d1530fd1
+03-10 18:20:34.264 I/SyncState(12164): Background sync complete for page ab684a2a-a00a-40ea-8e36-2979d1530fd1
+03-10 18:20:36.109 D/QuickSettings(12164): App is paused - maybe quick settings opened?
+03-10 18:20:36.148 D/MainActivity(12164): OnWindowFocusChanged: false
+03-10 18:20:36.287 D/VRI[MainActivity](12164): visibilityChanged oldVisibility=true newVisibility=false
+03-10 18:20:36.323 D/PageDataManager(12164): onTrimMemory: 20, currentCacheSizeMB: 36
+03-10 18:20:36.324 D/PageDataManager(12164): freeMemory(10)
+03-10 18:20:36.325 D/PageDataManager(12164): Clearing page (all except current) ebfdc42e-8b6c-4c32-84c0-a6b92a618462, requested by freeMemory
+03-10 18:20:36.325 D/PageDataManager(12164): Removing page ebfdc42e-8b6c-4c32-84c0-a6b92a618462
+03-10 18:20:36.329 D/PageDataManager(12164): after trim currentCacheSizeMB: 20
+03-10 18:20:36.331 D/PageDataManager(12164): onTrimMemory: 20, currentCacheSizeMB: 20
+03-10 18:20:36.332 D/PageDataManager(12164): freeMemory(10)
+03-10 18:20:36.333 D/PageDataManager(12164): after trim currentCacheSizeMB: 20
+03-10 18:20:38.134 I/FA      (12164): Application backgrounded at: timestamp_millis: 1773166836130
+03-10 18:20:39.160 D/TrafficStats(12164): tagSocket(103) with statsTag=0xffffffff, statsUid=-1
+03-10 18:21:20.445 W/WindowOnBackDispatcher(12164): OnBackInvokedCallback is not enabled for the application.
+03-10 18:21:20.445 W/WindowOnBackDispatcher(12164): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+03-10 18:21:20.449 V/ActivityThread(12164): reportTopResumedActivityChanged - > onActivityTopResumed
+03-10 18:21:20.469 W/.ethran.notable(12164): type=1400 audit(0.0:21086): avc:  denied  { read } for  name="u:object_r:vendor_display_prop:s0" dev="tmpfs" ino=10756 scontext=u:r:untrusted_app:s0:c145,c256,c512,c768 tcontext=u:object_r:vendor_display_prop:s0 tclass=file permissive=0 app=com.tailscale.ipn
+03-10 18:21:20.470 W/libc    (12164): Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+03-10 18:21:20.534 D/MainActivity(12164): OnWindowFocusChanged: true
+03-10 18:21:22.308 D/NotableAppState(12164): navigate -> editor/ab684a2a-a00a-40ea-8e36-2979d1530fd1
+03-10 18:21:22.379 I/PageView(12164): PageView init
+03-10 18:21:22.379 I/PageView(12164): PageView: using cached bitmap
+03-10 18:21:22.398 I/EditorSurface(12164): recompose surface
+03-10 18:21:22.406 I/DrawCanvas(12164): Initializing Canvas
+03-10 18:21:22.407 D/OpenGLRenderer(12164): Releasing renderer
+03-10 18:21:22.407 V/GLThread(12164): starting thread...
+03-10 18:21:22.407 E/Gralloc4(12164): buffer descriptor contains invalid usage bits 0x100000000
+03-10 18:21:22.412 D/GLFrontBufferedRenderer(12164): Supports KHR_FENCE_SYNC: true
+03-10 18:21:22.412 D/GLFrontBufferedRenderer(12164): Supports ANDROID_NATIVE_FENCE_SYNC: true
+03-10 18:21:22.433 V/CanvasObservers(12164): Refreshing UI!
+03-10 18:21:22.433 D/DrawCanvas(12164): refreshUi: scroll: Offset(0.0, 0.0), zoom: 1.0
+03-10 18:21:22.435 I/EditorView(12164): EditorView: saving
+03-10 18:21:22.436 I/PageViewCache(12164): Init from persist layer, pageId: ab684a2a-a00a-40ea-8e36-2979d1530fd1
+03-10 18:21:22.437 D/PageView(12164): Page loaded (Init with id: ab684a2a-a00a-40ea-8e36-2979d1530fd1)
+03-10 18:21:22.438 V/CanvasObservers(12164): Refreshing UI!
+03-10 18:21:22.438 D/DrawCanvas(12164): refreshUi: scroll: Offset(0.0, 0.0), zoom: 1.0
+03-10 18:21:22.535 D/PageViewCache(12164): Start page, id ab684a2a-a00a-40ea-8e36-2979d1530fd1
+03-10 18:21:22.536 D/PageDataManager(12164): requestPageLoadJoin(ab684a2a-a00a-40ea-8e36-2979d1530fd1)
+03-10 18:21:22.536 D/PageDataManager(12164): getOrStartLoadingJob(ab684a2a-a00a-40ea-8e36-2979d1530fd1)
+03-10 18:21:22.537 D/PageDataManager(12164): Page(ab684a2a-a00a-40ea-8e36-2979d1530fd1) already in memory, stroke number 2
+03-10 18:21:22.537 D/PageViewCache(12164): Got page data (PageView.loadPage). id ab684a2a-a00a-40ea-8e36-2979d1530fd1
+03-10 18:21:22.538 D/PageViewCache(12164): All strokes loaded in 2 ms
+03-10 18:21:22.538 D/SnackState(12164): Removing snack b21783a8-ca61-495d-ae99-badf726cabb0
+03-10 18:21:22.543 D/PageViewCache(12164): Loaded page from persistent layer ab684a2a-a00a-40ea-8e36-2979d1530fd1
+03-10 18:21:22.545 D/PageDataManager(12164): page(ab684a2a-a00a-40ea-8e36-2979d1530fd1)areListInitialized, true, true, 16
+03-10 18:21:22.557 W/libc    (12164): Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+03-10 18:21:22.553 W/.ethran.notable(12164): type=1400 audit(0.0:21087): avc:  denied  { read } for  name="u:object_r:vendor_display_prop:s0" dev="tmpfs" ino=10756 scontext=u:r:untrusted_app:s0:c145,c256,c512,c768 tcontext=u:object_r:vendor_display_prop:s0 tclass=file permissive=0 app=com.tailscale.ipn
+03-10 18:21:22.557 I/DrawCanvas(12164): surface created android.view.SurfaceView$2@d238558
+03-10 18:21:22.558 I/DrawCanvas(12164): Update editable surface
+03-10 18:21:22.560 E/Gralloc4(12164): buffer descriptor contains invalid usage bits 0x100000000
+03-10 18:21:22.561 D/PageDataManager(12164): reduceCache(20)
+03-10 18:21:22.561 V/DrawCanvas(12164): Surface dimension changed!
+03-10 18:21:22.561 D/PageView(12164): Updating dimensions: 1755 x 2480
+03-10 18:21:22.627 D/bitmapUtils(12164): loadPersistBitmap: loaded cached preview 'ab684a2a-a00a-40ea-8e36-2979d1530fd1-sy0.png'
+03-10 18:21:22.644 D/PageView(12164): loaded initial bitmap
+03-10 18:21:22.645 I/DrawCanvas(12164): Update editable surface
+03-10 18:21:22.647 V/GLThread(12164): dispatching request to render for token: 10
+03-10 18:21:22.648 V/GLThread(12164): requesting render for token: 10
+03-10 18:21:22.661 V/CanvasObservers(12164): Force update, zone: null, Strokes to draw: 2
+03-10 18:21:22.662 D/PageDrawingLog(12164): drawOnCanvasFromPage, zoom: 1.0, background: inbox, type: Native
+03-10 18:21:22.670 D/EGL     (12164): eglDupNativeFence returned 175
+03-10 18:21:22.682 V/DrawCanvas(12164): refreshUiSuspend() is called from the non-main thread.
+03-10 18:21:22.682 D/DrawCanvas.waitForDrawing(12164): waiting
+03-10 18:21:22.685 V/einkHelper(12164): onSurfaceInit, (0, 0 - 1755, 2480)
+03-10 18:21:22.685 D/DrawCanvas.waitForDrawing(12164): Finished waiting in 3 ms
+03-10 18:21:22.685 D/einkHelper(12164): Set update mode HAND_WRITING_REPAINT_MODE
+03-10 18:21:22.687 I/einkHelper(12164): Setup editable surface
+03-10 18:21:22.796 I/RawInputReader$a(12164): submitJob finally closeRawInput raw_input-134
+03-10 18:21:22.810 I/RawInputReader$a(12164): submitJob nativeRawReader raw_input-134
+03-10 18:21:22.812 I/lib_touch_reader(12164): find path /dev/input/event1 result name onyx_emp_Wacom I2C Digitizer
+03-10 18:21:22.851 I/einkHelper(12164): Setup editable surface completed
+03-10 18:21:22.852 I/DrawCanvas(12164): Update pen and stroke: pen=FOUNTAIN, mode=Draw
+03-10 18:21:22.858 V/CanvasObservers(12164): Force update, zone: null, Strokes to draw: 2
+03-10 18:21:22.860 D/PageDrawingLog(12164): drawOnCanvasFromPage, zoom: 1.0, background: inbox, type: Native
+03-10 18:21:22.890 V/DrawCanvas(12164): refreshUiSuspend() is called from the non-main thread.
+03-10 18:21:22.890 D/DrawCanvas.waitForDrawing(12164): waiting
+03-10 18:21:22.892 V/einkHelper(12164): onSurfaceInit, (0, 0 - 1755, 2480)
+03-10 18:21:22.892 D/einkHelper(12164): Set update mode HAND_WRITING_REPAINT_MODE
+03-10 18:21:22.893 D/DrawCanvas.waitForDrawing(12164): Finished waiting in 2 ms
+03-10 18:21:22.899 I/einkHelper(12164): Setup editable surface
+03-10 18:21:22.927 I/RawInputReader$a(12164): submitJob finally closeRawInput raw_input-134
+03-10 18:21:22.945 I/RawInputReader$a(12164): submitJob nativeRawReader raw_input-134
+03-10 18:21:22.945 I/lib_touch_reader(12164): find path /dev/input/event1 result name onyx_emp_Wacom I2C Digitizer
+03-10 18:21:22.981 I/einkHelper(12164): Setup editable surface completed
+03-10 18:21:22.981 I/DrawCanvas(12164): Update pen and stroke: pen=FOUNTAIN, mode=Draw
+03-10 18:21:23.437 I/PageDataManager(12164): Persisting batch of bitmaps for pages: [ab684a2a-a00a-40ea-8e36-2979d1530fd1]
+03-10 18:21:23.733 D/bitmapUtils(12164): persistBitmapFull: cached preview saved as ab684a2a-a00a-40ea-8e36-2979d1530fd1-sy0.png (scrollY=0)
+03-10 18:21:25.215 W/WindowOnBackDispatcher(12164): OnBackInvokedCallback is not enabled for the application.
+03-10 18:21:25.215 W/WindowOnBackDispatcher(12164): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+03-10 18:21:25.237 W/.ethran.notable(12164): type=1400 audit(0.0:21088): avc:  denied  { read } for  name="u:object_r:vendor_display_prop:s0" dev="tmpfs" ino=10756 scontext=u:r:untrusted_app:s0:c145,c256,c512,c768 tcontext=u:object_r:vendor_display_prop:s0 tclass=file permissive=0 app=com.tailscale.ipn
+03-10 18:21:25.255 D/EditorState(12164): Drawing state should be: false (menus open: true, selection active: false)
+03-10 18:21:25.266 V/CanvasObservers(12164): isDrawing change to false
+03-10 18:21:25.266 I/DrawCanvas(12164): Update is drawing: false
+03-10 18:21:25.267 D/DrawCanvas.waitForDrawing(12164): waiting
+03-10 18:21:25.270 D/DrawCanvas.waitForDrawing(12164): Finished waiting in 3 ms
+03-10 18:21:25.312 D/MainActivity(12164): OnWindowFocusChanged: false
+03-10 18:21:25.317 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:21:25.323 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:21:25.324 V/CanvasObservers(12164): App has focus: false
+03-10 18:21:25.325 V/CanvasObservers(12164): drawing state changed to false!
+03-10 18:21:25.349 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:21:25.371 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:21:25.398 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:21:26.969 W/WindowOnBackDispatcher(12164): sendCancelIfRunning: isInProgress=false callback=android.view.ViewRootImpl$$ExternalSyntheticLambda12@9a3ced8
+03-10 18:21:26.995 D/showSnackDuring(12164): Task cancelled
+03-10 18:21:26.996 D/SnackState(12164): Removing snack f9f11cbd-642b-41ec-a083-38a7c83bdd67
+03-10 18:21:26.999 D/EditorState(12164): Drawing state should be: true (menus open: false, selection active: false)
+03-10 18:21:27.005 V/CanvasObservers(12164): isDrawing change to true
+03-10 18:21:27.007 D/einkHelper(12164): Waiting for screen, Update mode: NORMAL
+03-10 18:21:27.017 D/MainActivity(12164): OnWindowFocusChanged: true
+03-10 18:21:27.019 V/CanvasObservers(12164): App has focus: true
+03-10 18:21:27.019 I/DrawCanvas(12164): Update pen and stroke: pen=FOUNTAIN, mode=Draw
+03-10 18:21:27.198 I/DrawCanvas(12164): Update is drawing: true
+03-10 18:21:28.833 W/WindowOnBackDispatcher(12164): OnBackInvokedCallback is not enabled for the application.
+03-10 18:21:28.833 W/WindowOnBackDispatcher(12164): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+03-10 18:21:28.865 W/.ethran.notable(12164): type=1400 audit(0.0:21089): avc:  denied  { read } for  name="u:object_r:vendor_display_prop:s0" dev="tmpfs" ino=10756 scontext=u:r:untrusted_app:s0:c145,c256,c512,c768 tcontext=u:object_r:vendor_display_prop:s0 tclass=file permissive=0 app=com.tailscale.ipn
+03-10 18:21:28.868 W/libc    (12164): Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+03-10 18:21:28.888 D/EditorState(12164): Drawing state should be: false (menus open: true, selection active: false)
+03-10 18:21:28.900 V/CanvasObservers(12164): isDrawing change to false
+03-10 18:21:28.900 I/DrawCanvas(12164): Update is drawing: false
+03-10 18:21:28.901 D/DrawCanvas.waitForDrawing(12164): waiting
+03-10 18:21:28.906 D/DrawCanvas.waitForDrawing(12164): Finished waiting in 4 ms
+03-10 18:21:28.961 D/MainActivity(12164): OnWindowFocusChanged: false
+03-10 18:21:28.972 V/CanvasObservers(12164): App has focus: false
+03-10 18:21:28.974 V/CanvasObservers(12164): drawing state changed to false!
+03-10 18:21:29.604 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:21:29.620 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:21:29.646 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:21:29.673 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:21:29.699 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:21:29.725 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:21:29.751 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:21:29.778 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:21:29.805 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:21:29.831 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:21:29.857 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:21:29.883 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:21:29.910 D/VRI[Pop-up window](12164): updatePointerIcon called with position out of bounds
+03-10 18:21:30.491 W/WindowOnBackDispatcher(12164): sendCancelIfRunning: isInProgress=false callback=android.view.ViewRootImpl$$ExternalSyntheticLambda12@3af9b07
+03-10 18:21:30.514 D/EditorState(12164): Drawing state should be: true (menus open: false, selection active: false)
+03-10 18:21:30.520 V/CanvasObservers(12164): isDrawing change to true
+03-10 18:21:30.522 D/einkHelper(12164): Waiting for screen, Update mode: NORMAL
+03-10 18:21:30.552 D/MainActivity(12164): OnWindowFocusChanged: true
+03-10 18:21:30.556 V/CanvasObservers(12164): App has focus: true
+03-10 18:21:30.557 I/DrawCanvas(12164): Update pen and stroke: pen=FOUNTAIN, mode=Draw
+03-10 18:21:30.561 E/ExportEngine(12164): Save error: rememberCoroutineScope left the composition
+03-10 18:21:30.561 E/ExportEngine(12164): androidx.compose.runtime.ForgottenCoroutineScopeException: rememberCoroutineScope left the composition
+03-10 18:21:30.622 E/ExportEngine(12164): Fallback save error: rememberCoroutineScope left the composition
+03-10 18:21:30.622 E/ExportEngine(12164): androidx.compose.runtime.ForgottenCoroutineScopeException: rememberCoroutineScope left the composition
+03-10 18:21:30.622 D/showSnackDuring(12164): Task cancelled
+03-10 18:21:30.623 D/SnackState(12164): Removing snack 93b480aa-1a5e-4c0d-a50b-b57024b830b1
+03-10 18:21:30.715 I/DrawCanvas(12164): Update is drawing: true
+03-10 18:21:32.135 I/GestureReceiver(12164): GestureReceiver got touch at (840.0, 2479.0), type=Touch, consumed=false
+03-10 18:21:32.178 I/GestureReceiver(12164): Canceling gesture - already consumed
+03-10 18:21:32.250 D/QuickSettings(12164): App is paused - maybe quick settings opened?
+03-10 18:21:32.251 V/CanvasObservers(12164): Refreshing UI!
+03-10 18:21:32.251 V/DrawCanvas(12164): refreshUiSuspend() is called from the non-main thread.
+03-10 18:21:32.252 D/DrawCanvas.waitForDrawing(12164): waiting
+03-10 18:21:32.261 D/DrawCanvas.waitForDrawing(12164): Finished waiting in 8 ms
+03-10 18:21:32.347 D/MainActivity(12164): OnWindowFocusChanged: false
+03-10 18:21:32.347 V/CanvasObservers(12164): App has focus: false
+03-10 18:21:32.348 V/CanvasObservers(12164): drawing state changed to false!
+03-10 18:21:32.351 V/CanvasObservers(12164): isDrawing change to false
+03-10 18:21:32.351 I/DrawCanvas(12164): Update is drawing: false
+03-10 18:21:32.351 D/DrawCanvas.waitForDrawing(12164): waiting
+03-10 18:21:32.353 D/DrawCanvas.waitForDrawing(12164): Finished waiting in 2 ms
+03-10 18:21:32.391 D/VRI[MainActivity](12164): visibilityChanged oldVisibility=true newVisibility=false
+03-10 18:21:32.416 V/GLThread(12164): dispatching request to detach surface w/ token: 10
+03-10 18:21:32.416 V/GLThread(12164): dispatching request to detach surface w/ token: 11
+03-10 18:21:32.417 I/DrawCanvas(12164): surface destroyed 196139770 - ref 218916448
+03-10 18:21:32.417 V/einkHelper(12164): onSurfaceDestroy, (0, 0 - 1755, 2480)
+03-10 18:21:32.420 E/BufferQueueProducer(12164): [SurfaceView[com.ethran.notable/com.ethran.notable.MainActivity]#46(BLAST Consumer)46](id:2f840000002e,api:0,p:-1,c:12164) disconnect: not connected (req=2)
+03-10 18:21:32.466 D/PageDataManager(12164): onTrimMemory: 20, currentCacheSizeMB: 20
+03-10 18:21:32.467 D/PageDataManager(12164): freeMemory(10)
+03-10 18:21:32.480 D/PageDataManager(12164): after trim currentCacheSizeMB: 20
+03-10 18:21:32.482 D/PageDataManager(12164): onTrimMemory: 20, currentCacheSizeMB: 20
+03-10 18:21:32.483 D/PageDataManager(12164): freeMemory(10)
+03-10 18:21:32.484 D/PageDataManager(12164): after trim currentCacheSizeMB: 20
+03-10 18:21:34.288 I/FA      (12164): Application backgrounded at: timestamp_millis: 1773166892284
+03-10 18:21:35.630 D/TrafficStats(12164): tagSocket(103) with statsTag=0xffffffff, statsUid=-1
+03-10 18:24:15.504 W/WindowOnBackDispatcher(12164): OnBackInvokedCallback is not enabled for the application.
+03-10 18:24:15.504 W/WindowOnBackDispatcher(12164): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+03-10 18:24:15.510 V/ActivityThread(12164): reportTopResumedActivityChanged - > onActivityTopResumed
+03-10 18:24:15.511 V/CanvasObservers(12164): Configuration changed!
+03-10 18:24:15.512 I/DrawCanvas(12164): Initializing Canvas
+03-10 18:24:15.512 D/OpenGLRenderer(12164): Releasing renderer
+03-10 18:24:15.512 V/GLThread(12164): stopping thread...
+03-10 18:24:15.512 V/GLThread(12164): starting thread...
+03-10 18:24:15.527 E/Gralloc4(12164): buffer descriptor contains invalid usage bits 0x100000000
+03-10 18:24:15.532 D/GLFrontBufferedRenderer(12164): Supports KHR_FENCE_SYNC: true
+03-10 18:24:15.532 D/GLFrontBufferedRenderer(12164): Supports ANDROID_NATIVE_FENCE_SYNC: true
+03-10 18:24:15.537 W/.ethran.notable(12164): type=1400 audit(0.0:21095): avc:  denied  { read } for  name="u:object_r:vendor_display_prop:s0" dev="tmpfs" ino=10756 scontext=u:r:untrusted_app:s0:c145,c256,c512,c768 tcontext=u:object_r:vendor_display_prop:s0 tclass=file permissive=0 app=com.tailscale.ipn
+03-10 18:24:15.537 W/.ethran.notable(12164): type=1400 audit(0.0:21096): avc:  denied  { read } for  name="u:object_r:vendor_display_prop:s0" dev="tmpfs" ino=10756 scontext=u:r:untrusted_app:s0:c145,c256,c512,c768 tcontext=u:object_r:vendor_display_prop:s0 tclass=file permissive=0 app=com.tailscale.ipn
+03-10 18:24:15.538 W/libc    (12164): Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+03-10 18:24:15.541 W/libc    (12164): Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+03-10 18:24:15.542 I/DrawCanvas(12164): surface created android.view.SurfaceView$2@d238558
+03-10 18:24:15.542 I/DrawCanvas(12164): Update editable surface
+03-10 18:24:15.551 E/Gralloc4(12164): buffer descriptor contains invalid usage bits 0x100000000
+03-10 18:24:15.551 V/GLThread(12164): dispatching request to render for token: 12
+03-10 18:24:15.555 V/GLThread(12164): requesting render for token: 12
+03-10 18:24:15.567 D/EGL     (12164): eglDupNativeFence returned 128
+03-10 18:24:15.579 V/einkHelper(12164): onSurfaceInit, (0, 0 - 1755, 2480)
+03-10 18:24:15.579 D/einkHelper(12164): Set update mode HAND_WRITING_REPAINT_MODE
+03-10 18:24:15.584 I/einkHelper(12164): Setup editable surface
+03-10 18:24:15.698 I/RawInputReader$a(12164): submitJob finally closeRawInput raw_input-134
+03-10 18:24:15.707 I/RawInputReader$a(12164): submitJob nativeRawReader raw_input-134
+03-10 18:24:15.708 I/lib_touch_reader(12164): find path /dev/input/event1 result name onyx_emp_Wacom I2C Digitizer
+03-10 18:24:15.745 I/einkHelper(12164): Setup editable surface completed
+03-10 18:24:15.746 I/DrawCanvas(12164): Update pen and stroke: pen=FOUNTAIN, mode=Draw
+03-10 18:24:15.749 D/MainActivity(12164): OnWindowFocusChanged: true
+03-10 18:24:15.756 V/CanvasObservers(12164): App has focus: true
+03-10 18:24:15.756 D/EditorState(12164): Drawing state should be: true (menus open: false, selection active: false)
+03-10 18:24:15.757 I/DrawCanvas(12164): Update pen and stroke: pen=FOUNTAIN, mode=Draw
+03-10 18:24:15.777 V/CanvasObservers(12164): isDrawing change to true
+03-10 18:24:15.779 D/einkHelper(12164): Waiting for screen, Update mode: NORMAL
+03-10 18:24:15.973 I/DrawCanvas(12164): Update is drawing: true
+03-10 18:24:19.791 I/GestureReceiver(12164): GestureReceiver got touch at (139.27051, 19.760742), type=Stylus, consumed=false
+03-10 18:24:19.797 E/GestureReceiver(12164): Unexpected error in gesture handling
+03-10 18:24:19.797 E/GestureReceiver(12164): java.lang.IllegalArgumentException: Failed requirement.
+03-10 18:24:19.797 E/GestureReceiver(12164): 	at com.ethran.notable.gestures.EditorGestureReceiverKt$EditorGestureReceiver$1$1$1.invokeSuspend(EditorGestureReceiver.kt:58)
+03-10 18:24:19.797 E/GestureReceiver(12164): 	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+03-10 18:24:19.797 E/GestureReceiver(12164): 	at kotlinx.coroutines.DispatchedTaskKt.resume(DispatchedTask.kt:165)
+03-10 18:24:19.797 E/GestureReceiver(12164): 	at kotlinx.coroutines.DispatchedTaskKt.dispatch(DispatchedTask.kt:154)
+03-10 18:24:19.797 E/GestureReceiver(12164): 	at kotlinx.coroutines.CancellableContinuationImpl.dispatchResume(CancellableContinuationImpl.kt:470)
+03-10 18:24:19.797 E/GestureReceiver(12164): 	at kotlinx.coroutines.CancellableContinuationImpl.resumeImpl$kotlinx_coroutines_core(CancellableContinuationImpl.kt:504)
+03-10 18:24:19.797 E/GestureReceiver(12164): 	at kotlinx.coroutines.CancellableContinuationImpl.resumeImpl$kotlinx_coroutines_core$default(CancellableContinuationImpl.kt:493)
+03-10 18:24:19.797 E/GestureReceiver(12164): 	at kotlinx.coroutines.CancellableContinuationImpl.resumeWith(CancellableContinuationImpl.kt:359)
+03-10 18:24:19.797 E/GestureReceiver(12164): 	at androidx.compose.ui.input.pointer.SuspendingPointerInputModifierNodeImpl$PointerEventHandlerCoroutine.offerPointerEvent(SuspendingPointerInputFilter.kt:829)
+03-10 18:24:19.797 E/GestureReceiver(12164): 	at androidx.compose.ui.input.pointer.SuspendingPointerInputModifierNodeImpl.dispatchPointerEvent(SuspendingPointerInputFilter.kt:699)
+03-10 18:24:19.797 E/GestureReceiver(12164): 	at androidx.compose.ui.input.pointer.SuspendingPointerInputModifierNodeImpl.onPointerEvent-H0pRuoY(SuspendingPointerInputFilter.kt:725)
+03-10 18:24:19.797 E/GestureReceiver(12164): 	at androidx.compose.ui.input.pointer.Node.dispatchMainEventPass(HitPathTracker.kt:446)
+03-10 18:24:19.797 E/GestureReceiver(12164): 	at androidx.compose.ui.input.pointer.Node.dispatchMainEventPass(HitPathTracker.kt:432)
+03-10 18:24:19.797 E/GestureReceiver(12164): 	at androidx.compose.ui.input.pointer.Node.dispatchMainEventPass(HitPathTracker.kt:432)
+03-10 18:24:19.797 E/GestureReceiver(12164): 	at androidx.compose.ui.input.pointer.NodeParent.dispatchMainEventPass(HitPathTracker.kt:285)
+03-10 18:24:19.797 E/GestureReceiver(12164): 	at androidx.compose.ui.input.pointer.HitPathTracker.dispatchChanges(HitPathTracker.kt:181)
+03-10 18:24:19.797 E/GestureReceiver(12164): 	at androidx.compose.ui.input.pointer.PointerInputEventProcessor.process-BIzXfog(PointerInputEventProcessor.kt:118)
+03-10 18:24:19.797 E/GestureReceiver(12164): 	at androidx.compose.ui.platform.AndroidComposeView.sendMotionEvent-8iAsVTc(AndroidComposeView.android.kt:2685)
+03-10 18:24:19.797 E/GestureReceiver(12164): 	at androidx.compose.ui.platform.AndroidComposeView.handleMotionEvent-8iAsVTc(AndroidComposeView.android.kt:2629)
+03-10 18:24:19.797 E/GestureReceiver(12164): 	at androidx.compose.ui.platform.AndroidComposeView.dispatchTouchEvent(AndroidComposeView.android.kt:2467)
+03-10 18:24:19.797 E/GestureReceiver(12164): 	at android.view.ViewGroup.dispatchTransformedTouchEvent(ViewGroup.java:3123)
+03-10 18:24:19.797 E/GestureReceiver(12164): 	at android.view.ViewGroup.dispatchTouchEvent(ViewGroup.java:2747)
+03-10 18:24:19.797 E/GestureReceiver(12164): 	at android.view.ViewGroup.dispatchTransformedTouchEvent(ViewGroup.java:3123)
+03-10 18:24:19.797 E/GestureReceiver(12164): 	at android.view.ViewGroup.dispatchTouchEvent(ViewGroup.java:2747)
+03-10 18:24:19.797 E/GestureReceiver(12164): 	at android.view.ViewGroup.dispatchTransformedTouchEvent(ViewGroup.java:3123)
+03-10 18:24:19.797 E/GestureReceiver(12164): 	at android.view.ViewGroup.dispatchTouchEvent(ViewGroup.java:2747)
+03-10 18:24:19.797 E/GestureReceiver(12164): 	at android.view.ViewGroup.dispatchTransformedTouchEvent(ViewGroup.java:3123)
+03-10 18:24:19.797 E/GestureReceiver(12164): 	at android.view.ViewGroup.dispatchTouchEvent(ViewGroup.java:2747)
+03-10 18:24:19.797 E/GestureReceiver(12164): 	at com.android.internal.policy.DecorView.superDispatchTouchEvent(DecorView.java:464)
+03-10 18:24:19.797 E/GestureReceiver(12164): 	at com.android.internal.policy.PhoneWindow.superDispatchTouchEvent(PhoneWindow.java:1980)
+03-10 18:24:19.797 E/GestureReceiver(12164): 	at android.app.Activity.dispatchTouchEvent(Activity.java:4533)
+03-10 18:24:19.797 E/GestureReceiver(12164): 	at com.android.internal.policy.DecorView.dispatchTouchEvent(DecorView.java:422)
+03-10 18:24:19.797 E/GestureReceiver(12164): 	at android.view.View.dispatchPointerEvent(View.java:16767)
+03-10 18:24:19.797 E/GestureReceiver(12164): 	at android.view.ViewRootImpl$ViewPostImeInputStage.processPointerEvent(ViewRootImpl.java:8029)
+03-10 18:24:19.797 E/GestureReceiver(12164): 	at android.view.ViewRootImpl$ViewPostImeInputStage.onProcess(ViewRootImpl.java:7795)
+03-10 18:24:19.797 E/GestureReceiver(12164): 	at android.view.ViewRootImpl$InputStage.deliver(ViewRootImpl.java:7191)
+03-10 18:24:19.797 E/GestureReceiver(12164): 	at android.view.ViewRootImpl$InputStage.onDeliverToNext(ViewRootImpl.java:7248)
+03-10 18:24:19.797 E/GestureReceiver(12164): 	at android.view.ViewRootImpl$InputStage.forward(ViewRootImpl.java:7214)
+03-10 18:24:19.797 E/GestureReceiver(12164): 	at android.view.ViewRootImpl$AsyncInputStage.forward(ViewRootImpl.java:7380)
+03-10 18:24:19.797 E/GestureReceiver(12164): 	at android.view.ViewRootImpl$InputStage.apply(ViewRootImpl.java:7222)
+03-10 18:24:19.797 E/GestureReceiver(12164): 	at android.view.ViewRootImpl$AsyncInputStage.apply(ViewRootImpl.java:7437)
+03-10 18:24:19.797 E/GestureReceiver(12164): 	at android.view.ViewRootImpl$InputStage.deliver(ViewRootImpl.java:7195)
+03-10 18:24:19.797 E/GestureReceiver(12164): 	at android.view.ViewRootImpl$InputStage.onDeliverToNext(ViewRootImpl.java:7248)
+03-10 18:24:19.797 E/GestureReceiver(12164): 	at android.view.ViewRootImpl$InputStage.forward(ViewRootImpl.java:7214)
+03-10 18:24:19.797 E/GestureReceiver(12164): 	at android.view.ViewRootImpl$InputStage.apply(ViewRootImpl.java:7222)
+03-10 18:24:19.797 E/GestureReceiver(12164): 	at android.view.ViewRootImpl$InputStage.deliver(ViewRootImpl.java:7195)
+03-10 18:24:19.797 E/GestureReceiver(12164): 	at android.view.ViewRootImpl.deliverInputEvent(ViewRootImpl.java:10340)
+03-10 18:24:19.797 E/GestureReceiver(12164): 	at android.view.ViewRootImpl.doProcessInputEvents(ViewRootImpl.java:10287)
+03-10 18:24:19.797 E/GestureReceiver(12164): 	at android.view.ViewRootImpl.enqueueInputEvent(ViewRootImpl.java:10224)
+03-10 18:24:19.797 E/GestureReceiver(12164): 	at android.view.ViewRootImpl$WindowInputEventReceiver.onInputEvent(ViewRootImpl.java:10482)
+03-10 18:24:19.797 E/GestureReceiver(12164): 	at android.view.InputEventReceiver.dispatchInputEvent(InputEventReceiver.java:295)
+03-10 18:24:19.797 E/GestureReceiver(12164): 	at android.os.MessageQueue.nativePollOnce(Native Method)
+03-10 18:24:19.797 E/GestureReceiver(12164): 	at android.os.MessageQueue.next(MessageQueue.java:346)
+03-10 18:24:19.797 E/GestureReceiver(12164): 	at android.os.Looper.loopOnce(Looper.java:189)
+03-10 18:24:19.797 E/GestureReceiver(12164): 	at android.os.Looper.loop(Looper.java:317)
+03-10 18:24:19.797 E/GestureReceiver(12164): 	at android.app.ActivityThread.main(ActivityThread.java:8842)
+03-10 18:24:19.797 E/GestureReceiver(12164): 	at java.lang.reflect.Method.invoke(Native Method)
+03-10 18:24:19.797 E/GestureReceiver(12164): 	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:580)
+03-10 18:24:19.797 E/GestureReceiver(12164): 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:892)
+03-10 18:24:21.944 D/PageDataManager(12164): Cancelling loading pages, ignoring: []
+03-10 18:24:21.960 W/GestureReceiver(12164): Gesture coroutine canceled
+03-10 18:24:21.960 W/GestureReceiver(12164): androidx.compose.ui.input.pointer.PointerInputResetException: Pointer input was reset
+03-10 18:24:21.961 V/GLThread(12164): dispatching request to detach surface w/ token: 12
+03-10 18:24:21.961 V/GLThread(12164): dispatching request to detach surface w/ token: 13
+03-10 18:24:21.961 I/DrawCanvas(12164): surface destroyed 196139770 - ref 218916448
+03-10 18:24:21.962 V/einkHelper(12164): onSurfaceDestroy, (0, 0 - 1755, 2480)
+03-10 18:24:21.966 E/BufferQueueProducer(12164): [SurfaceView[com.ethran.notable/com.ethran.notable.MainActivity]#50(BLAST Consumer)50](id:2f8400000032,api:0,p:-1,c:12164) disconnect: not connected (req=2)
+03-10 18:24:21.970 D/PageView(12164): Dispose old page
+03-10 18:24:21.971 D/PageDataManager(12164): page(ab684a2a-a00a-40ea-8e36-2979d1530fd1)areListInitialized, true, true, 16
+03-10 18:24:21.971 I/PageDataManager(12164): Page exit, is page loaded: true
+03-10 18:24:21.972 D/PageDataManager(12164): page(ab684a2a-a00a-40ea-8e36-2979d1530fd1)areListInitialized, true, true, 16
+03-10 18:24:21.973 D/PageDataManager(12164): Cancelling loading page: pageId=ab684a2a-a00a-40ea-8e36-2979d1530fd1
+03-10 18:24:24.891 D/TrafficStats(12164): tagSocket(103) with statsTag=0xffffffff, statsUid=-1
+03-10 18:26:49.047 D/InsetsController(12164): show(ime(), fromIme=false)
+03-10 18:26:49.049 I/ImeTracker(12164): com.ethran.notable:3265dd5f: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT_BY_INSETS_API fromUser false
+03-10 18:26:49.050 D/InputMethodManager(12164): showSoftInput() view=androidx.compose.ui.platform.AndroidComposeView{faa721b VFED..... .F....ID 0,0-1860,2480 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT_BY_INSETS_API
+03-10 18:26:49.075 I/AssistStructure(12164): Flattened final assist data: 1916 bytes, containing 1 windows, 12 views
+03-10 18:26:49.143 W/WindowOnBackDispatcher(12164): OnBackInvokedCallback is not enabled for the application.
+03-10 18:26:49.143 W/WindowOnBackDispatcher(12164): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+03-10 18:26:49.153 W/.ethran.notable(12164): type=1400 audit(0.0:21165): avc:  denied  { read } for  name="u:object_r:vendor_display_prop:s0" dev="tmpfs" ino=10756 scontext=u:r:untrusted_app:s0:c145,c256,c512,c768 tcontext=u:object_r:vendor_display_prop:s0 tclass=file permissive=0 app=com.tailscale.ipn
+03-10 18:26:49.156 W/libc    (12164): Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+03-10 18:26:49.171 I/ImeTracker(12164): com.ethran.notable:dc6121dd: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser false
+03-10 18:26:49.171 D/InputMethodManager(12164): showSoftInput() view=androidx.compose.ui.platform.AndroidComposeView{faa721b VFED..... .F...... 0,0-1860,2480 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+03-10 18:26:49.172 W/RemoteInputConnectionImpl(12164): getTextBeforeCursor on inactive InputConnection
+03-10 18:26:49.202 D/InsetsController(12164): show(ime(), fromIme=true)
+03-10 18:26:49.204 D/InsetsController(12164): show(ime(), fromIme=true)
+03-10 18:26:49.204 I/ImeTracker(12164): com.ethran.notable:dc6121dd: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+03-10 18:26:49.762 I/ImeTracker(12164): com.ethran.notable:3265dd5f: onShown

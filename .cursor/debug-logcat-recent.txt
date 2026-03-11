@@ -1,0 +1,126 @@
+--------- beginning of system
+03-10 17:36:27.462 V/ActivityThread(10221): reportTopResumedActivityChanged - > onActivityTopResumed
+--------- beginning of main
+03-10 17:36:45.950 D/DrawCanvas(10221): lock obtained in 0 ms
+03-10 17:36:45.951 D/DrawCanvas(10221): Drawing...
+03-10 17:36:45.955 D/PageDrawingLog(10221): drawOnCanvasFromPage, zoom: 1.0, background: inbox, type: Native
+03-10 17:36:46.062 I/PageDataManager(10221): Persisting batch of bitmaps for pages: [fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7]
+03-10 17:36:46.352 D/bitmapUtils(10221): persistBitmapFull: cached preview saved as fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7-sy0.png (scrollY=0)
+03-10 17:36:46.424 D/DrawCanvas(10221): lock obtained in 0 ms
+03-10 17:36:46.428 D/DrawCanvas(10221): Drawing...
+03-10 17:36:46.430 D/PageDrawingLog(10221): drawOnCanvasFromPage, zoom: 1.0, background: inbox, type: Native
+03-10 17:36:46.566 D/DrawCanvas(10221): lock obtained in 0 ms
+03-10 17:36:46.566 D/DrawCanvas(10221): Drawing...
+03-10 17:36:46.569 D/PageDrawingLog(10221): drawOnCanvasFromPage, zoom: 1.0, background: inbox, type: Native
+03-10 17:36:47.045 D/DrawCanvas(10221): lock obtained in 0 ms
+03-10 17:36:47.046 D/DrawCanvas(10221): Drawing...
+03-10 17:36:47.049 D/PageDrawingLog(10221): drawOnCanvasFromPage, zoom: 1.0, background: inbox, type: Native
+03-10 17:36:47.062 I/PageDataManager(10221): Persisting batch of bitmaps for pages: [fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7]
+03-10 17:36:47.352 D/bitmapUtils(10221): persistBitmapFull: cached preview saved as fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7-sy0.png (scrollY=0)
+03-10 17:36:47.566 V/CanvasObservers(10221): Commiting to history
+03-10 17:36:48.062 I/PageDataManager(10221): Persisting batch of bitmaps for pages: [fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7]
+03-10 17:36:48.121 D/DrawCanvas(10221): lock obtained in 0 ms
+03-10 17:36:48.123 D/DrawCanvas(10221): Drawing...
+03-10 17:36:48.129 D/PageDrawingLog(10221): drawOnCanvasFromPage, zoom: 1.0, background: inbox, type: Native
+03-10 17:36:48.345 D/DrawCanvas(10221): lock obtained in 0 ms
+03-10 17:36:48.346 D/DrawCanvas(10221): Drawing...
+03-10 17:36:48.348 D/PageDrawingLog(10221): drawOnCanvasFromPage, zoom: 1.0, background: inbox, type: Native
+03-10 17:36:48.357 D/bitmapUtils(10221): persistBitmapFull: cached preview saved as fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7-sy0.png (scrollY=0)
+03-10 17:36:48.488 I/GestureReceiver(10221): GestureReceiver got touch at (1658.0, 1230.0), type=Touch, consumed=false
+03-10 17:36:48.683 V/GestureReceiver(10221): horizontalDrag 0, verticalDrag 13.0
+03-10 17:36:48.868 V/CanvasObservers(10221): Commiting to history
+03-10 17:36:49.062 I/PageDataManager(10221): Persisting batch of bitmaps for pages: [fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7]
+03-10 17:36:49.358 D/bitmapUtils(10221): persistBitmapFull: cached preview saved as fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7-sy0.png (scrollY=0)
+03-10 17:36:50.439 I/InboxSyncEngine(10221): Starting inbox sync for page fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7 with tags: []
+03-10 17:36:50.553 I/.ethran.notable(10221): Waiting for a blocking GC ClassLinker
+03-10 17:36:50.563 D/PageDataManager(10221): Cancelling loading pages, ignoring: []
+03-10 17:36:50.579 W/GestureReceiver(10221): Gesture coroutine canceled
+03-10 17:36:50.579 W/GestureReceiver(10221): androidx.compose.ui.input.pointer.PointerInputResetException: Pointer input was reset
+03-10 17:36:50.580 V/GLThread(10221): dispatching request to detach surface w/ token: 0
+03-10 17:36:50.580 V/GLThread(10221): dispatching request to detach surface w/ token: 1
+03-10 17:36:50.581 I/DrawCanvas(10221): surface destroyed 1989128 - ref 90308577
+03-10 17:36:50.581 V/einkHelper(10221): onSurfaceDestroy, (0, 0 - 1755, 2480)
+03-10 17:36:50.762 E/BufferQueueProducer(10221): [SurfaceView[com.ethran.notable/com.ethran.notable.MainActivity]#1(BLAST Consumer)1](id:27ed00000001,api:0,p:-1,c:10221) disconnect: not connected (req=2)
+03-10 17:36:50.781 D/PageView(10221): Dispose old page
+03-10 17:36:50.782 D/PageDataManager(10221): page(fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7)areListInitialized, true, true, 17
+03-10 17:36:50.783 I/PageDataManager(10221): Page exit, is page loaded: true
+03-10 17:36:50.783 D/PageDataManager(10221): page(fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7)areListInitialized, true, true, 17
+03-10 17:36:50.822 I/OnyxHWREngine(10221): OnyxHWR service connected
+03-10 17:36:50.824 I/InboxSyncEngine(10221): Recognizing all 8 strokes
+03-10 17:36:50.824 I/OnyxHWREngine(10221): Initializing OnyxHWR recognizer...
+03-10 17:36:50.892 I/OnyxHWREngine(10221): OnyxHWR init: recognizerActivated=true, compileSuccess=false
+03-10 17:36:50.892 I/OnyxHWREngine(10221): OnyxHWR initialized=true
+03-10 17:36:51.429 I/OnyxHWREngine(10221): OnyxHWR recognized 14 chars
+03-10 17:36:51.434 I/InboxSyncEngine(10221): Full recognized text: 'This is a note'
+03-10 17:36:51.621 I/InboxSyncEngine(10221): Written inbox note to /storage/emulated/0/Notes/Study/Study/2026-03-10-17-36-42.md
+03-10 17:36:51.622 I/InboxSyncEngine(10221): Inbox sync complete for page fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7
+03-10 17:36:51.623 I/SyncState(10221): Background sync complete for page fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7
+03-10 17:36:54.393 D/QuickSettings(10221): App is paused - maybe quick settings opened?
+03-10 17:36:54.450 D/MainActivity(10221): OnWindowFocusChanged: false
+03-10 17:36:54.513 D/VRI[MainActivity](10221): visibilityChanged oldVisibility=true newVisibility=false
+03-10 17:36:54.637 D/PageDataManager(10221): onTrimMemory: 20, currentCacheSizeMB: 17
+03-10 17:36:54.638 D/PageDataManager(10221): freeMemory(10)
+03-10 17:36:54.639 D/PageDataManager(10221): after trim currentCacheSizeMB: 17
+03-10 17:36:56.418 I/FA      (10221): Application backgrounded at: timestamp_millis: 1773164214410
+03-10 17:37:14.024 V/ActivityThread(10221): reportTopResumedActivityChanged - > onActivityTopResumed
+03-10 17:37:14.039 W/libc    (10221): Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+03-10 17:37:14.037 W/.ethran.notable(10221): type=1400 audit(0.0:20519): avc:  denied  { read } for  name="u:object_r:vendor_display_prop:s0" dev="tmpfs" ino=10756 scontext=u:r:untrusted_app:s0:c143,c256,c512,c768 tcontext=u:object_r:vendor_display_prop:s0 tclass=file permissive=0 app=com.tailscale.ipn
+03-10 17:37:14.115 D/MainActivity(10221): OnWindowFocusChanged: true
+03-10 17:37:15.807 W/WindowOnBackDispatcher(10221): OnBackInvokedCallback is not enabled for the application.
+03-10 17:37:15.807 W/WindowOnBackDispatcher(10221): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+03-10 17:37:17.150 D/TrafficStats(10221): tagSocket(106) with statsTag=0xffffffff, statsUid=-1
+03-10 17:37:17.540 D/InsetsController(10221): show(ime(), fromIme=false)
+03-10 17:37:17.550 I/ImeTracker(10221): com.ethran.notable:473e4e9b: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT_BY_INSETS_API fromUser false
+03-10 17:37:17.551 D/InputMethodManager(10221): showSoftInput() view=androidx.compose.ui.platform.AndroidComposeView{eb4e048 VFED..... .F....ID 0,0-1860,2480 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT_BY_INSETS_API
+03-10 17:37:17.563 I/AssistStructure(10221): Flattened final assist data: 1876 bytes, containing 1 windows, 12 views
+03-10 17:37:17.581 W/RemoteInputConnectionImpl(10221): getTextBeforeCursor on inactive InputConnection
+03-10 17:37:17.582 I/ImeTracker(10221): com.ethran.notable:4fa010fd: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser false
+03-10 17:37:17.585 D/InputMethodManager(10221): showSoftInput() view=androidx.compose.ui.platform.AndroidComposeView{eb4e048 VFED..... .F...... 0,0-1860,2480 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+03-10 17:37:17.587 D/Autofill Status(10221): Autofill popup isn't shown because autofill is not available.
+03-10 17:37:17.587 D/Autofill Status(10221): 
+03-10 17:37:17.587 D/Autofill Status(10221): Did you set up autofill?
+03-10 17:37:17.587 D/Autofill Status(10221): 1. Go to Settings > System > Languages&input > Advanced > Autofill Service
+03-10 17:37:17.587 D/Autofill Status(10221): 2. Pick a service
+03-10 17:37:17.587 D/Autofill Status(10221): 
+03-10 17:37:17.587 D/Autofill Status(10221): Did you add an account?
+03-10 17:37:17.587 D/Autofill Status(10221): 1. Go to Settings > System > Languages&input > Advanced
+03-10 17:37:17.587 D/Autofill Status(10221): 2. Click on the settings icon next to the Autofill Service
+03-10 17:37:17.587 D/Autofill Status(10221): 3. Add your account
+03-10 17:37:17.654 D/InsetsController(10221): show(ime(), fromIme=true)
+03-10 17:37:17.669 D/InsetsController(10221): show(ime(), fromIme=true)
+03-10 17:37:17.669 I/ImeTracker(10221): com.ethran.notable:4fa010fd: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+03-10 17:37:18.221 I/ImeTracker(10221): com.ethran.notable:473e4e9b: onShown
+03-10 17:37:26.936 D/InsetsController(10221): hide(ime(), fromIme=false)
+03-10 17:37:26.937 I/ImeTracker(10221): com.ethran.notable:c6495efc: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT_BY_INSETS_API fromUser false
+03-10 17:37:26.938 I/ImeTracker(10221): com.ethran.notable:aa05560e: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT_REQUEST_HIDE_WITH_CONTROL fromUser false
+03-10 17:37:26.956 D/InsetsController(10221): hide(ime(), fromIme=true)
+03-10 17:37:26.956 I/ImeTracker(10221): com.ethran.notable:aa05560e: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+03-10 17:37:27.482 I/ImeTracker(10221): com.ethran.notable:1b1aace2: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT_ON_ANIMATION_STATE_CHANGED fromUser false
+03-10 17:37:27.488 I/ImeTracker(10221): com.ethran.notable:c6495efc: onHidden
+03-10 17:37:33.217 D/InsetsController(10221): show(ime(), fromIme=false)
+03-10 17:37:33.218 I/ImeTracker(10221): com.ethran.notable:9d474899: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT_BY_INSETS_API fromUser false
+03-10 17:37:33.219 D/InputMethodManager(10221): showSoftInput() view=androidx.compose.ui.platform.AndroidComposeView{eb4e048 VFED..... .F....ID 0,0-1860,2480 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT_BY_INSETS_API
+03-10 17:37:33.234 I/AssistStructure(10221): Flattened final assist data: 1876 bytes, containing 1 windows, 12 views
+03-10 17:37:33.253 I/ImeTracker(10221): com.ethran.notable:ecb9141f: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser false
+03-10 17:37:33.254 D/InputMethodManager(10221): showSoftInput() view=androidx.compose.ui.platform.AndroidComposeView{eb4e048 VFED..... .F....ID 0,0-1860,2480 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+03-10 17:37:33.268 D/Autofill Status(10221): Autofill popup isn't shown because autofill is not available.
+03-10 17:37:33.268 D/Autofill Status(10221): 
+03-10 17:37:33.268 D/Autofill Status(10221): Did you set up autofill?
+03-10 17:37:33.268 D/Autofill Status(10221): 1. Go to Settings > System > Languages&input > Advanced > Autofill Service
+03-10 17:37:33.268 D/Autofill Status(10221): 2. Pick a service
+03-10 17:37:33.268 D/Autofill Status(10221): 
+03-10 17:37:33.268 D/Autofill Status(10221): Did you add an account?
+03-10 17:37:33.268 D/Autofill Status(10221): 1. Go to Settings > System > Languages&input > Advanced
+03-10 17:37:33.268 D/Autofill Status(10221): 2. Click on the settings icon next to the Autofill Service
+03-10 17:37:33.268 D/Autofill Status(10221): 3. Add your account
+03-10 17:37:33.351 D/InsetsController(10221): show(ime(), fromIme=true)
+03-10 17:37:33.369 D/InsetsController(10221): show(ime(), fromIme=true)
+03-10 17:37:33.370 I/ImeTracker(10221): com.ethran.notable:ecb9141f: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+03-10 17:37:33.917 D/InsetsController(10221): show(ime(), fromIme=false)
+03-10 17:37:33.919 I/ImeTracker(10221): com.ethran.notable:2362d7b: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT_BY_INSETS_API fromUser false
+03-10 17:37:33.919 I/ImeTracker(10221): com.ethran.notable:2362d7b: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+03-10 17:37:33.921 I/ImeTracker(10221): com.ethran.notable:9d474899: onShown
+03-10 17:37:33.960 I/ImeTracker(10221): com.ethran.notable:3ee00b70: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser false
+03-10 17:37:33.961 D/InputMethodManager(10221): showSoftInput() view=androidx.compose.ui.platform.AndroidComposeView{eb4e048 VFED..... .F...... 0,0-1860,2480 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+03-10 17:37:33.973 D/InsetsController(10221): show(ime(), fromIme=true)
+03-10 17:37:33.974 I/ImeTracker(10221): com.ethran.notable:3ee00b70: onCancelled at PHASE_CLIENT_APPLY_ANIMATION

@@ -1,0 +1,593 @@
+--------- beginning of system
+03-10 17:36:27.008 D/IntervalStats( 1636): Unable to parse usage stats packages: [151]
+--------- beginning of main
+03-10 17:36:27.014 D/nativeloader(10221): Configuring clns-7 for other apk /data/app/~~tVe_s556piJsR3Qrcf06Ow==/com.ethran.notable-9pIauBCdtfIQwxenb69XuQ==/base.apk. target_sdk_version=35, uses_libraries=, library_path=/data/app/~~tVe_s556piJsR3Qrcf06Ow==/com.ethran.notable-9pIauBCdtfIQwxenb69XuQ==/lib/arm64:/data/app/~~tVe_s556piJsR3Qrcf06Ow==/com.ethran.notable-9pIauBCdtfIQwxenb69XuQ==/base.apk!/lib/arm64-v8a, permitted_path=/data:/mnt/expand:/data/user/0/com.ethran.notable
+03-10 17:36:27.017 D/CompatChangeReporter(10221): Compat change id reported: 202956589; UID 10143; state: ENABLED
+03-10 17:36:27.019 D/IntervalStats( 1636): Unable to parse usage stats packages: [151]
+03-10 17:36:27.023 I/Perf    (10221): Connecting to perf service.
+03-10 17:36:27.026 I/MMKV    (10221): Enable checkProcessMode()
+03-10 17:36:27.027 D/nativeloader(10221): Load libmmkv-onyx.so using system ns (caller=/system/framework/framework.jar!classes5.dex): ok
+03-10 17:36:27.027 I/MMKV    (10221): current API level = 35, libc++_shared=0
+03-10 17:36:27.027 I/MMKV    (10221): <MMKV.cpp:166::initialize> version v1.3.9, page size 4096, arch arm64-v8a
+03-10 17:36:27.027 I/MMKV    (10221): <MMKV.cpp:177::initialize> armv8 AES instructions is supported
+03-10 17:36:27.027 I/MMKV    (10221): <MMKV.cpp:185::initialize> armv8 CRC32 instructions is supported
+03-10 17:36:27.027 I/MMKV    (10221): <MMKV.cpp:225::initializeMMKV> root dir: /onyxconfig/mmkv
+03-10 17:36:27.027 I/MMKV    (10221): <MemoryFile.cpp:98::open> open fd[0x51], /onyxconfig/mmkv/onyx_config
+03-10 17:36:27.027 I/MMKV    (10221): <MemoryFile.cpp:203::mmap> mmap to address [0x6f1d70c000], oldPtr [0x0], [/onyxconfig/mmkv/onyx_config]
+03-10 17:36:27.027 I/MMKV    (10221): <MemoryFile.cpp:98::open> open fd[0x52], /onyxconfig/mmkv/onyx_config.crc
+03-10 17:36:27.027 I/MMKV    (10221): <MemoryFile.cpp:203::mmap> mmap to address [0x725e3c6000], oldPtr [0x0], [/onyxconfig/mmkv/onyx_config.crc]
+03-10 17:36:27.027 I/MMKV    (10221): <MMKV_IO.cpp:214::loadMetaInfoAndCheck> meta file [onyx_config] has flag [0]
+03-10 17:36:27.028 I/MMKV    (10221): <MMKV_IO.cpp:84::loadFromFile> loading [onyx_config] with 1502733 actual size, file size 2097152, InterProcess 1, meta info version:4
+03-10 17:36:27.028 I/MMKV    (10221): <MMKV_IO.cpp:89::loadFromFile> loading [onyx_config] with crc 1534726120 sequence 721 version 4
+03-10 17:36:27.028 I/MMKV    (10221): <MMKV_IO.cpp:133::loadFromFile> loaded [onyx_config] with 526 key-values
+03-10 17:36:27.030 V/GraphicsEnvironment(10221): Currently set values for:
+03-10 17:36:27.030 V/GraphicsEnvironment(10221):   angle_gl_driver_selection_pkgs=[]
+03-10 17:36:27.030 V/GraphicsEnvironment(10221):   angle_gl_driver_selection_values=[]
+03-10 17:36:27.030 V/GraphicsEnvironment(10221): Global.Settings values are invalid: number of packages: 0, number of values: 0
+03-10 17:36:27.030 V/GraphicsEnvironment(10221): Updatable production driver is not supported on the device.
+03-10 17:36:27.034 D/IntervalStats( 1636): Unable to parse usage stats packages: [151]
+03-10 17:36:27.072 I/FirebaseApp(10221): Device unlocked: initializing all Firebase APIs for app [DEFAULT]
+03-10 17:36:27.090 I/FirebaseInitProvider(10221): FirebaseApp initialization successful
+03-10 17:36:27.113 D/CompatChangeReporter(10221): Compat change id reported: 279646685; UID 10143; state: ENABLED
+03-10 17:36:27.120 I/bt_shim_scanner( 9953): system/main/shim/le_scanning_manager.cc:186 Scan: in shim layer stopped
+03-10 17:36:27.120 I/bluetooth( 9953): system/gd/hci/le_address_manager.cc:244 unregister_client: Client unregistered
+03-10 17:36:27.121 D/vendor.qti.bluetooth@1.0-ibs_handler( 1036): SerialClockVote: vote for UART CLK ON
+03-10 17:36:27.121 W/BtGatt.JNI( 9953): android/app/jni/com_android_bluetooth_gatt.cpp:1592 gattSetScanParametersNative: gattSetScanParametersNative
+03-10 17:36:27.121 I/bt_shim_scanner( 9953): system/main/shim/le_scanning_manager.cc:364 SetScanParameters: in shim layer, scannerId=1
+03-10 17:36:27.121 I/bt_shim_scanner( 9953): system/main/shim/le_scanning_manager.cc:186 Scan: in shim layer started
+03-10 17:36:27.122 D/vendor.qti.bluetooth@1.0-wake_lock( 1036): Acquire wakelock is acquired 
+03-10 17:36:27.122 I/vendor.qti.bluetooth@1.0-ibs_handler( 1036): DeviceWakeUp: Writing IBS_WAKE_IND
+03-10 17:36:27.125 I/vendor.qti.bluetooth@1.0-ibs_handler( 1036): ProcessIbsCmd: Received IBS_WAKE_ACK: 0xFC
+03-10 17:36:27.126 I/vendor.qti.bluetooth@1.0-ibs_handler( 1036): ProcessIbsCmd: Signal wack_cond_
+03-10 17:36:27.126 D/vendor.qti.bluetooth@1.0-ibs_handler( 1036): DeviceWakeUp: Unblocked from waiting for FC, pthread_cond_timedwait ret = 0
+03-10 17:36:27.127 W/bluetooth( 9953): system/gd/hci/hci_layer.cc:364 send_next_command: Start monitoring events!
+03-10 17:36:27.127 I/bluetooth( 9953): system/gd/hci/le_scanning_manager.cc:690 stop_scan: Scanning already stopped, return!
+03-10 17:36:27.127 I/bluetooth( 9953): system/gd/hci/le_address_manager.cc:229 register_client: Client registered
+03-10 17:36:27.128 I/vendor.qti.bluetooth@1.0-ibs_handler( 1036): ProcessIbsCmd: Received IBS_WAKE_IND: 0xFD
+03-10 17:36:27.128 I/vendor.qti.bluetooth@1.0-ibs_handler( 1036): ProcessIbsCmd: Writing IBS_WAKE_ACK
+03-10 17:36:27.129 W/bluetooth( 9953): system/gd/hci/hci_layer.cc:277 handle_command_response: Stop monitoring events!
+03-10 17:36:27.130 W/bluetooth( 9953): system/gd/hci/hci_layer.cc:364 send_next_command: Start monitoring events!
+03-10 17:36:27.131 W/bluetooth( 9953): system/gd/hci/hci_layer.cc:277 handle_command_response: Stop monitoring events!
+03-10 17:36:27.131 W/bluetooth( 9953): system/gd/hci/hci_layer.cc:364 send_next_command: Start monitoring events!
+03-10 17:36:27.132 W/.ethran.notable(10221): Unsupported class loader
+03-10 17:36:27.132 W/bluetooth( 9953): system/gd/hci/hci_layer.cc:277 handle_command_response: Stop monitoring events!
+03-10 17:36:27.133 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{b22c57b com.android.cts.priv.ctsshim/10109} BLOCKED
+03-10 17:36:27.133 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{e1bbf98 com.android.uwb.resources/10096} BLOCKED
+03-10 17:36:27.133 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{dc113f1 com.android.internal.display.cutout.emulation.corner/10008} BLOCKED
+03-10 17:36:27.133 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{caf1bd6 org.chromium.chrome/10040} BLOCKED
+03-10 17:36:27.133 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{e8e3e57 com.tailscale.ipn/10119} BLOCKED
+03-10 17:36:27.133 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{7d93d44 com.android.internal.display.cutout.emulation.double/10009} BLOCKED
+03-10 17:36:27.134 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{ec1fe2d com.android.healthconnect.controller/10098} BLOCKED
+03-10 17:36:27.134 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{7d91f62 md.obsidian/10118} BLOCKED
+03-10 17:36:27.134 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{6ce68f3 org.koreader.launcher/10121} BLOCKED
+03-10 17:36:27.134 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{8cee9b0 com.android.health.connect.backuprestore/10099} BLOCKED
+03-10 17:36:27.134 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{96d5029 com.google.android.ext.shared/10054} BLOCKED
+03-10 17:36:27.134 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{aadcfae com.android.virtualmachine.res/10108} BLOCKED
+03-10 17:36:27.134 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{fdca14f com.onyx.dict/10035} BLOCKED
+03-10 17:36:27.134 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{c30f0dc com.android.providers.telephony.auto_generated_characteristics_rro/10012} BLOCKED
+03-10 17:36:27.134 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{61c5e5 com.onyx.android.onyxotaservice/10028} BLOCKED
+03-10 17:36:27.134 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{80b38ba com.android.htmlviewer/10044} BLOCKED
+03-10 17:36:27.134 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{1ec036b com.android.quicksearchbox/10069} BLOCKED
+03-10 17:36:27.134 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{a4a3ec8 com.quicinc.voice.activation/10086} BLOCKED
+03-10 17:36:27.134 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{76ddb61 com.onyx.igetshop/10037} BLOCKED
+03-10 17:36:27.134 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{a42686 com.openai.chatgpt/10130} BLOCKED
+03-10 17:36:27.134 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{2a2b798 org.fossify.filemanager/10135} BLOCKED
+03-10 17:36:27.134 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{3287f74 com.google.android.configupdater/10064} BLOCKED
+03-10 17:36:27.134 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{6080a96 com.microsoft.office.excel/10132} BLOCKED
+03-10 17:36:27.134 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{6cbcc9d com.android.safetycenter.resources/10113} BLOCKED
+03-10 17:36:27.134 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{b8c2512 com.microsoft.skydrive/10133} BLOCKED
+03-10 17:36:27.134 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{be374e3 com.android.connectivity.resources/10112} BLOCKED
+03-10 17:36:27.134 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{8081ee0 com.android.internal.display.cutout.emulation.hole/10010} BLOCKED
+03-10 17:36:27.134 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{61d9599 com.android.internal.display.cutout.emulation.tall/10007} BLOCKED
+03-10 17:36:27.135 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{b83805e com.android.modulemetadata/10076} BLOCKED
+03-10 17:36:27.135 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{ece7c3f com.android.internal.systemui.navbar.threebutton/10003} BLOCKED
+03-10 17:36:27.135 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{f80490c com.android.wifi.dialog/10105} BLOCKED
+03-10 17:36:27.135 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{b28f255 biblereader.olivetree/10128} BLOCKED
+03-10 17:36:27.135 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{272aa04 com.microsoft.office.onenote/10132} BLOCKED
+03-10 17:36:27.135 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{d03446a com.android.settings.intelligence/10065} BLOCKED
+03-10 17:36:27.135 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{d389d5b com.microsoft.office.outlook/10134} BLOCKED
+03-10 17:36:27.135 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{8535ed1 com.android.printspooler/10033} BLOCKED
+03-10 17:36:27.135 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{9093d36 com.android.rkpdapp/10111} BLOCKED
+03-10 17:36:27.135 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{6de170d eu.kanade.tachiyomi.yokai/10136} BLOCKED
+03-10 17:36:27.135 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{8a3f6c2 com.google.android.apps.docs/10129} BLOCKED
+03-10 17:36:27.135 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{db7cbed com.microsoft.office.word/10132} BLOCKED
+03-10 17:36:27.135 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{f0b5cd3 org.fdroid.fdroid/10070} BLOCKED
+03-10 17:36:27.135 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{c510010 com.google.android.webview/10071} BLOCKED
+03-10 17:36:27.135 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{aaa6617 com.microsoft.office.powerpoint/10132} BLOCKED
+03-10 17:36:27.135 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{8e21709 com.google.android.contactkeys/10120} BLOCKED
+03-10 17:36:27.135 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{53ebd0e com.onyx.kreader/10045} BLOCKED
+03-10 17:36:27.135 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{24f32f com.onyx.android.note/10041} BLOCKED
+03-10 17:36:27.135 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{72e0d3c com.android.chrome/10125} BLOCKED
+03-10 17:36:27.135 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{f0c1ac5 com.android.printservice.recommendation/10032} BLOCKED
+03-10 17:36:27.135 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{1ad9c1a com.android.wifi.resources/10103} BLOCKED
+03-10 17:36:27.135 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{297934b com.android.theme.font.notoserifsource/10000} BLOCKED
+03-10 17:36:27.135 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{e189e41 com.android.internal.display.cutout.emulation.waterfall/10006} BLOCKED
+03-10 17:36:27.135 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{7f95fe6 com.android.internal.systemui.navbar.transparent/10004} BLOCKED
+03-10 17:36:27.135 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{6b7f13b com.google.android.syncadapters.calendar/10077} BLOCKED
+03-10 17:36:27.135 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{24a1927 com.x8bit.bitwarden/10123} BLOCKED
+03-10 17:36:27.135 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{860c7d4 com.android.dreams.phototable/10075} BLOCKED
+03-10 17:36:27.136 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{fdd7d com.android.smspush/10093} BLOCKED
+03-10 17:36:27.136 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{7eb9472 com.android.appsearch.apk/10115} BLOCKED
+03-10 17:36:27.136 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{924bbf7 com.android.cts.ctsshim/10110} BLOCKED
+03-10 17:36:27.136 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{8b520c3 fr.gaulupeau.apps.InThePoche/10137} BLOCKED
+03-10 17:36:27.136 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{eec8d40 com.android.hotspot2.osulogin/10104} BLOCKED
+03-10 17:36:27.136 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{d41d479 com.android.companiondevicemanager.auto_generated_characteristics_rro/10014} BLOCKED
+03-10 17:36:27.136 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{25a85be com.google.android.gms.location.history/10072} BLOCKED
+03-10 17:36:27.136 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{43f061f com.android.internal.systemui.navbar.gestural/10005} BLOCKED
+03-10 17:36:27.136 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{dad3d6c com.google.android.overlay.gmsconfig.personalsafety/10013} BLOCKED
+03-10 17:36:27.136 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{9023f35 com.android.bluetoothmidiservice/10031} BLOCKED
+03-10 17:36:27.136 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{d353fca eu.kanade.tachiyomi.extension.all.komga/10127} BLOCKED
+03-10 17:36:27.136 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{957e53b com.qualcomm.qti.gpudrivers.lito.api30/10062} BLOCKED
+03-10 17:36:27.136 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{8e6c458 com.qualcomm.qti.server.wigig.tethering.rro/10092} BLOCKED
+03-10 17:36:27.136 I/DynamiteModule(10221): Considering local module com.google.android.gms.measurement.dynamite:152 and remote module com.google.android.gms.measurement.dynamite:179
+03-10 17:36:27.136 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{e2499b1 com.android.captiveportallogin/10055} BLOCKED
+03-10 17:36:27.136 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{c4f8e96 com.amazon.kindle/10131} BLOCKED
+03-10 17:36:27.136 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{9559a17 com.google.android.apps.restore/10066} BLOCKED
+03-10 17:36:27.136 I/DynamiteModule(10221): Selected remote version of com.google.android.gms.measurement.dynamite, version >= 179
+03-10 17:36:27.136 V/DynamiteModule(10221): Dynamite loader version >= 2, using loadModule2NoCrashUtils
+03-10 17:36:27.148 W/ActivityTaskManager( 1636): callingPackage for (uid=2000, pid=10252) has no WPC
+03-10 17:36:27.149 W/OptProp ( 1636): Cannot read opt property android.window.PROPERTY_COMPAT_ALLOW_ORIENTATION_OVERRIDE
+03-10 17:36:27.150 V/GrammaticalInflectionUtils( 1636): AttributionSource: android.content.AttributionSource@20429c5 does not have READ_SYSTEM_GRAMMATICAL_GENDER permission.
+03-10 17:36:27.150 W/OptProp ( 1636): Cannot read opt property android.window.PROPERTY_COMPAT_ALLOW_RESIZEABLE_ACTIVITY_OVERRIDES
+03-10 17:36:27.150 W/OptProp ( 1636): Cannot read opt property android.window.PROPERTY_COMPAT_ALLOW_MIN_ASPECT_RATIO_OVERRIDE
+03-10 17:36:27.152 E/CellBroadcastUtils( 1636): getDefaultCellBroadcastReceiverPackageName: no package found
+03-10 17:36:27.157 I/ActivityTaskManager( 1636): The Process com.ethran.notable Already Exists in BG. So sending its PID: 10221
+03-10 17:36:27.157 W/.ethran.notable(10221): Unsupported class loader
+03-10 17:36:27.158 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{b22c57b com.android.cts.priv.ctsshim/10109} BLOCKED
+03-10 17:36:27.158 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{e1bbf98 com.android.uwb.resources/10096} BLOCKED
+03-10 17:36:27.158 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{dc113f1 com.android.internal.display.cutout.emulation.corner/10008} BLOCKED
+03-10 17:36:27.158 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{caf1bd6 org.chromium.chrome/10040} BLOCKED
+03-10 17:36:27.158 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{e8e3e57 com.tailscale.ipn/10119} BLOCKED
+03-10 17:36:27.158 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{7d93d44 com.android.internal.display.cutout.emulation.double/10009} BLOCKED
+03-10 17:36:27.158 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{ec1fe2d com.android.healthconnect.controller/10098} BLOCKED
+03-10 17:36:27.158 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{7d91f62 md.obsidian/10118} BLOCKED
+03-10 17:36:27.158 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{6ce68f3 org.koreader.launcher/10121} BLOCKED
+03-10 17:36:27.158 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{8cee9b0 com.android.health.connect.backuprestore/10099} BLOCKED
+03-10 17:36:27.158 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{96d5029 com.google.android.ext.shared/10054} BLOCKED
+03-10 17:36:27.158 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{aadcfae com.android.virtualmachine.res/10108} BLOCKED
+03-10 17:36:27.158 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{fdca14f com.onyx.dict/10035} BLOCKED
+03-10 17:36:27.158 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{c30f0dc com.android.providers.telephony.auto_generated_characteristics_rro/10012} BLOCKED
+03-10 17:36:27.158 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{61c5e5 com.onyx.android.onyxotaservice/10028} BLOCKED
+03-10 17:36:27.158 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{80b38ba com.android.htmlviewer/10044} BLOCKED
+03-10 17:36:27.158 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{1ec036b com.android.quicksearchbox/10069} BLOCKED
+03-10 17:36:27.158 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{a4a3ec8 com.quicinc.voice.activation/10086} BLOCKED
+03-10 17:36:27.158 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{76ddb61 com.onyx.igetshop/10037} BLOCKED
+03-10 17:36:27.158 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{a42686 com.openai.chatgpt/10130} BLOCKED
+03-10 17:36:27.158 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{2a2b798 org.fossify.filemanager/10135} BLOCKED
+03-10 17:36:27.158 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{3287f74 com.google.android.configupdater/10064} BLOCKED
+03-10 17:36:27.158 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{6080a96 com.microsoft.office.excel/10132} BLOCKED
+03-10 17:36:27.159 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{6cbcc9d com.android.safetycenter.resources/10113} BLOCKED
+03-10 17:36:27.159 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{b8c2512 com.microsoft.skydrive/10133} BLOCKED
+03-10 17:36:27.159 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{be374e3 com.android.connectivity.resources/10112} BLOCKED
+03-10 17:36:27.159 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{8081ee0 com.android.internal.display.cutout.emulation.hole/10010} BLOCKED
+03-10 17:36:27.159 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{61d9599 com.android.internal.display.cutout.emulation.tall/10007} BLOCKED
+03-10 17:36:27.159 D/debugOrientation( 1636): caculateTopActivityRecord isTopRecordVisible  true   currentFocus topActivity:ActivityRecord{fc79cb0 u0 com.ethran.notable/.MainActivity t837}
+03-10 17:36:27.159 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{b83805e com.android.modulemetadata/10076} BLOCKED
+03-10 17:36:27.159 D/debugOrientation( 1636): ActivityRecord{fc79cb0 u0 com.ethran.notable/.MainActivity t837}  computeOrientation :-1 user set rotation -1
+03-10 17:36:27.159 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{ece7c3f com.android.internal.systemui.navbar.threebutton/10003} BLOCKED
+03-10 17:36:27.159 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{f80490c com.android.wifi.dialog/10105} BLOCKED
+03-10 17:36:27.159 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{b28f255 biblereader.olivetree/10128} BLOCKED
+03-10 17:36:27.159 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{272aa04 com.microsoft.office.onenote/10132} BLOCKED
+03-10 17:36:27.159 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{d03446a com.android.settings.intelligence/10065} BLOCKED
+03-10 17:36:27.159 D/debugOrientation( 1636): caculateTopActivityRecord isTopRecordVisible  true   currentFocus topActivity:ActivityRecord{fc79cb0 u0 com.ethran.notable/.MainActivity t837}
+03-10 17:36:27.159 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{d389d5b com.microsoft.office.outlook/10134} BLOCKED
+03-10 17:36:27.159 D/debugOrientation( 1636): ActivityRecord{fc79cb0 u0 com.ethran.notable/.MainActivity t837}  computeOrientation :-1 user set rotation -1
+03-10 17:36:27.159 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{8535ed1 com.android.printspooler/10033} BLOCKED
+03-10 17:36:27.159 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{9093d36 com.android.rkpdapp/10111} BLOCKED
+03-10 17:36:27.159 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{6de170d eu.kanade.tachiyomi.yokai/10136} BLOCKED
+03-10 17:36:27.159 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{8a3f6c2 com.google.android.apps.docs/10129} BLOCKED
+03-10 17:36:27.159 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{db7cbed com.microsoft.office.word/10132} BLOCKED
+03-10 17:36:27.159 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{f0b5cd3 org.fdroid.fdroid/10070} BLOCKED
+03-10 17:36:27.159 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{c510010 com.google.android.webview/10071} BLOCKED
+03-10 17:36:27.159 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{aaa6617 com.microsoft.office.powerpoint/10132} BLOCKED
+03-10 17:36:27.159 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{8e21709 com.google.android.contactkeys/10120} BLOCKED
+03-10 17:36:27.159 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{53ebd0e com.onyx.kreader/10045} BLOCKED
+03-10 17:36:27.159 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{24f32f com.onyx.android.note/10041} BLOCKED
+03-10 17:36:27.159 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{72e0d3c com.android.chrome/10125} BLOCKED
+03-10 17:36:27.159 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{f0c1ac5 com.android.printservice.recommendation/10032} BLOCKED
+03-10 17:36:27.159 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{1ad9c1a com.android.wifi.resources/10103} BLOCKED
+03-10 17:36:27.160 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{297934b com.android.theme.font.notoserifsource/10000} BLOCKED
+03-10 17:36:27.160 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{e189e41 com.android.internal.display.cutout.emulation.waterfall/10006} BLOCKED
+03-10 17:36:27.160 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{7f95fe6 com.android.internal.systemui.navbar.transparent/10004} BLOCKED
+03-10 17:36:27.160 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{6b7f13b com.google.android.syncadapters.calendar/10077} BLOCKED
+03-10 17:36:27.160 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{24a1927 com.x8bit.bitwarden/10123} BLOCKED
+03-10 17:36:27.160 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{860c7d4 com.android.dreams.phototable/10075} BLOCKED
+03-10 17:36:27.160 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{fdd7d com.android.smspush/10093} BLOCKED
+03-10 17:36:27.160 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{7eb9472 com.android.appsearch.apk/10115} BLOCKED
+03-10 17:36:27.160 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{924bbf7 com.android.cts.ctsshim/10110} BLOCKED
+03-10 17:36:27.160 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{8b520c3 fr.gaulupeau.apps.InThePoche/10137} BLOCKED
+03-10 17:36:27.160 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{eec8d40 com.android.hotspot2.osulogin/10104} BLOCKED
+03-10 17:36:27.160 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{d41d479 com.android.companiondevicemanager.auto_generated_characteristics_rro/10014} BLOCKED
+03-10 17:36:27.160 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{25a85be com.google.android.gms.location.history/10072} BLOCKED
+03-10 17:36:27.160 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{43f061f com.android.internal.systemui.navbar.gestural/10005} BLOCKED
+03-10 17:36:27.160 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{dad3d6c com.google.android.overlay.gmsconfig.personalsafety/10013} BLOCKED
+03-10 17:36:27.160 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{9023f35 com.android.bluetoothmidiservice/10031} BLOCKED
+03-10 17:36:27.160 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{d353fca eu.kanade.tachiyomi.extension.all.komga/10127} BLOCKED
+03-10 17:36:27.160 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{957e53b com.qualcomm.qti.gpudrivers.lito.api30/10062} BLOCKED
+03-10 17:36:27.160 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{8e6c458 com.qualcomm.qti.server.wigig.tethering.rro/10092} BLOCKED
+03-10 17:36:27.160 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{e2499b1 com.android.captiveportallogin/10055} BLOCKED
+03-10 17:36:27.160 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{c4f8e96 com.amazon.kindle/10131} BLOCKED
+03-10 17:36:27.160 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{9559a17 com.google.android.apps.restore/10066} BLOCKED
+03-10 17:36:27.160 D/CompatChangeReporter( 1636): Compat change id reported: 324203798; UID 10143; state: ENABLED
+03-10 17:36:27.165 W/System  (10221): ClassLoader referenced unknown path: 
+03-10 17:36:27.165 D/nativeloader(10221): Configuring clns-8 for other apk . target_sdk_version=36, uses_libraries=, library_path=/data/app/~~JA6qdRKfynuJJnzGRg-qrA==/com.google.android.gms-0xOZhUsCbPwyBS-ubGefGA==/lib/arm64:/data/app/~~JA6qdRKfynuJJnzGRg-qrA==/com.google.android.gms-0xOZhUsCbPwyBS-ubGefGA==/base.apk!/lib/arm64-v8a, permitted_path=/data:/mnt/expand:/data/user/0/com.google.android.gms
+03-10 17:36:27.167 V/WindowManagerShell( 2105): Transition requested (#847): android.os.BinderProxy@1b29702 TransitionRequestInfo { type = OPEN, triggerTask = TaskInfo{userId=0 taskId=837 displayId=0 isRunning=true baseIntent=Intent { act=android.intent.action.MAIN cat=[android.intent.category.LAUNCHER] flg=0x10200000 pkg=com.ethran.notable cmp=com.ethran.notable/.MainActivity } baseActivity=ComponentInfo{com.ethran.notable/com.ethran.notable.MainActivity} topActivity=ComponentInfo{com.ethran.notable/com.ethran.notable.MainActivity} origActivity=null realActivity=ComponentInfo{com.ethran.notable/com.ethran.notable.MainActivity} numActivities=2 lastActiveTime=101581030 supportsMultiWindow=true resizeMode=1 isResizeable=true minWidth=-1 minHeight=-1 defaultMinSize=220 token=WCT{android.window.IWindowContainerToken$Stub$Proxy@991813} topActivityType=1 pictureInPictureParams=null shouldDockBigOverlays=false launchIntoPipHostTaskId=-1 lastParentTaskIdBeforePip=-1 displayCutoutSafeInsets=null topActivityInfo=ActivityInfo{8373a50 com.ethran.notable.MainActivity} launchCookies=[] positionInParent=Point(0, 0) parentTaskId=-1 isFocused=true isVisible=true isVisibleRequested=true isSleeping=false locusId=null displayAreaFeatureId=1 isTopActivityTransparent=false appCompatTaskInfo=AppCompatTaskInfo { topActivityInSizeCompat=true topActivityEligibleForLetterboxEducation= falseisLetterboxEducationEnabled= false isLetterboxDoubleTapEnabled= false topActivityEligibleForUserAspectRatioButton= false topActivityBoundsLetterboxed= true isFromLetterboxDoubleTap= false topActivityLetterboxVerticalPosition= -1 topActivityLetterboxHorizontalPosition= -1 topActivityLetterboxWidth=1860 topActivityLetterboxHeight=2480 isUserFullscreenOverrideEnabled=false isSystemFullscreenOverrideEnabled=false cameraCompatTaskInfo=CameraCompatTaskInfo { cameraCompatControlState=hidden freeformCameraCompatMode=inactive}}}, pipTask = null, remoteTransition = null, displayChange = null, flags = 0, debugId = 847 }
+03-10 17:36:27.169 I/ActivityTaskManager( 1636): START u0 {flg=0x10000000 cmp=com.ethran.notable/.MainActivity} with LAUNCH_MULTIPLE from uid 2000 (BAL_ALLOW_PERMISSION) result code=0
+03-10 17:36:27.172 I/vendor.qti.bluetooth@1.0-ibs_handler( 1036): ProcessIbsCmd: Received IBS_SLEEP_IND: 0xFE
+03-10 17:36:27.176 V/WindowManagerShell( 2105): onTransitionReady(transaction=7026567620697)
+03-10 17:36:27.177 V/WindowManager( 1636): Sent Transition (#847) createdAt=03-10 17:36:27.151 via request=TransitionRequestInfo { type = OPEN, triggerTask = TaskInfo{userId=0 taskId=837 displayId=0 isRunning=true baseIntent=Intent { act=android.intent.action.MAIN cat=[android.intent.category.LAUNCHER] flg=0x10200000 pkg=com.ethran.notable cmp=com.ethran.notable/.MainActivity } baseActivity=ComponentInfo{com.ethran.notable/com.ethran.notable.MainActivity} topActivity=ComponentInfo{com.ethran.notable/com.ethran.notable.MainActivity} origActivity=null realActivity=ComponentInfo{com.ethran.notable/com.ethran.notable.MainActivity} numActivities=2 lastActiveTime=101581030 supportsMultiWindow=true resizeMode=1 isResizeable=true minWidth=-1 minHeight=-1 defaultMinSize=220 token=WCT{RemoteToken{201ce6f Task{c47b8aa #837 type=standard A=10143:com.ethran.notable}}} topActivityType=1 pictureInPictureParams=null shouldDockBigOverlays=false launchIntoPipHostTaskId=-1 lastParentTaskIdBeforePip=-1 displayCutoutSafeInsets=null topActivityInfo=ActivityInfo{28bf261 com.ethran.notable.MainActivity} launchCookies=[] positionInParent=Point(0, 0) parentTaskId=-1 isFocused=true isVisible=true isVisibleRequested=true isSleeping=false locusId=null displayAreaFeatureId=1 isTopActivityTransparent=false appCompatTaskInfo=AppCompatTaskInfo { topActivityInSizeCompat=true topActivityEligibleForLetterboxEducation= falseisLetterboxEducationEnabled= false isLetterboxDoubleTapEnabled= false topActivityEligibleForUserAspectRatioButton= false topActivityBoundsLetterboxed= true isFromLetterboxDoubleTap= false topActivityLetterboxVerticalPosition= -1 topActivityLetterboxHorizontalPosition= -1 topActivityLetterboxWidth=1860 topActivityLetterboxHeight=2480 isUserFullscreenOverrideEnabled=false isSystemFullscreenOverrideEnabled=false cameraCompatTaskInfo=CameraCompatTaskInfo { cameraCompatControlState=hidden freeformCameraCompatMode=inactive}}}, pipTask = null, remoteTransition = null, displayChange = null, flags = 0, debugId = 847 }
+03-10 17:36:27.177 V/WindowManager( 1636):     startWCT=WindowContainerTransaction { changes = {} hops = [] errorCallbackToken=null taskFragmentOrganizer=null }
+03-10 17:36:27.177 V/WindowManager( 1636):     info={id=847 t=OPEN f=0x0 trk=0 r=[0@Point(0, 0)] c=[
+03-10 17:36:27.177 V/WindowManager( 1636):         {null m=OPEN f=STARTING_WINDOW_TRANSFER|FILLS_TASK|IS_BEHIND_STARTING_WINDOW leash=Surface(name=ActivityRecord{fc79cb0 u0 com.ethran.notable/.MainActivity)/@0x5d0826b sb=Rect(0, 0 - 0, 0) eb=Rect(0, 0 - 1860, 2480) d=-1->0 r=-1->0:-1 bc=ff000000 component=com.ethran.notable/.MainActivity},
+03-10 17:36:27.177 V/WindowManager( 1636):         {null m=TO_BACK f=FILLS_TASK|IS_BEHIND_STARTING_WINDOW leash=Surface(name=ActivityRecord{a218f95 u0 com.ethran.notable/.MainActivity)/@0x8c653ba sb=Rect(0, 0 - 1860, 2480) eb=Rect(0, 0 - 1860, 2480) d=0 bc=ff000000 component=com.ethran.notable/.MainActivity}
+03-10 17:36:27.177 V/WindowManager( 1636):     ]}
+03-10 17:36:27.177 V/WindowManagerShell( 2105): onTransitionReady (#847) android.os.BinderProxy@1b29702: {id=847 t=OPEN f=0x0 trk=0 r=[0@Point(0, 0)] c=[{null m=OPEN f=STARTING_WINDOW_TRANSFER|FILLS_TASK|IS_BEHIND_STARTING_WINDOW leash=Surface(name=ActivityRecord{fc79cb0 u0 com.ethran.notable/.MainActivity)/@0xd286449 sb=Rect(0, 0 - 0, 0) eb=Rect(0, 0 - 1860, 2480) d=-1->0 r=-1->0:-1 bc=ff000000 component=com.ethran.notable/.MainActivity},{null m=TO_BACK f=FILLS_TASK|IS_BEHIND_STARTING_WINDOW leash=Surface(name=ActivityRecord{a218f95 u0 com.ethran.notable/.MainActivity)/@0x237214e sb=Rect(0, 0 - 1860, 2480) eb=Rect(0, 0 - 1860, 2480) d=0 bc=ff000000 component=com.ethran.notable/.MainActivity}]}
+03-10 17:36:27.177 V/WindowManagerShell( 2105): Non-visible anim so abort: (#847) android.os.BinderProxy@1b29702@0
+03-10 17:36:27.178 W/DynamicDDSService( 2318): appName is not found in cache: com.onyx
+03-10 17:36:27.178 V/WindowManagerShell( 2105): Transition animation finished (aborted=true), notifying core (#847) android.os.BinderProxy@1b29702@0
+03-10 17:36:27.179 I/TabletMainActivity( 1475): onStop--------------
+03-10 17:36:27.180 D/EventBus( 1475): No subscribers registered for event class com.onyx.android.sdk.kui.event.FileSelectorDialogDismissEvent
+03-10 17:36:27.180 D/EventBus( 1475): No subscribers registered for event class org.greenrobot.eventbus.NoSubscriberEvent
+03-10 17:36:27.181 V/WindowManager( 1636): Finish Transition (#847): created at 03-10 17:36:27.151 collect-started=0.044ms request-sent=14.124ms started=20.445ms ready=20.428ms sent=24.173ms finished=29.484ms
+03-10 17:36:27.186 I/BpBinder( 1112): onLastStrongRef automatically unlinking death recipients: 
+03-10 17:36:27.191 W/UserManagerService( 1636): Requested status bar icon for non-badged user 0
+03-10 17:36:27.192 V/WindowManagerShell( 2105): Track 0 became idle
+03-10 17:36:27.192 V/WindowManagerShell( 2105): All active transition animations finished
+03-10 17:36:27.193 W/UserManagerService( 1636): Requested status bar icon for non-badged user 0
+03-10 17:36:27.201 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{b22c57b com.android.cts.priv.ctsshim/10109} BLOCKED
+03-10 17:36:27.201 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{e1bbf98 com.android.uwb.resources/10096} BLOCKED
+03-10 17:36:27.201 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{dc113f1 com.android.internal.display.cutout.emulation.corner/10008} BLOCKED
+03-10 17:36:27.201 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{caf1bd6 org.chromium.chrome/10040} BLOCKED
+03-10 17:36:27.201 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{e8e3e57 com.tailscale.ipn/10119} BLOCKED
+03-10 17:36:27.201 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{7d93d44 com.android.internal.display.cutout.emulation.double/10009} BLOCKED
+03-10 17:36:27.201 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{ec1fe2d com.android.healthconnect.controller/10098} BLOCKED
+03-10 17:36:27.201 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{7d91f62 md.obsidian/10118} BLOCKED
+03-10 17:36:27.201 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{6ce68f3 org.koreader.launcher/10121} BLOCKED
+03-10 17:36:27.201 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{8cee9b0 com.android.health.connect.backuprestore/10099} BLOCKED
+03-10 17:36:27.201 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{96d5029 com.google.android.ext.shared/10054} BLOCKED
+03-10 17:36:27.201 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{aadcfae com.android.virtualmachine.res/10108} BLOCKED
+03-10 17:36:27.201 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{fdca14f com.onyx.dict/10035} BLOCKED
+03-10 17:36:27.201 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{c30f0dc com.android.providers.telephony.auto_generated_characteristics_rro/10012} BLOCKED
+03-10 17:36:27.201 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{61c5e5 com.onyx.android.onyxotaservice/10028} BLOCKED
+03-10 17:36:27.202 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{80b38ba com.android.htmlviewer/10044} BLOCKED
+03-10 17:36:27.202 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{1ec036b com.android.quicksearchbox/10069} BLOCKED
+03-10 17:36:27.202 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{a4a3ec8 com.quicinc.voice.activation/10086} BLOCKED
+03-10 17:36:27.202 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{76ddb61 com.onyx.igetshop/10037} BLOCKED
+03-10 17:36:27.202 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{a42686 com.openai.chatgpt/10130} BLOCKED
+03-10 17:36:27.202 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{2a2b798 org.fossify.filemanager/10135} BLOCKED
+03-10 17:36:27.202 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{3287f74 com.google.android.configupdater/10064} BLOCKED
+03-10 17:36:27.202 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{6080a96 com.microsoft.office.excel/10132} BLOCKED
+03-10 17:36:27.202 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{6cbcc9d com.android.safetycenter.resources/10113} BLOCKED
+03-10 17:36:27.202 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{b8c2512 com.microsoft.skydrive/10133} BLOCKED
+03-10 17:36:27.202 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{be374e3 com.android.connectivity.resources/10112} BLOCKED
+03-10 17:36:27.202 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{8081ee0 com.android.internal.display.cutout.emulation.hole/10010} BLOCKED
+03-10 17:36:27.202 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{61d9599 com.android.internal.display.cutout.emulation.tall/10007} BLOCKED
+03-10 17:36:27.202 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{b83805e com.android.modulemetadata/10076} BLOCKED
+03-10 17:36:27.202 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{ece7c3f com.android.internal.systemui.navbar.threebutton/10003} BLOCKED
+03-10 17:36:27.202 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{f80490c com.android.wifi.dialog/10105} BLOCKED
+03-10 17:36:27.202 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{b28f255 biblereader.olivetree/10128} BLOCKED
+03-10 17:36:27.203 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{272aa04 com.microsoft.office.onenote/10132} BLOCKED
+03-10 17:36:27.203 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{d03446a com.android.settings.intelligence/10065} BLOCKED
+03-10 17:36:27.203 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{d389d5b com.microsoft.office.outlook/10134} BLOCKED
+03-10 17:36:27.203 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{8535ed1 com.android.printspooler/10033} BLOCKED
+03-10 17:36:27.203 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{9093d36 com.android.rkpdapp/10111} BLOCKED
+03-10 17:36:27.203 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{6de170d eu.kanade.tachiyomi.yokai/10136} BLOCKED
+03-10 17:36:27.203 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{8a3f6c2 com.google.android.apps.docs/10129} BLOCKED
+03-10 17:36:27.203 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{db7cbed com.microsoft.office.word/10132} BLOCKED
+03-10 17:36:27.203 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{f0b5cd3 org.fdroid.fdroid/10070} BLOCKED
+03-10 17:36:27.203 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{c510010 com.google.android.webview/10071} BLOCKED
+03-10 17:36:27.203 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{aaa6617 com.microsoft.office.powerpoint/10132} BLOCKED
+03-10 17:36:27.203 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{8e21709 com.google.android.contactkeys/10120} BLOCKED
+03-10 17:36:27.203 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{53ebd0e com.onyx.kreader/10045} BLOCKED
+03-10 17:36:27.203 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{24f32f com.onyx.android.note/10041} BLOCKED
+03-10 17:36:27.203 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{72e0d3c com.android.chrome/10125} BLOCKED
+03-10 17:36:27.203 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{f0c1ac5 com.android.printservice.recommendation/10032} BLOCKED
+03-10 17:36:27.203 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{1ad9c1a com.android.wifi.resources/10103} BLOCKED
+03-10 17:36:27.203 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{297934b com.android.theme.font.notoserifsource/10000} BLOCKED
+03-10 17:36:27.203 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{e189e41 com.android.internal.display.cutout.emulation.waterfall/10006} BLOCKED
+03-10 17:36:27.203 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{7f95fe6 com.android.internal.systemui.navbar.transparent/10004} BLOCKED
+03-10 17:36:27.203 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{6b7f13b com.google.android.syncadapters.calendar/10077} BLOCKED
+03-10 17:36:27.203 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{24a1927 com.x8bit.bitwarden/10123} BLOCKED
+03-10 17:36:27.203 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{860c7d4 com.android.dreams.phototable/10075} BLOCKED
+03-10 17:36:27.203 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{fdd7d com.android.smspush/10093} BLOCKED
+03-10 17:36:27.203 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{7eb9472 com.android.appsearch.apk/10115} BLOCKED
+03-10 17:36:27.203 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{924bbf7 com.android.cts.ctsshim/10110} BLOCKED
+03-10 17:36:27.203 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{8b520c3 fr.gaulupeau.apps.InThePoche/10137} BLOCKED
+03-10 17:36:27.203 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{eec8d40 com.android.hotspot2.osulogin/10104} BLOCKED
+03-10 17:36:27.203 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{d41d479 com.android.companiondevicemanager.auto_generated_characteristics_rro/10014} BLOCKED
+03-10 17:36:27.203 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{25a85be com.google.android.gms.location.history/10072} BLOCKED
+03-10 17:36:27.203 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{43f061f com.android.internal.systemui.navbar.gestural/10005} BLOCKED
+03-10 17:36:27.203 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{dad3d6c com.google.android.overlay.gmsconfig.personalsafety/10013} BLOCKED
+03-10 17:36:27.204 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{9023f35 com.android.bluetoothmidiservice/10031} BLOCKED
+03-10 17:36:27.204 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{d353fca eu.kanade.tachiyomi.extension.all.komga/10127} BLOCKED
+03-10 17:36:27.204 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{957e53b com.qualcomm.qti.gpudrivers.lito.api30/10062} BLOCKED
+03-10 17:36:27.204 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{8e6c458 com.qualcomm.qti.server.wigig.tethering.rro/10092} BLOCKED
+03-10 17:36:27.204 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{e2499b1 com.android.captiveportallogin/10055} BLOCKED
+03-10 17:36:27.204 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{c4f8e96 com.amazon.kindle/10131} BLOCKED
+03-10 17:36:27.204 I/AppsFilter( 1636): interaction: PackageSetting{69d1298 com.ethran.notable/10143} -> PackageSetting{9559a17 com.google.android.apps.restore/10066} BLOCKED
+03-10 17:36:27.213 D/debugOrientation( 1636): caculateTopActivityRecord isTopRecordVisible  true   currentFocus topActivity:ActivityRecord{fc79cb0 u0 com.ethran.notable/.MainActivity t837}
+03-10 17:36:27.213 D/debugOrientation( 1636): ActivityRecord{fc79cb0 u0 com.ethran.notable/.MainActivity t837}  computeOrientation :-1 user set rotation -1
+03-10 17:36:27.257 I/Benchmark( 1475): getAppConfig ---> 1ms
+03-10 17:36:27.257 I/RxEACUtils( 1475): updateAppDataEACInfo pkgName: com.ethran.notable, isAutoFreeze: true, isEACEnabled: true
+03-10 17:36:27.258 I/Benchmark( 1475): getAppConfig ---> 1ms
+03-10 17:36:27.258 I/RxEACUtils( 1475): updateAppDataEACInfo pkgName: md.obsidian, isAutoFreeze: false, isEACEnabled: true
+03-10 17:36:27.259 I/Benchmark( 1475): getAppConfig ---> 1ms
+03-10 17:36:27.259 I/RxEACUtils( 1475): updateAppDataEACInfo pkgName: com.onyx.easytransfer, isAutoFreeze: false, isEACEnabled: false
+03-10 17:36:27.260 I/Benchmark( 1475): getAppConfig ---> 1ms
+03-10 17:36:27.260 I/RxEACUtils( 1475): updateAppDataEACInfo pkgName: com.onyx.mail, isAutoFreeze: false, isEACEnabled: false
+03-10 17:36:27.261 I/Benchmark( 1475): getAppConfig ---> 1ms
+03-10 17:36:27.261 I/RxEACUtils( 1475): updateAppDataEACInfo pkgName: com.onyx.mail, isAutoFreeze: false, isEACEnabled: false
+03-10 17:36:27.262 I/Benchmark( 1475): getAppConfig ---> 1ms
+03-10 17:36:27.262 I/RxEACUtils( 1475): updateAppDataEACInfo pkgName: com.x8bit.bitwarden, isAutoFreeze: false, isEACEnabled: true
+03-10 17:36:27.263 I/Benchmark( 1475): getAppConfig ---> 1ms
+03-10 17:36:27.263 I/RxEACUtils( 1475): updateAppDataEACInfo pkgName: com.android.vending, isAutoFreeze: false, isEACEnabled: true
+03-10 17:36:27.264 I/Benchmark( 1475): getAppConfig ---> 1ms
+03-10 17:36:27.264 I/RxEACUtils( 1475): updateAppDataEACInfo pkgName: com.tailscale.ipn, isAutoFreeze: false, isEACEnabled: true
+03-10 17:36:27.265 I/Benchmark( 1475): getAppConfig ---> 1ms
+03-10 17:36:27.265 I/RxEACUtils( 1475): updateAppDataEACInfo pkgName: com.onyx.floatingbutton, isAutoFreeze: false, isEACEnabled: false
+03-10 17:36:27.266 I/Benchmark( 1475): getAppConfig ---> 1ms
+03-10 17:36:27.266 I/RxEACUtils( 1475): updateAppDataEACInfo pkgName: com.onyx, isAutoFreeze: false, isEACEnabled: false
+03-10 17:36:27.268 I/Benchmark( 1475): getAppConfig ---> 2ms
+03-10 17:36:27.268 I/RxEACUtils( 1475): updateAppDataEACInfo pkgName: com.onyx.aiassistant, isAutoFreeze: false, isEACEnabled: false
+03-10 17:36:27.268 I/PhenotypeResourceReader( 2594): unable to find any Phenotype resource metadata for com.ethran.notable
+03-10 17:36:27.269 I/Benchmark( 1475): getAppConfig ---> 1ms
+03-10 17:36:27.269 I/RxEACUtils( 1475): updateAppDataEACInfo pkgName: org.chromium.chrome, isAutoFreeze: false, isEACEnabled: true
+03-10 17:36:27.270 I/Benchmark( 1475): getAppConfig ---> 1ms
+03-10 17:36:27.270 I/RxEACUtils( 1475): updateAppDataEACInfo pkgName: com.microsoft.office.onenote, isAutoFreeze: false, isEACEnabled: true
+03-10 17:36:27.271 I/Benchmark( 1475): getAppConfig ---> 1ms
+03-10 17:36:27.271 I/RxEACUtils( 1475): updateAppDataEACInfo pkgName: com.onyx.gallery, isAutoFreeze: false, isEACEnabled: false
+03-10 17:36:27.272 I/Benchmark( 1475): getAppConfig ---> 1ms
+03-10 17:36:27.272 I/RxEACUtils( 1475): updateAppDataEACInfo pkgName: com.onyx, isAutoFreeze: false, isEACEnabled: false
+03-10 17:36:27.276 D/IntervalStats( 1636): Unable to parse usage stats packages: [151]
+03-10 17:36:27.281 D/IntervalStats( 1636): Unable to parse usage stats packages: [151]
+03-10 17:36:27.291 D/AppWidgetServiceImpl( 1636): Trying to notify widget update for package com.onyx with widget id: 5
+03-10 17:36:27.293 D/AppWidgetServiceImpl( 1636): Trying to notify widget view data changed
+03-10 17:36:27.294 D/IntervalStats( 1636): Unable to parse usage stats packages: [151]
+03-10 17:36:27.300 D/CompatChangeReporter(10221): Compat change id reported: 309578419; UID 10143; state: ENABLED
+03-10 17:36:27.331 E/.ethran.notable(10221): No package ID 6b found for resource ID 0x6b0b0013.
+03-10 17:36:27.334 I/FA      (10221): App measurement initialized, version: 155007
+03-10 17:36:27.335 I/FA      (10221): To enable debug logging run: adb shell setprop log.tag.FA VERBOSE
+03-10 17:36:27.335 I/FA      (10221): To enable faster debug mode event logging run:
+03-10 17:36:27.335 I/FA      (10221):   adb shell setprop debug.firebase.analytics.app com.ethran.notable
+03-10 17:36:27.356 I/MainActivity(10221): Notable started
+03-10 17:36:27.406 I/Benchmark( 1475): getAppConfig ---> 1ms
+03-10 17:36:27.406 I/RxEACUtils( 1475): updateAppDataEACInfo pkgName: com.ethran.notable, isAutoFreeze: true, isEACEnabled: true
+03-10 17:36:27.410 I/Benchmark( 1475): getAppConfig ---> 4ms
+03-10 17:36:27.410 I/RxEACUtils( 1475): updateAppDataEACInfo pkgName: md.obsidian, isAutoFreeze: false, isEACEnabled: true
+03-10 17:36:27.411 I/Benchmark( 1475): getAppConfig ---> 1ms
+03-10 17:36:27.411 I/RxEACUtils( 1475): updateAppDataEACInfo pkgName: com.onyx.easytransfer, isAutoFreeze: false, isEACEnabled: false
+03-10 17:36:27.412 I/Benchmark( 1475): getAppConfig ---> 1ms
+03-10 17:36:27.412 I/RxEACUtils( 1475): updateAppDataEACInfo pkgName: com.onyx.mail, isAutoFreeze: false, isEACEnabled: false
+03-10 17:36:27.413 I/DpmTcmClient(10221): RegisterTcmMonitor from: $Proxy2
+03-10 17:36:27.414 I/Benchmark( 1475): getAppConfig ---> 2ms
+03-10 17:36:27.414 I/RxEACUtils( 1475): updateAppDataEACInfo pkgName: com.onyx.mail, isAutoFreeze: false, isEACEnabled: false
+03-10 17:36:27.415 I/Benchmark( 1475): getAppConfig ---> 1ms
+03-10 17:36:27.415 I/RxEACUtils( 1475): updateAppDataEACInfo pkgName: com.x8bit.bitwarden, isAutoFreeze: false, isEACEnabled: true
+03-10 17:36:27.416 I/Benchmark( 1475): getAppConfig ---> 1ms
+03-10 17:36:27.416 I/RxEACUtils( 1475): updateAppDataEACInfo pkgName: com.android.vending, isAutoFreeze: false, isEACEnabled: true
+03-10 17:36:27.418 I/Benchmark( 1475): getAppConfig ---> 2ms
+03-10 17:36:27.418 I/RxEACUtils( 1475): updateAppDataEACInfo pkgName: com.tailscale.ipn, isAutoFreeze: false, isEACEnabled: true
+03-10 17:36:27.419 I/Benchmark( 1475): getAppConfig ---> 1ms
+03-10 17:36:27.419 I/RxEACUtils( 1475): updateAppDataEACInfo pkgName: com.onyx.floatingbutton, isAutoFreeze: false, isEACEnabled: false
+03-10 17:36:27.420 I/Benchmark( 1475): getAppConfig ---> 1ms
+03-10 17:36:27.420 I/RxEACUtils( 1475): updateAppDataEACInfo pkgName: com.onyx, isAutoFreeze: false, isEACEnabled: false
+03-10 17:36:27.421 I/Benchmark( 1475): getAppConfig ---> 1ms
+03-10 17:36:27.421 I/RxEACUtils( 1475): updateAppDataEACInfo pkgName: com.onyx.aiassistant, isAutoFreeze: false, isEACEnabled: false
+03-10 17:36:27.422 I/Benchmark( 1475): getAppConfig ---> 1ms
+03-10 17:36:27.422 I/RxEACUtils( 1475): updateAppDataEACInfo pkgName: org.chromium.chrome, isAutoFreeze: false, isEACEnabled: true
+03-10 17:36:27.424 I/Benchmark( 1475): getAppConfig ---> 2ms
+03-10 17:36:27.424 I/RxEACUtils( 1475): updateAppDataEACInfo pkgName: com.microsoft.office.onenote, isAutoFreeze: false, isEACEnabled: true
+03-10 17:36:27.425 I/Benchmark( 1475): getAppConfig ---> 1ms
+03-10 17:36:27.425 I/RxEACUtils( 1475): updateAppDataEACInfo pkgName: com.onyx.gallery, isAutoFreeze: false, isEACEnabled: false
+03-10 17:36:27.426 I/Benchmark( 1475): getAppConfig ---> 1ms
+03-10 17:36:27.426 I/RxEACUtils( 1475): updateAppDataEACInfo pkgName: com.onyx, isAutoFreeze: false, isEACEnabled: false
+03-10 17:36:27.429 D/IntervalStats( 1636): Unable to parse usage stats packages: [151]
+03-10 17:36:27.432 D/IntervalStats( 1636): Unable to parse usage stats packages: [151]
+03-10 17:36:27.440 D/IntervalStats( 1636): Unable to parse usage stats packages: [151]
+03-10 17:36:27.442 D/AppWidgetServiceImpl( 1636): Trying to notify widget update for package com.onyx with widget id: 5
+03-10 17:36:27.447 D/AppWidgetServiceImpl( 1636): Trying to notify widget view data changed
+03-10 17:36:27.462 V/ActivityThread(10221): reportTopResumedActivityChanged - > onActivityTopResumed
+03-10 17:36:27.467 D/BoundBrokerSvc( 7367): onBind: Intent { act=com.google.android.gms.measurement.START pkg=com.google.android.gms }
+03-10 17:36:27.467 D/BoundBrokerSvc( 7367): Loading bound service for intent: Intent { act=com.google.android.gms.measurement.START pkg=com.google.android.gms }
+03-10 17:36:27.477 D/TrafficStats(10221): tagSocket(106) with statsTag=0xffffffff, statsUid=-1
+03-10 17:36:27.484 E/EpdcManager( 1112): DT 128
+03-10 17:36:27.485 E/HWEpdcManager( 1112): ### EE 1
+03-10 17:36:27.491 E/HWEpdcManager( 1112): ET 0
+03-10 17:36:27.492 E/HWEpdcManager( 1112): ### AF 10
+03-10 17:36:27.503 D/EventBus( 1475): No subscribers registered for event class com.onyx.android.sdk.eac.event.EACTopComponentChangedEvent
+03-10 17:36:27.503 D/EventBus( 1475): No subscribers registered for event class org.greenrobot.eventbus.NoSubscriberEvent
+03-10 17:36:27.514 I/FA      (10221): Tag Manager is not found and thus will not be used
+03-10 17:36:27.582 I/Benchmark( 1475): getAppConfig ---> 2ms
+03-10 17:36:27.582 I/RxEACUtils( 1475): updateAppDataEACInfo pkgName: com.ethran.notable, isAutoFreeze: true, isEACEnabled: true
+03-10 17:36:27.586 I/Benchmark( 1475): getAppConfig ---> 4ms
+03-10 17:36:27.586 I/RxEACUtils( 1475): updateAppDataEACInfo pkgName: md.obsidian, isAutoFreeze: false, isEACEnabled: true
+03-10 17:36:27.587 I/Benchmark( 1475): getAppConfig ---> 1ms
+03-10 17:36:27.587 I/RxEACUtils( 1475): updateAppDataEACInfo pkgName: com.onyx.easytransfer, isAutoFreeze: false, isEACEnabled: false
+03-10 17:36:27.588 I/Benchmark( 1475): getAppConfig ---> 1ms
+03-10 17:36:27.588 I/RxEACUtils( 1475): updateAppDataEACInfo pkgName: com.onyx.mail, isAutoFreeze: false, isEACEnabled: false
+03-10 17:36:27.590 I/Benchmark( 1475): getAppConfig ---> 2ms
+03-10 17:36:27.590 I/RxEACUtils( 1475): updateAppDataEACInfo pkgName: com.onyx.mail, isAutoFreeze: false, isEACEnabled: false
+03-10 17:36:27.591 I/Benchmark( 1475): getAppConfig ---> 1ms
+03-10 17:36:27.591 I/RxEACUtils( 1475): updateAppDataEACInfo pkgName: com.x8bit.bitwarden, isAutoFreeze: false, isEACEnabled: true
+03-10 17:36:27.592 I/Benchmark( 1475): getAppConfig ---> 1ms
+03-10 17:36:27.592 I/RxEACUtils( 1475): updateAppDataEACInfo pkgName: com.android.vending, isAutoFreeze: false, isEACEnabled: true
+03-10 17:36:27.593 I/Benchmark( 1475): getAppConfig ---> 1ms
+03-10 17:36:27.593 I/RxEACUtils( 1475): updateAppDataEACInfo pkgName: com.tailscale.ipn, isAutoFreeze: false, isEACEnabled: true
+03-10 17:36:27.594 I/Benchmark( 1475): getAppConfig ---> 1ms
+03-10 17:36:27.594 I/RxEACUtils( 1475): updateAppDataEACInfo pkgName: com.onyx.floatingbutton, isAutoFreeze: false, isEACEnabled: false
+03-10 17:36:27.596 I/Benchmark( 1475): getAppConfig ---> 1ms
+03-10 17:36:27.596 I/RxEACUtils( 1475): updateAppDataEACInfo pkgName: com.onyx, isAutoFreeze: false, isEACEnabled: false
+03-10 17:36:27.597 I/Benchmark( 1475): getAppConfig ---> 1ms
+03-10 17:36:27.597 I/RxEACUtils( 1475): updateAppDataEACInfo pkgName: com.onyx.aiassistant, isAutoFreeze: false, isEACEnabled: false
+03-10 17:36:27.598 I/Benchmark( 1475): getAppConfig ---> 1ms
+03-10 17:36:27.598 I/RxEACUtils( 1475): updateAppDataEACInfo pkgName: org.chromium.chrome, isAutoFreeze: false, isEACEnabled: true
+03-10 17:36:27.599 I/Benchmark( 1475): getAppConfig ---> 1ms
+03-10 17:36:27.599 I/RxEACUtils( 1475): updateAppDataEACInfo pkgName: com.microsoft.office.onenote, isAutoFreeze: false, isEACEnabled: true
+03-10 17:36:27.600 I/Benchmark( 1475): getAppConfig ---> 1ms
+03-10 17:36:27.600 I/RxEACUtils( 1475): updateAppDataEACInfo pkgName: com.onyx.gallery, isAutoFreeze: false, isEACEnabled: false
+03-10 17:36:27.601 I/Benchmark( 1475): getAppConfig ---> 1ms
+03-10 17:36:27.601 I/RxEACUtils( 1475): updateAppDataEACInfo pkgName: com.onyx, isAutoFreeze: false, isEACEnabled: false
+03-10 17:36:27.604 D/IntervalStats( 1636): Unable to parse usage stats packages: [151]
+03-10 17:36:27.607 D/IntervalStats( 1636): Unable to parse usage stats packages: [151]
+03-10 17:36:27.610 D/IntervalStats( 1636): Unable to parse usage stats packages: [151]
+03-10 17:36:27.618 D/AppWidgetServiceImpl( 1636): Trying to notify widget update for package com.onyx with widget id: 5
+03-10 17:36:27.620 D/AppWidgetServiceImpl( 1636): Trying to notify widget view data changed
+03-10 17:36:27.674 I/com.onyx( 1475): Background young concurrent copying GC freed 17MB AllocSpace bytes, 0(0B) LOS objects, 17% free, 51MB/63MB, paused 349us,124us total 221.568ms
+03-10 17:36:27.726 I/Benchmark( 1475): getAppConfig ---> 1ms
+03-10 17:36:27.726 I/RxEACUtils( 1475): updateAppDataEACInfo pkgName: com.ethran.notable, isAutoFreeze: true, isEACEnabled: true
+03-10 17:36:27.727 I/Benchmark( 1475): getAppConfig ---> 1ms
+03-10 17:36:27.727 I/RxEACUtils( 1475): updateAppDataEACInfo pkgName: md.obsidian, isAutoFreeze: false, isEACEnabled: true
+03-10 17:36:27.728 I/Benchmark( 1475): getAppConfig ---> 0ms
+03-10 17:36:27.728 I/RxEACUtils( 1475): updateAppDataEACInfo pkgName: com.onyx.easytransfer, isAutoFreeze: false, isEACEnabled: false
+03-10 17:36:27.729 I/Benchmark( 1475): getAppConfig ---> 1ms
+03-10 17:36:27.729 I/RxEACUtils( 1475): updateAppDataEACInfo pkgName: com.onyx.mail, isAutoFreeze: false, isEACEnabled: false
+03-10 17:36:27.730 I/Benchmark( 1475): getAppConfig ---> 1ms
+03-10 17:36:27.730 I/RxEACUtils( 1475): updateAppDataEACInfo pkgName: com.onyx.mail, isAutoFreeze: false, isEACEnabled: false
+03-10 17:36:27.731 I/Benchmark( 1475): getAppConfig ---> 1ms
+03-10 17:36:27.731 I/RxEACUtils( 1475): updateAppDataEACInfo pkgName: com.x8bit.bitwarden, isAutoFreeze: false, isEACEnabled: true
+03-10 17:36:27.732 I/Benchmark( 1475): getAppConfig ---> 1ms
+03-10 17:36:27.732 I/RxEACUtils( 1475): updateAppDataEACInfo pkgName: com.android.vending, isAutoFreeze: false, isEACEnabled: true
+03-10 17:36:27.733 I/Benchmark( 1475): getAppConfig ---> 1ms
+03-10 17:36:27.733 I/RxEACUtils( 1475): updateAppDataEACInfo pkgName: com.tailscale.ipn, isAutoFreeze: false, isEACEnabled: true
+03-10 17:36:27.734 I/Benchmark( 1475): getAppConfig ---> 1ms
+03-10 17:36:27.734 I/RxEACUtils( 1475): updateAppDataEACInfo pkgName: com.onyx.floatingbutton, isAutoFreeze: false, isEACEnabled: false
+03-10 17:36:27.735 I/Benchmark( 1475): getAppConfig ---> 1ms
+03-10 17:36:27.735 I/RxEACUtils( 1475): updateAppDataEACInfo pkgName: com.onyx, isAutoFreeze: false, isEACEnabled: false
+03-10 17:36:27.736 I/Benchmark( 1475): getAppConfig ---> 1ms
+03-10 17:36:27.736 I/RxEACUtils( 1475): updateAppDataEACInfo pkgName: com.onyx.aiassistant, isAutoFreeze: false, isEACEnabled: false
+03-10 17:36:27.737 I/Benchmark( 1475): getAppConfig ---> 1ms
+03-10 17:36:27.737 I/RxEACUtils( 1475): updateAppDataEACInfo pkgName: org.chromium.chrome, isAutoFreeze: false, isEACEnabled: true
+03-10 17:36:27.738 I/Benchmark( 1475): getAppConfig ---> 1ms
+03-10 17:36:27.738 I/RxEACUtils( 1475): updateAppDataEACInfo pkgName: com.microsoft.office.onenote, isAutoFreeze: false, isEACEnabled: true
+03-10 17:36:27.739 I/Benchmark( 1475): getAppConfig ---> 1ms
+03-10 17:36:27.739 I/RxEACUtils( 1475): updateAppDataEACInfo pkgName: com.onyx.gallery, isAutoFreeze: false, isEACEnabled: false
+03-10 17:36:27.740 I/Benchmark( 1475): getAppConfig ---> 1ms
+03-10 17:36:27.740 I/RxEACUtils( 1475): updateAppDataEACInfo pkgName: com.onyx, isAutoFreeze: false, isEACEnabled: false
+03-10 17:36:27.748 D/AppWidgetServiceImpl( 1636): Trying to notify widget update for package com.onyx with widget id: 5
+03-10 17:36:27.749 D/AppWidgetServiceImpl( 1636): Trying to notify widget view data changed
+03-10 17:36:27.840 D/CoreBackPreview( 1636): Window{12fa607 u0 com.ethran.notable/com.ethran.notable.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@24d17cf, mPriority=0, mIsAnimationCallback=false}
+03-10 17:36:27.866 D/debugOrientation( 1636): caculateTopActivityRecord isTopRecordVisible  true   currentFocus topActivity:ActivityRecord{fc79cb0 u0 com.ethran.notable/.MainActivity t837}
+03-10 17:36:27.866 D/debugOrientation( 1636): ActivityRecord{fc79cb0 u0 com.ethran.notable/.MainActivity t837}  computeOrientation :-1 user set rotation -1
+03-10 17:36:27.867 D/CentralSurfaces( 2105): setStatusBarInvalidateState false
+03-10 17:36:27.876 D/EventBus( 3129): No subscribers registered for event class com.onyx.android.sdk.eac.event.EACTopComponentChangedEvent
+03-10 17:36:27.876 D/EventBus( 3125): No subscribers registered for event class com.onyx.gallery.event.EACTopComponentChangedEvent
+03-10 17:36:27.876 D/EventBus( 3129): No subscribers registered for event class org.greenrobot.eventbus.NoSubscriberEvent
+03-10 17:36:27.876 D/EventBus( 3125): No subscribers registered for event class org.greenrobot.eventbus.NoSubscriberEvent
+03-10 17:36:27.881 W/.ethran.notable(10221): type=1400 audit(0.0:20500): avc:  denied  { read } for  name="u:object_r:vendor_display_prop:s0" dev="tmpfs" ino=10756 scontext=u:r:untrusted_app:s0:c143,c256,c512,c768 tcontext=u:object_r:vendor_display_prop:s0 tclass=file permissive=0 app=com.tailscale.ipn
+03-10 17:36:27.882 W/libc    (10221): Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+03-10 17:36:27.885 I/AdrenoGLES-0(10221): QUALCOMM build                   : 0a31cc5b53, I80d2918b26
+03-10 17:36:27.885 I/AdrenoGLES-0(10221): Build Date                       : 09/27/23
+03-10 17:36:27.885 I/AdrenoGLES-0(10221): OpenGL ES Shader Compiler Version: EV031.32.02.17
+03-10 17:36:27.885 I/AdrenoGLES-0(10221): Local Branch                     : 
+03-10 17:36:27.885 I/AdrenoGLES-0(10221): Remote Branch                    : 
+03-10 17:36:27.885 I/AdrenoGLES-0(10221): Remote Branch                    : 
+03-10 17:36:27.885 I/AdrenoGLES-0(10221): Reconstruct Branch               : 
+03-10 17:36:27.885 I/AdrenoGLES-0(10221): Build Config                     : S P 10.0.7 AArch64
+03-10 17:36:27.885 I/AdrenoGLES-0(10221): Driver Path                      : /vendor/lib64/egl/libGLESv2_adreno.so
+03-10 17:36:27.889 D/EventBus(18229): No subscribers registered for event class com.onyx.dict.common.event.StatusBarChangedEvent
+03-10 17:36:27.889 D/EventBus(18229): No subscribers registered for event class org.greenrobot.eventbus.NoSubscriberEvent
+03-10 17:36:27.889 D/EventBus(18229): No subscribers registered for event class com.onyx.dict.common.event.StatusBarChangedEvent
+03-10 17:36:27.889 D/EventBus(18229): No subscribers registered for event class org.greenrobot.eventbus.NoSubscriberEvent
+03-10 17:36:27.890 I/GlobalSystemUIChangeReceiver( 3125): onStatusBarChanged false
+03-10 17:36:27.890 D/EventBus( 3125): No subscribers registered for event class com.onyx.gallery.event.StatusBarDisplayEvent
+03-10 17:36:27.890 D/EventBus( 3125): No subscribers registered for event class org.greenrobot.eventbus.NoSubscriberEvent
+03-10 17:36:27.891 I/ExtraIntentReceiver( 3125): onReceive com.android.systemui.STATUS_BAR_HIDE_ACTION
+03-10 17:36:27.893 I/AdrenoGLES-0(10221): PFP: 0x016ee197, ME: 0x00000000
+03-10 17:36:27.939 W/ziparchive( 1636): Unable to open '/data/app/~~tVe_s556piJsR3Qrcf06Ow==/com.ethran.notable-9pIauBCdtfIQwxenb69XuQ==/base.dm': No such file or directory
+03-10 17:36:27.944 I/ActivityTaskManager( 1636): Displayed com.ethran.notable/.MainActivity for user 0: +790ms
+03-10 17:36:27.955 D/debugOrientation( 1636): caculateTopActivityRecord isTopRecordVisible  true   currentFocus topActivity:ActivityRecord{fc79cb0 u0 com.ethran.notable/.MainActivity t837}
+03-10 17:36:27.955 D/debugOrientation( 1636): ActivityRecord{fc79cb0 u0 com.ethran.notable/.MainActivity t837}  computeOrientation :-1 user set rotation -1
+03-10 17:36:27.959 W/WindowOnBackDispatcher( 2105): sendCancelIfRunning: isInProgress=false callback=android.view.ViewRootImpl$$ExternalSyntheticLambda12@bc46f1c
+03-10 17:36:27.959 D/CoreBackPreview( 1636): Window{3bb7fe4 u0 Splash Screen com.ethran.notable EXITING}: Setting back callback null
+03-10 17:36:27.964 W/InputManager-JNI( 1636): Input channel object '3bb7fe4 Splash Screen com.ethran.notable (client)' was disposed without first being removed with the input manager!
+03-10 17:36:27.988 D/MainActivity(10221): OnWindowFocusChanged: true
+03-10 17:36:27.990 W/DynamicDDSService( 2318): appName is not found in cache: com.android.vending
+03-10 17:36:27.996 W/DynamicDDSService( 2318): appName is not found in cache: com.tailscale.ipn
+03-10 17:36:28.004 W/DynamicDDSService( 2318): appName is not found in cache: org.chromium.chrome
+03-10 17:36:28.011 D/AdvertisingIdClient( 7367): AdvertisingIdClient already created.
+03-10 17:36:28.011 D/AdvertisingIdClient( 7367): AdvertisingIdClient is not bounded. Starting to bind it...
+03-10 17:36:28.012 I/ImeTracker( 1636): com.ethran.notable:ef46039c: onRequestHide at ORIGIN_SERVER reason HIDE_UNSPECIFIED_WINDOW fromUser false
+03-10 17:36:28.012 I/ImeTracker( 1636): com.ethran.notable:ef46039c: onCancelled at PHASE_SERVER_SHOULD_HIDE
+03-10 17:36:28.020 I/ActivityManager( 1636): Killing 26600:com.google.android.syncadapters.calendar/u0a77 (adj 985): empty #31
+03-10 17:36:28.020 W/UsageStatsService( 1636): Unexpected activity event reported! (com.tailscale.ipn/com.tailscale.ipn.MainActivity event : 23 instanceId : 68845639)
+03-10 17:36:28.021 I/ActivityManager( 1636): Killing 3281:system:ui/1000 (adj 985): empty #32
+03-10 17:36:28.022 I/ActivityManager( 1636): Killing 3151:com.onyx.android.ksync:KCommonHwrService/1000 (adj 985): empty #33
+03-10 17:36:28.027 I/FontLog ( 2594): (REDACTED) Received query %s, URI %s
+03-10 17:36:28.027 I/FontLog ( 2594): (REDACTED) Query [%s] resolved to %s
+03-10 17:36:28.028 I/FontLog ( 2594): (REDACTED) Fetch %s end status %s
+03-10 17:36:28.031 I/FontLog ( 2594): (REDACTED) Pulling font file for id = %d, cache size = %d
+03-10 17:36:28.035 D/AdvertisingIdClient( 7367): AdvertisingIdClient is bounded
+03-10 17:36:28.036 I/FontLog ( 2594): (REDACTED) Pulling font file for id = %d, cache size = %d
+03-10 17:36:28.040 I/Debug   ( 3383): onFinishInput
+03-10 17:36:28.040 I/Debug   ( 3383): onStartInput, start by: com.ethran.notable, restart: false
+03-10 17:36:28.045 I/AdvertisingIdClient( 7367): shouldSendLog 98829615
+03-10 17:36:28.045 I/AdvertisingIdClient( 7367): GetInfoInternal elapse 34ms
+03-10 17:36:28.055 I/Debug   ( 3383): schemaId: english
+03-10 17:36:28.061 W/cr_ContextualSearch( 5482): Warning, the 0 state was aborted.
+03-10 17:36:28.064 I/Rime    ( 3383): message: [option] !ascii_mode
+03-10 17:36:28.077 D/BoundBrokerSvc( 2594): onRebind: Intent { act=com.google.android.gms.common.telemetry.service.START dat=chimera-action:/... cmp=com.google.android.gms/.chimera.PersistentApiService }
+03-10 17:36:28.088 I/AdvertisingIdClient( 7367): getting error as 17: API: ClientTelemetry.API is not available on this device. Connection failed with: ConnectionResult{statusCode=API_DISABLED_FOR_CONNECTION, resolution=null, message=null, clientMethodKey=null}
+03-10 17:36:28.117 E/cr_CompositorSurfaceMgr( 5482): SurfaceState : detach from parent : 0
+03-10 17:36:28.123 D/BoundBrokerSvc( 2594): onRebind: Intent { act=com.google.android.gms.presencemanager.service.START dat=chimera-action:/... cmp=com.google.android.gms/.chimera.PersistentApiService }
+03-10 17:36:28.131 I/vendor.qti.bluetooth@1.0-ibs_handler( 1036): DeviceSleep: TX Awake, Sending SLEEP_IND
+03-10 17:36:28.131 D/vendor.qti.bluetooth@1.0-ibs_handler( 1036): SerialClockVote: vote for UART CLK OFF
+03-10 17:36:28.140 D/BoundBrokerSvc( 2594): onRebind: Intent { act=com.google.android.gms.presencemanager.service.INTERNAL_IDENTITY dat=chimera-action:/... cmp=com.google.android.gms/.chimera.PersistentApiService }
+03-10 17:36:28.141 E/ocessService0:0( 4210): failed to create Unix domain socket: Operation not permitted
+03-10 17:36:28.141 E/ocessService0:1(27262): failed to create Unix domain socket: Operation not permitted
+03-10 17:36:28.157 I/NetworkScheduler( 2594): (REDACTED) Error inserting %s
+03-10 17:36:28.175 W/ActivityManager( 1636): setHasOverlayUi called on unknown pid: 3281
+03-10 17:36:28.184 I/Zygote  (  893): Process 3281 exited due to signal 9 (Killed)
+03-10 17:36:28.206 E/Finsky  (31282): [2] ComposeVisualElement Error: veType=70, CVE is already removed from parent
+03-10 17:36:28.211 I/libprocessgroup( 1636): Removed cgroup /sys/fs/cgroup/uid_10077/pid_26600
+03-10 17:36:28.211 I/libprocessgroup( 1636): Removed cgroup /sys/fs/cgroup/uid_1000/pid_3281
+03-10 17:36:28.211 I/Zygote  (  893): Process 26600 exited due to signal 9 (Killed)
+03-10 17:36:28.211 D/DisplayManagerService( 1636): Drop pending events for gone uid 10077
+03-10 17:36:28.215 I/VaultTagScanner(10221): Scanning 2 markdown files for tags
+03-10 17:36:28.221 I/VaultTagScanner(10221): Tag cache refreshed: 0 tags
+03-10 17:36:28.245 I/libprocessgroup( 1636): Removed cgroup /sys/fs/cgroup/uid_1000/pid_3151
+03-10 17:36:28.245 I/Zygote  (  893): Process 3151 exited due to signal 9 (Killed)
+03-10 17:36:28.282 D/vendor.qti.bluetooth@1.0-wake_lock( 1036): Release wakelock is released 
+03-10 17:36:28.292 W/WindowOnBackDispatcher(31282): sendCancelIfRunning: isInProgress=false callback=android.app.Activity$$ExternalSyntheticLambda0@f46476b
+03-10 17:36:28.293 D/CoreBackPreview( 1636): Window{b91264 u0 com.android.vending/com.android.vending.AssetBrowserActivity}: Setting back callback null
+03-10 17:36:28.360 W/id.apps.restore( 6648): Reducing the number of considered missed Gc histogram windows from 393 to 100
+03-10 17:36:28.376 W/InputManager-JNI( 1636): Input channel object 'b91264 com.android.vending/com.android.vending.AssetBrowserActivity (client)' was disposed without first being removed with the input manager!
+03-10 17:36:28.381 W/UsageStatsService( 1636): Unexpected activity event reported! (com.android.vending/com.google.android.finsky.activities.MainActivity event : 23 instanceId : 120709782)
+03-10 17:36:28.434 I/ActivityManager( 1636): Killing 4210:org.chromium.chrome:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0/u0a40i-9000 (adj 0): isolated not needed
+03-10 17:36:28.439 V/ClearcutMetricXmitter( 6648): Transmission is done.
+03-10 17:36:28.455 D/TrafficStats(10221): tagSocket(129) with statsTag=0xffffffff, statsUid=-1
+03-10 17:36:28.472 I/MediaFocusControl( 1636): abandonAudioFocus() from uid/pid 10040/5482 clientId=android.media.AudioManager@f40d257org.chromium.content.browser.AudioFocusDelegate@4fa4144
+03-10 17:36:28.482 E/ClipboardService( 1636): Denying clipboard access to org.chromium.chrome, application is not in focus nor is it a system service for user 0
+03-10 17:36:28.486 W/WindowOnBackDispatcher( 5482): sendCancelIfRunning: isInProgress=false callback=android.view.ViewRootImpl$$ExternalSyntheticLambda12@d6d79b4
+03-10 17:36:28.487 D/CoreBackPreview( 1636): Window{8d7f89d u0 org.chromium.chrome/com.google.android.apps.chrome.Main}: Setting back callback null
+03-10 17:36:28.494 D/DisplayManagerService( 1636): Drop pending events for gone uid 90000
+03-10 17:36:28.503 W/InputManager-JNI( 1636): Input channel object '8d7f89d org.chromium.chrome/com.google.android.apps.chrome.Main (client)' was disposed without first being removed with the input manager!
+03-10 17:36:28.505 I/Zygote  ( 4181): Process 4210 exited due to signal 9 (Killed)
+03-10 17:36:28.507 I/libprocessgroup( 1636): Removed cgroup /sys/fs/cgroup/uid_90000/pid_4210
+03-10 17:36:28.508 E/KernelCpuSpeedReader( 1636): Failed to read cpu-freq: /sys/devices/system/cpu/cpu6/cpufreq/stats/time_in_state: open failed: ENOENT (No such file or directory)
+03-10 17:36:28.509 W/UsageStatsService( 1636): Unexpected activity event reported! (org.chromium.chrome/org.chromium.chrome.browser.ChromeTabbedActivity event : 23 instanceId : 249774426)
+03-10 17:36:28.509 E/KernelCpuSpeedReader( 1636): Failed to read cpu-freq: /sys/devices/system/cpu/cpu0/cpufreq/stats/time_in_state: open failed: ENOENT (No such file or directory)
+03-10 17:36:28.647 W/FA-SVC  ( 7367): Failed to get uid, app: app.mihon
+03-10 17:36:28.666 D/PageDataManager(10221): Cancelling loading pages, ignoring: []
+03-10 17:36:28.666 D/TrafficStats( 7367): tagSocket(81) with statsTag=0x4003300, statsUid=-1
+03-10 17:36:28.671 D/TrafficStats( 7367): tagSocket(81) with statsTag=0x4003300, statsUid=-1
+03-10 17:36:28.676 W/FA-SVC  ( 7367): Gms url request failed, app: app.mihon, GOOGLE_ANALYTICS, m1.ms: Exception in CronetUrlRequest: net::ERR_CONNECTION_REFUSED, ErrorCode=7, InternalErrorCode=-102, Retryable=false
+03-10 17:36:28.676 W/FA-SVC  ( 7367): Network upload failed. Will retry later. code, error: 0, m1.ms: Exception in CronetUrlRequest: net::ERR_CONNECTION_REFUSED, ErrorCode=7, InternalErrorCode=-102, Retryable=false
+03-10 17:36:28.688 I/NetworkScheduler( 2594): (REDACTED) Error inserting %s
+03-10 17:36:28.790 D/CompatChangeReporter( 1636): Compat change id reported: 319212206; UID 10143; state: ENABLED
+03-10 17:36:28.793 D/ConnectivityService( 1636): NetReassign [no changes] [c 1] [a 1] [i 1]
+03-10 17:36:28.999 I/.ethran.notable(10221): Compiler allocated 5318KB to compile void android.view.ViewRootImpl.performTraversals()
+03-10 17:36:29.092 D/PowerManagerService( 1636):  ========== Enter idle mode ========== 
+03-10 17:36:29.092 D/OnyxPowerManager( 1636):  ========== GOING_TO_IDLE ========== 
+03-10 17:36:29.093 D/OnyxPowerManager( 1636):  ========== Setup standby alarm: 600000 ========== 
+03-10 17:36:29.096 D/OnyxPowerManager( 1636):  ========== setKernelPowerModeImp: freeze ========== 
+03-10 17:36:29.096 D/OnyxPowerManager( 1636):  ========== setCurrentPowerMode: 1 ========== 
+03-10 17:36:29.096 D/OnyxPowerManager( 1636):  ========== IDLE_DONE ========== 
+03-10 17:36:29.097 V/DisplayPowerController2[0]( 1636): Brightness [0.05] reason changing to: 'manual [ dim ]', previous reason: 'manual'.
+03-10 17:36:29.097 I/DisplayPowerController2[0]( 1636): BrightnessEvent: disp=0, physDisp=local:4630946716506123905, displayState=ON, displayPolicy=DIM, brt=0.05, initBrt=0.39763778, rcmdBrt=NaN, preBrt=NaN, lux=0.0, preLux=0.0, hbmMax=1.0, hbmMode=off, rbcStrength=50, thrmMax=1.0, powerFactor=1.0, wasShortTermModelActive=false, flags=, reason=manual [ dim ], autoBrightness=false, strategy=InvalidBrightnessStrategy, autoBrightnessMode=default
+03-10 17:36:29.098 D/DisplayManagerService( 1636): Ignore redundant display event 0/4 to 10049/989
+03-10 17:36:29.099 D/DisplayManagerService( 1636): Ignore redundant display event 0/4 to 10026/5309
+03-10 17:36:29.099 D/DisplayManagerService( 1636): Ignore redundant display event 0/4 to 10040/5482
+03-10 17:36:29.099 D/DisplayManagerService( 1636): Ignore redundant display event 0/4 to 10057/5896
+03-10 17:36:29.099 D/DisplayManagerService( 1636): Ignore redundant display event 0/4 to 10029/15764
+03-10 17:36:29.099 D/DisplayManagerService( 1636): Ignore redundant display event 0/4 to 10118/27173
+03-10 17:36:29.099 D/DisplayManagerService( 1636): Ignore redundant display event 0/4 to 10067/31282

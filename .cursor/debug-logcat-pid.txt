@@ -1,0 +1,431 @@
+--------- beginning of system
+03-10 17:36:27.462 V/ActivityThread(10221): reportTopResumedActivityChanged - > onActivityTopResumed
+--------- beginning of main
+03-10 17:36:32.609 D/ProfileInstaller(10221): Installing profile for com.ethran.notable
+03-10 17:36:33.264 D/InsetsController(10221): show(ime(), fromIme=false)
+03-10 17:36:33.265 I/ImeTracker(10221): com.ethran.notable:c60d58f6: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT_BY_INSETS_API fromUser false
+03-10 17:36:33.267 D/InputMethodManager(10221): showSoftInput() view=androidx.compose.ui.platform.AndroidComposeView{eb4e048 VFED..... .F....ID 0,0-1860,2480 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT_BY_INSETS_API
+03-10 17:36:33.310 I/AssistStructure(10221): Flattened final assist data: 1876 bytes, containing 1 windows, 12 views
+03-10 17:36:33.413 I/ImeTracker(10221): com.ethran.notable:ff3063fc: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser false
+03-10 17:36:33.414 D/InputMethodManager(10221): showSoftInput() view=androidx.compose.ui.platform.AndroidComposeView{eb4e048 VFED..... .F...... 0,0-1860,2480 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+03-10 17:36:33.414 W/RemoteInputConnectionImpl(10221): getTextBeforeCursor on inactive InputConnection
+03-10 17:36:33.418 D/Autofill Status(10221): Autofill popup isn't shown because autofill is not available.
+03-10 17:36:33.418 D/Autofill Status(10221): 
+03-10 17:36:33.418 D/Autofill Status(10221): Did you set up autofill?
+03-10 17:36:33.418 D/Autofill Status(10221): 1. Go to Settings > System > Languages&input > Advanced > Autofill Service
+03-10 17:36:33.418 D/Autofill Status(10221): 2. Pick a service
+03-10 17:36:33.418 D/Autofill Status(10221): 
+03-10 17:36:33.418 D/Autofill Status(10221): Did you add an account?
+03-10 17:36:33.418 D/Autofill Status(10221): 1. Go to Settings > System > Languages&input > Advanced
+03-10 17:36:33.418 D/Autofill Status(10221): 2. Click on the settings icon next to the Autofill Service
+03-10 17:36:33.418 D/Autofill Status(10221): 3. Add your account
+03-10 17:36:33.418 D/InsetsController(10221): show(ime(), fromIme=true)
+03-10 17:36:33.445 W/InteractionJankMonitor(10221): Initializing without READ_DEVICE_CONFIG permission. enabled=false, interval=1, missedFrameThreshold=3, frameTimeThreshold=64, package=com.ethran.notable
+03-10 17:36:33.455 D/InsetsController(10221): show(ime(), fromIme=true)
+03-10 17:36:33.456 I/ImeTracker(10221): com.ethran.notable:ff3063fc: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+03-10 17:36:33.993 I/ImeTracker(10221): com.ethran.notable:c60d58f6: onShown
+03-10 17:36:36.949 I/.ethran.notable(10221): Background concurrent copying GC freed 8542KB AllocSpace bytes, 38(1252KB) LOS objects, 49% free, 8028KB/15MB, paused 96us,26us total 236.887ms
+03-10 17:36:37.588 I/VaultTagScanner(10221): Scanning 2 markdown files for tags
+03-10 17:36:37.593 I/VaultTagScanner(10221): Tag cache refreshed: 0 tags
+03-10 17:36:37.594 I/KvProxy (10221): Setting APP_SETTINGS to AppSettings(version=1, monitorBgFiles=false, defaultNativeTemplate=blank, quickNavPages=[], neoTools=false, scribbleToEraseEnabled=false, toolbarPosition=Top, smoothScroll=true, continuousZoom=false, continuousStrokeSlider=false, monochromeMode=false, paginatePdf=true, visualizePdfPagination=false, doubleTapAction=Undo, twoFingerTapAction=ChangeTool, swipeLeftAction=NextPage, swipeRightAction=PreviousPage, twoFingerSwipeLeftAction=ToggleZen, twoFingerSwipeRightAction=ToggleZen, holdAction=Select, enableQuickNav=true, obsidianInboxPath=Notes/Study/Study, obsidianAttachmentPath=, showWelcome=false, debugMode=false, simpleRendering=false, openGLRendering=true, muPdfRendering=true, destructiveMigrations=false)
+03-10 17:36:37.612 D/InsetsController(10221): hide(ime(), fromIme=false)
+03-10 17:36:37.613 I/ImeTracker(10221): com.ethran.notable:c6463097: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT_BY_INSETS_API fromUser false
+03-10 17:36:37.614 I/ImeTracker(10221): com.ethran.notable:8e00b13b: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT_REQUEST_HIDE_WITH_CONTROL fromUser false
+03-10 17:36:37.650 D/InsetsController(10221): hide(ime(), fromIme=true)
+03-10 17:36:37.650 I/ImeTracker(10221): com.ethran.notable:8e00b13b: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+03-10 17:36:38.161 I/ImeTracker(10221): com.ethran.notable:39b3836b: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT_ON_ANIMATION_STATE_CHANGED fromUser false
+03-10 17:36:38.162 I/ImeTracker(10221): com.ethran.notable:c6463097: onHidden
+03-10 17:36:39.737 D/PageDataManager(10221): Cancelling loading pages, ignoring: []
+03-10 17:36:42.674 W/WindowOnBackDispatcher(10221): OnBackInvokedCallback is not enabled for the application.
+03-10 17:36:42.674 W/WindowOnBackDispatcher(10221): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+03-10 17:36:42.765 I/PageView(10221): PageView init
+03-10 17:36:42.766 I/PageView(10221): PageView.init: creating new bitmap
+03-10 17:36:42.771 I/bitmapUtils(10221): loadPersistBitmap: no exact-match cache (expected fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7-sy0.png)
+03-10 17:36:42.773 D/PageView(10221): Drawing initial background.
+03-10 17:36:42.831 I/.ethran.notable(10221): Compiler allocated 5559KB to compile void com.ethran.notable.editor.ui.EditorSidebarKt.EditorSidebar(com.ethran.notable.io.ExportEngine, androidx.navigation.NavController, com.ethran.notable.data.AppRepository, com.ethran.notable.editor.state.EditorState, com.ethran.notable.editor.EditorControlTower, int, androidx.compose.runtime.Composer, int, int)
+03-10 17:36:42.843 I/EditorSurface(10221): recompose surface
+03-10 17:36:42.865 I/.ethran.notable(10221): Compiler allocated 5476KB to compile void com.ethran.notable.editor.ui.EditorSidebarKt.EditorSidebar(com.ethran.notable.io.ExportEngine, androidx.navigation.NavController, com.ethran.notable.data.AppRepository, com.ethran.notable.editor.state.EditorState, com.ethran.notable.editor.EditorControlTower, int, androidx.compose.runtime.Composer, int, int)
+03-10 17:36:42.912 D/nativeloader(10221): Load /data/app/~~tVe_s556piJsR3Qrcf06Ow==/com.ethran.notable-9pIauBCdtfIQwxenb69XuQ==/base.apk!/lib/arm64-v8a/libonyx_pen_touch_reader.so using ns clns-7 from class loader (caller=/data/app/~~tVe_s556piJsR3Qrcf06Ow==/com.ethran.notable-9pIauBCdtfIQwxenb69XuQ==/base.apk!classes19.dex): ok
+03-10 17:36:42.920 I/DrawCanvas(10221): Initializing Canvas
+03-10 17:36:42.921 D/OpenGLRenderer(10221): Releasing renderer
+03-10 17:36:42.929 V/GLThread(10221): starting thread...
+03-10 17:36:42.930 E/Gralloc4(10221): buffer descriptor contains invalid usage bits 0x100000000
+03-10 17:36:42.952 D/GLFrontBufferedRenderer(10221): Supports KHR_FENCE_SYNC: true
+03-10 17:36:42.952 D/GLFrontBufferedRenderer(10221): Supports ANDROID_NATIVE_FENCE_SYNC: true
+03-10 17:36:42.997 I/EditorView(10221): EditorView: saving
+03-10 17:36:43.001 I/PageViewCache(10221): Init from persist layer, pageId: fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7
+03-10 17:36:43.003 D/PageView(10221): Page loaded (Init with id: fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7)
+03-10 17:36:43.006 V/CanvasObservers(10221): Refreshing UI!
+03-10 17:36:43.006 D/DrawCanvas(10221): refreshUi: scroll: Offset(0.0, 0.0), zoom: 1.0
+03-10 17:36:43.011 D/PageViewCache(10221): Start page, id fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7
+03-10 17:36:43.012 D/PageDataManager(10221): requestPageLoadJoin(fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7)
+03-10 17:36:43.013 D/PageDataManager(10221): getOrStartLoadingJob(fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7)
+03-10 17:36:43.014 D/PageDataManager(10221): starting loading of the Page(fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7)
+03-10 17:36:43.015 D/PageDataManager(10221): page(fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7)areListInitialized, false, false, null
+03-10 17:36:43.019 D/PageDataManager(10221): Loading page fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7
+03-10 17:36:43.024 D/PageDataManager(10221): Preloading background for page fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7
+03-10 17:36:43.047 D/PageDataManager(10221): Loaded page fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7
+03-10 17:36:43.048 D/PageViewCache(10221): Got page data (PageView.loadPage). id fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7
+03-10 17:36:43.049 D/PageViewCache(10221): All strokes loaded in 38 ms
+03-10 17:36:43.051 D/SnackState(10221): Removing snack 99bb1003-c677-4473-b5e7-48c95fd9e0b3
+03-10 17:36:43.049 W/.ethran.notable(10221): type=1400 audit(0.0:20501): avc:  denied  { read } for  name="u:object_r:vendor_display_prop:s0" dev="tmpfs" ino=10756 scontext=u:r:untrusted_app:s0:c143,c256,c512,c768 tcontext=u:object_r:vendor_display_prop:s0 tclass=file permissive=0 app=com.tailscale.ipn
+03-10 17:36:43.053 W/libc    (10221): Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+03-10 17:36:43.053 I/DrawCanvas(10221): surface created android.view.SurfaceView$2@7874b1e
+03-10 17:36:43.054 I/DrawCanvas(10221): Update editable surface
+03-10 17:36:43.062 E/Gralloc4(10221): buffer descriptor contains invalid usage bits 0x100000000
+03-10 17:36:43.062 V/DrawCanvas(10221): Surface dimension changed!
+03-10 17:36:43.063 D/PageView(10221): Updating dimensions: 1755 x 2480
+03-10 17:36:43.064 I/bitmapUtils(10221): loadPersistBitmap: no exact-match cache (expected fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7-sy0.png)
+03-10 17:36:43.064 D/PageView(10221): Drawing initial background.
+03-10 17:36:43.079 I/DrawCanvas(10221): Update editable surface
+03-10 17:36:43.080 V/GLThread(10221): dispatching request to render for token: 0
+03-10 17:36:43.081 V/GLThread(10221): requesting render for token: 0
+03-10 17:36:43.085 D/nativeloader(10221): Load /data/app/~~tVe_s556piJsR3Qrcf06Ow==/com.ethran.notable-9pIauBCdtfIQwxenb69XuQ==/base.apk!/lib/arm64-v8a/libgraphics-core.so using ns clns-7 from class loader (caller=/data/app/~~tVe_s556piJsR3Qrcf06Ow==/com.ethran.notable-9pIauBCdtfIQwxenb69XuQ==/base.apk!classes18.dex): ok
+03-10 17:36:43.085 E/ASurfaceControlTest(10221): GraphicsCore JNI_OnLoad start
+03-10 17:36:43.091 D/EGL     (10221): eglDupNativeFence returned 165
+03-10 17:36:43.109 V/einkHelper(10221): onSurfaceInit, (0, 0 - 1755, 2480)
+03-10 17:36:43.110 D/PageViewCache(10221): Loaded page from persistent layer fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7
+03-10 17:36:43.110 D/PageDataManager(10221): page(fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7)areListInitialized, true, true, 17
+03-10 17:36:43.111 D/einkHelper(10221): Set update mode HAND_WRITING_REPAINT_MODE
+03-10 17:36:43.114 I/einkHelper(10221): Setup editable surface
+03-10 17:36:43.123 D/PageDataManager(10221): reduceCache(20)
+03-10 17:36:43.261 I/RawInputReader$a(10221): submitJob nativeRawReader raw_input-128
+03-10 17:36:43.262 I/lib_touch_reader(10221): find path /dev/input/event1 result name onyx_emp_Wacom I2C Digitizer
+03-10 17:36:43.300 I/einkHelper(10221): Setup editable surface completed
+03-10 17:36:43.301 I/DrawCanvas(10221): Update pen and stroke: pen=FOUNTAIN, mode=Draw
+03-10 17:36:43.307 V/CanvasObservers(10221): Force update, zone: null, Strokes to draw: 0
+03-10 17:36:43.312 D/PageDrawingLog(10221): drawOnCanvasFromPage, zoom: 1.0, background: inbox, type: Native
+03-10 17:36:43.321 V/DrawCanvas(10221): refreshUiSuspend() is called from the non-main thread.
+03-10 17:36:43.322 D/DrawCanvas.waitForDrawing(10221): waiting
+03-10 17:36:43.325 V/einkHelper(10221): onSurfaceInit, (0, 0 - 1755, 2480)
+03-10 17:36:43.326 D/DrawCanvas.waitForDrawing(10221): Finished waiting in 4 ms
+03-10 17:36:43.330 D/einkHelper(10221): Set update mode HAND_WRITING_REPAINT_MODE
+03-10 17:36:43.332 I/einkHelper(10221): Setup editable surface
+03-10 17:36:43.359 I/RawInputReader$a(10221): submitJob finally closeRawInput raw_input-128
+03-10 17:36:43.377 I/RawInputReader$a(10221): submitJob nativeRawReader raw_input-128
+03-10 17:36:43.378 I/lib_touch_reader(10221): find path /dev/input/event1 result name onyx_emp_Wacom I2C Digitizer
+03-10 17:36:43.411 I/einkHelper(10221): Setup editable surface completed
+03-10 17:36:43.411 I/DrawCanvas(10221): Update pen and stroke: pen=FOUNTAIN, mode=Draw
+03-10 17:36:43.427 V/CanvasObservers(10221): Force update, zone: null, Strokes to draw: 0
+03-10 17:36:43.428 D/PageDrawingLog(10221): drawOnCanvasFromPage, zoom: 1.0, background: inbox, type: Native
+03-10 17:36:43.434 V/DrawCanvas(10221): refreshUiSuspend() is called from the non-main thread.
+03-10 17:36:43.434 D/DrawCanvas.waitForDrawing(10221): waiting
+03-10 17:36:43.438 D/DrawCanvas.waitForDrawing(10221): Finished waiting in 3 ms
+03-10 17:36:44.004 I/PageDataManager(10221): Persisting batch of bitmaps for pages: [fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7]
+03-10 17:36:44.306 D/bitmapUtils(10221): persistBitmapFull: cached preview saved as fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7-sy0.png (scrollY=0)
+03-10 17:36:44.987 D/DrawCanvas(10221): lock obtained in 2 ms
+03-10 17:36:44.991 D/DrawCanvas(10221): Drawing...
+03-10 17:36:44.998 D/PageDrawingLog(10221): drawOnCanvasFromPage, zoom: 1.0, background: inbox, type: Native
+03-10 17:36:45.002 D/nativeloader(10221): Load /data/app/~~tVe_s556piJsR3Qrcf06Ow==/com.ethran.notable-9pIauBCdtfIQwxenb69XuQ==/base.apk!/lib/arm64-v8a/libink.so using ns clns-7 from class loader (caller=/data/app/~~tVe_s556piJsR3Qrcf06Ow==/com.ethran.notable-9pIauBCdtfIQwxenb69XuQ==/base.apk!classes18.dex): ok
+03-10 17:36:45.061 I/PageDataManager(10221): Persisting batch of bitmaps for pages: [fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7]
+03-10 17:36:45.360 D/bitmapUtils(10221): persistBitmapFull: cached preview saved as fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7-sy0.png (scrollY=0)
+03-10 17:36:45.562 V/CanvasObservers(10221): Commiting to history
+03-10 17:36:45.789 D/DrawCanvas(10221): lock obtained in 0 ms
+03-10 17:36:45.792 D/DrawCanvas(10221): Drawing...
+03-10 17:36:45.806 D/PageDrawingLog(10221): drawOnCanvasFromPage, zoom: 1.0, background: inbox, type: Native
+03-10 17:36:45.950 D/DrawCanvas(10221): lock obtained in 0 ms
+03-10 17:36:45.951 D/DrawCanvas(10221): Drawing...
+03-10 17:36:45.955 D/PageDrawingLog(10221): drawOnCanvasFromPage, zoom: 1.0, background: inbox, type: Native
+03-10 17:36:46.062 I/PageDataManager(10221): Persisting batch of bitmaps for pages: [fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7]
+03-10 17:36:46.352 D/bitmapUtils(10221): persistBitmapFull: cached preview saved as fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7-sy0.png (scrollY=0)
+03-10 17:36:46.424 D/DrawCanvas(10221): lock obtained in 0 ms
+03-10 17:36:46.428 D/DrawCanvas(10221): Drawing...
+03-10 17:36:46.430 D/PageDrawingLog(10221): drawOnCanvasFromPage, zoom: 1.0, background: inbox, type: Native
+03-10 17:36:46.566 D/DrawCanvas(10221): lock obtained in 0 ms
+03-10 17:36:46.566 D/DrawCanvas(10221): Drawing...
+03-10 17:36:46.569 D/PageDrawingLog(10221): drawOnCanvasFromPage, zoom: 1.0, background: inbox, type: Native
+03-10 17:36:47.045 D/DrawCanvas(10221): lock obtained in 0 ms
+03-10 17:36:47.046 D/DrawCanvas(10221): Drawing...
+03-10 17:36:47.049 D/PageDrawingLog(10221): drawOnCanvasFromPage, zoom: 1.0, background: inbox, type: Native
+03-10 17:36:47.062 I/PageDataManager(10221): Persisting batch of bitmaps for pages: [fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7]
+03-10 17:36:47.352 D/bitmapUtils(10221): persistBitmapFull: cached preview saved as fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7-sy0.png (scrollY=0)
+03-10 17:36:47.566 V/CanvasObservers(10221): Commiting to history
+03-10 17:36:48.062 I/PageDataManager(10221): Persisting batch of bitmaps for pages: [fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7]
+03-10 17:36:48.121 D/DrawCanvas(10221): lock obtained in 0 ms
+03-10 17:36:48.123 D/DrawCanvas(10221): Drawing...
+03-10 17:36:48.129 D/PageDrawingLog(10221): drawOnCanvasFromPage, zoom: 1.0, background: inbox, type: Native
+03-10 17:36:48.345 D/DrawCanvas(10221): lock obtained in 0 ms
+03-10 17:36:48.346 D/DrawCanvas(10221): Drawing...
+03-10 17:36:48.348 D/PageDrawingLog(10221): drawOnCanvasFromPage, zoom: 1.0, background: inbox, type: Native
+03-10 17:36:48.357 D/bitmapUtils(10221): persistBitmapFull: cached preview saved as fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7-sy0.png (scrollY=0)
+03-10 17:36:48.488 I/GestureReceiver(10221): GestureReceiver got touch at (1658.0, 1230.0), type=Touch, consumed=false
+03-10 17:36:48.683 V/GestureReceiver(10221): horizontalDrag 0, verticalDrag 13.0
+03-10 17:36:48.868 V/CanvasObservers(10221): Commiting to history
+03-10 17:36:49.062 I/PageDataManager(10221): Persisting batch of bitmaps for pages: [fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7]
+03-10 17:36:49.358 D/bitmapUtils(10221): persistBitmapFull: cached preview saved as fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7-sy0.png (scrollY=0)
+03-10 17:36:50.439 I/InboxSyncEngine(10221): Starting inbox sync for page fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7 with tags: []
+03-10 17:36:50.553 I/.ethran.notable(10221): Waiting for a blocking GC ClassLinker
+03-10 17:36:50.563 D/PageDataManager(10221): Cancelling loading pages, ignoring: []
+03-10 17:36:50.579 W/GestureReceiver(10221): Gesture coroutine canceled
+03-10 17:36:50.579 W/GestureReceiver(10221): androidx.compose.ui.input.pointer.PointerInputResetException: Pointer input was reset
+03-10 17:36:50.580 V/GLThread(10221): dispatching request to detach surface w/ token: 0
+03-10 17:36:50.580 V/GLThread(10221): dispatching request to detach surface w/ token: 1
+03-10 17:36:50.581 I/DrawCanvas(10221): surface destroyed 1989128 - ref 90308577
+03-10 17:36:50.581 V/einkHelper(10221): onSurfaceDestroy, (0, 0 - 1755, 2480)
+03-10 17:36:50.762 E/BufferQueueProducer(10221): [SurfaceView[com.ethran.notable/com.ethran.notable.MainActivity]#1(BLAST Consumer)1](id:27ed00000001,api:0,p:-1,c:10221) disconnect: not connected (req=2)
+03-10 17:36:50.781 D/PageView(10221): Dispose old page
+03-10 17:36:50.782 D/PageDataManager(10221): page(fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7)areListInitialized, true, true, 17
+03-10 17:36:50.783 I/PageDataManager(10221): Page exit, is page loaded: true
+03-10 17:36:50.783 D/PageDataManager(10221): page(fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7)areListInitialized, true, true, 17
+03-10 17:36:50.822 I/OnyxHWREngine(10221): OnyxHWR service connected
+03-10 17:36:50.824 I/InboxSyncEngine(10221): Recognizing all 8 strokes
+03-10 17:36:50.824 I/OnyxHWREngine(10221): Initializing OnyxHWR recognizer...
+03-10 17:36:50.892 I/OnyxHWREngine(10221): OnyxHWR init: recognizerActivated=true, compileSuccess=false
+03-10 17:36:50.892 I/OnyxHWREngine(10221): OnyxHWR initialized=true
+03-10 17:36:51.429 I/OnyxHWREngine(10221): OnyxHWR recognized 14 chars
+03-10 17:36:51.434 I/InboxSyncEngine(10221): Full recognized text: 'This is a note'
+03-10 17:36:51.621 I/InboxSyncEngine(10221): Written inbox note to /storage/emulated/0/Notes/Study/Study/2026-03-10-17-36-42.md
+03-10 17:36:51.622 I/InboxSyncEngine(10221): Inbox sync complete for page fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7
+03-10 17:36:51.623 I/SyncState(10221): Background sync complete for page fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7
+03-10 17:36:54.393 D/QuickSettings(10221): App is paused - maybe quick settings opened?
+03-10 17:36:54.450 D/MainActivity(10221): OnWindowFocusChanged: false
+03-10 17:36:54.513 D/VRI[MainActivity](10221): visibilityChanged oldVisibility=true newVisibility=false
+03-10 17:36:54.637 D/PageDataManager(10221): onTrimMemory: 20, currentCacheSizeMB: 17
+03-10 17:36:54.638 D/PageDataManager(10221): freeMemory(10)
+03-10 17:36:54.639 D/PageDataManager(10221): after trim currentCacheSizeMB: 17
+03-10 17:36:56.418 I/FA      (10221): Application backgrounded at: timestamp_millis: 1773164214410
+03-10 17:37:14.024 V/ActivityThread(10221): reportTopResumedActivityChanged - > onActivityTopResumed
+03-10 17:37:14.039 W/libc    (10221): Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+03-10 17:37:14.037 W/.ethran.notable(10221): type=1400 audit(0.0:20519): avc:  denied  { read } for  name="u:object_r:vendor_display_prop:s0" dev="tmpfs" ino=10756 scontext=u:r:untrusted_app:s0:c143,c256,c512,c768 tcontext=u:object_r:vendor_display_prop:s0 tclass=file permissive=0 app=com.tailscale.ipn
+03-10 17:37:14.115 D/MainActivity(10221): OnWindowFocusChanged: true
+03-10 17:37:15.807 W/WindowOnBackDispatcher(10221): OnBackInvokedCallback is not enabled for the application.
+03-10 17:37:15.807 W/WindowOnBackDispatcher(10221): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+03-10 17:37:17.150 D/TrafficStats(10221): tagSocket(106) with statsTag=0xffffffff, statsUid=-1
+03-10 17:37:17.540 D/InsetsController(10221): show(ime(), fromIme=false)
+03-10 17:37:17.550 I/ImeTracker(10221): com.ethran.notable:473e4e9b: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT_BY_INSETS_API fromUser false
+03-10 17:37:17.551 D/InputMethodManager(10221): showSoftInput() view=androidx.compose.ui.platform.AndroidComposeView{eb4e048 VFED..... .F....ID 0,0-1860,2480 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT_BY_INSETS_API
+03-10 17:37:17.563 I/AssistStructure(10221): Flattened final assist data: 1876 bytes, containing 1 windows, 12 views
+03-10 17:37:17.581 W/RemoteInputConnectionImpl(10221): getTextBeforeCursor on inactive InputConnection
+03-10 17:37:17.582 I/ImeTracker(10221): com.ethran.notable:4fa010fd: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser false
+03-10 17:37:17.585 D/InputMethodManager(10221): showSoftInput() view=androidx.compose.ui.platform.AndroidComposeView{eb4e048 VFED..... .F...... 0,0-1860,2480 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+03-10 17:37:17.587 D/Autofill Status(10221): Autofill popup isn't shown because autofill is not available.
+03-10 17:37:17.587 D/Autofill Status(10221): 
+03-10 17:37:17.587 D/Autofill Status(10221): Did you set up autofill?
+03-10 17:37:17.587 D/Autofill Status(10221): 1. Go to Settings > System > Languages&input > Advanced > Autofill Service
+03-10 17:37:17.587 D/Autofill Status(10221): 2. Pick a service
+03-10 17:37:17.587 D/Autofill Status(10221): 
+03-10 17:37:17.587 D/Autofill Status(10221): Did you add an account?
+03-10 17:37:17.587 D/Autofill Status(10221): 1. Go to Settings > System > Languages&input > Advanced
+03-10 17:37:17.587 D/Autofill Status(10221): 2. Click on the settings icon next to the Autofill Service
+03-10 17:37:17.587 D/Autofill Status(10221): 3. Add your account
+03-10 17:37:17.654 D/InsetsController(10221): show(ime(), fromIme=true)
+03-10 17:37:17.669 D/InsetsController(10221): show(ime(), fromIme=true)
+03-10 17:37:17.669 I/ImeTracker(10221): com.ethran.notable:4fa010fd: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+03-10 17:37:18.221 I/ImeTracker(10221): com.ethran.notable:473e4e9b: onShown
+03-10 17:37:26.936 D/InsetsController(10221): hide(ime(), fromIme=false)
+03-10 17:37:26.937 I/ImeTracker(10221): com.ethran.notable:c6495efc: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT_BY_INSETS_API fromUser false
+03-10 17:37:26.938 I/ImeTracker(10221): com.ethran.notable:aa05560e: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT_REQUEST_HIDE_WITH_CONTROL fromUser false
+03-10 17:37:26.956 D/InsetsController(10221): hide(ime(), fromIme=true)
+03-10 17:37:26.956 I/ImeTracker(10221): com.ethran.notable:aa05560e: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+03-10 17:37:27.482 I/ImeTracker(10221): com.ethran.notable:1b1aace2: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT_ON_ANIMATION_STATE_CHANGED fromUser false
+03-10 17:37:27.488 I/ImeTracker(10221): com.ethran.notable:c6495efc: onHidden
+03-10 17:37:33.217 D/InsetsController(10221): show(ime(), fromIme=false)
+03-10 17:37:33.218 I/ImeTracker(10221): com.ethran.notable:9d474899: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT_BY_INSETS_API fromUser false
+03-10 17:37:33.219 D/InputMethodManager(10221): showSoftInput() view=androidx.compose.ui.platform.AndroidComposeView{eb4e048 VFED..... .F....ID 0,0-1860,2480 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT_BY_INSETS_API
+03-10 17:37:33.234 I/AssistStructure(10221): Flattened final assist data: 1876 bytes, containing 1 windows, 12 views
+03-10 17:37:33.253 I/ImeTracker(10221): com.ethran.notable:ecb9141f: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser false
+03-10 17:37:33.254 D/InputMethodManager(10221): showSoftInput() view=androidx.compose.ui.platform.AndroidComposeView{eb4e048 VFED..... .F....ID 0,0-1860,2480 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+03-10 17:37:33.268 D/Autofill Status(10221): Autofill popup isn't shown because autofill is not available.
+03-10 17:37:33.268 D/Autofill Status(10221): 
+03-10 17:37:33.268 D/Autofill Status(10221): Did you set up autofill?
+03-10 17:37:33.268 D/Autofill Status(10221): 1. Go to Settings > System > Languages&input > Advanced > Autofill Service
+03-10 17:37:33.268 D/Autofill Status(10221): 2. Pick a service
+03-10 17:37:33.268 D/Autofill Status(10221): 
+03-10 17:37:33.268 D/Autofill Status(10221): Did you add an account?
+03-10 17:37:33.268 D/Autofill Status(10221): 1. Go to Settings > System > Languages&input > Advanced
+03-10 17:37:33.268 D/Autofill Status(10221): 2. Click on the settings icon next to the Autofill Service
+03-10 17:37:33.268 D/Autofill Status(10221): 3. Add your account
+03-10 17:37:33.351 D/InsetsController(10221): show(ime(), fromIme=true)
+03-10 17:37:33.369 D/InsetsController(10221): show(ime(), fromIme=true)
+03-10 17:37:33.370 I/ImeTracker(10221): com.ethran.notable:ecb9141f: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+03-10 17:37:33.917 D/InsetsController(10221): show(ime(), fromIme=false)
+03-10 17:37:33.919 I/ImeTracker(10221): com.ethran.notable:2362d7b: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT_BY_INSETS_API fromUser false
+03-10 17:37:33.919 I/ImeTracker(10221): com.ethran.notable:2362d7b: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+03-10 17:37:33.921 I/ImeTracker(10221): com.ethran.notable:9d474899: onShown
+03-10 17:37:33.960 I/ImeTracker(10221): com.ethran.notable:3ee00b70: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser false
+03-10 17:37:33.961 D/InputMethodManager(10221): showSoftInput() view=androidx.compose.ui.platform.AndroidComposeView{eb4e048 VFED..... .F...... 0,0-1860,2480 aid=1073741824} flags=0 reason=SHOW_SOFT_INPUT
+03-10 17:37:33.973 D/InsetsController(10221): show(ime(), fromIme=true)
+03-10 17:37:33.974 I/ImeTracker(10221): com.ethran.notable:3ee00b70: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+03-10 17:37:40.919 I/KvProxy (10221): Setting APP_SETTINGS to AppSettings(version=1, monitorBgFiles=false, defaultNativeTemplate=blank, quickNavPages=[], neoTools=false, scribbleToEraseEnabled=false, toolbarPosition=Top, smoothScroll=true, continuousZoom=false, continuousStrokeSlider=false, monochromeMode=false, paginatePdf=true, visualizePdfPagination=false, doubleTapAction=Undo, twoFingerTapAction=ChangeTool, swipeLeftAction=NextPage, swipeRightAction=PreviousPage, twoFingerSwipeLeftAction=ToggleZen, twoFingerSwipeRightAction=ToggleZen, holdAction=Select, enableQuickNav=true, obsidianInboxPath=Notes/Study/Study, obsidianAttachmentPath=Excalidraw, showWelcome=false, debugMode=false, simpleRendering=false, openGLRendering=true, muPdfRendering=true, destructiveMigrations=false)
+03-10 17:37:40.925 I/VaultTagScanner(10221): Scanning 3 markdown files for tags
+03-10 17:37:40.937 I/VaultTagScanner(10221): Tag cache refreshed: 0 tags
+03-10 17:37:40.959 D/InsetsController(10221): hide(ime(), fromIme=false)
+03-10 17:37:40.960 I/ImeTracker(10221): com.ethran.notable:c236f7d4: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT_BY_INSETS_API fromUser false
+03-10 17:37:40.962 I/ImeTracker(10221): com.ethran.notable:630cc12e: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT_REQUEST_HIDE_WITH_CONTROL fromUser false
+03-10 17:37:40.989 D/InsetsController(10221): hide(ime(), fromIme=true)
+03-10 17:37:40.989 I/ImeTracker(10221): com.ethran.notable:630cc12e: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+03-10 17:37:41.493 E/SpannableStringBuilder(10221): SPAN_EXCLUSIVE_EXCLUSIVE spans cannot have a zero length
+03-10 17:37:41.493 E/SpannableStringBuilder(10221): SPAN_EXCLUSIVE_EXCLUSIVE spans cannot have a zero length
+03-10 17:37:41.514 I/ImeTracker(10221): com.ethran.notable:3c1bd3b1: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT_ON_ANIMATION_STATE_CHANGED fromUser false
+03-10 17:37:41.516 I/ImeTracker(10221): com.ethran.notable:c236f7d4: onHidden
+03-10 17:37:42.825 D/PageDataManager(10221): Cancelling loading pages, ignoring: []
+03-10 17:37:44.136 W/WindowOnBackDispatcher(10221): OnBackInvokedCallback is not enabled for the application.
+03-10 17:37:44.136 W/WindowOnBackDispatcher(10221): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+03-10 17:37:46.111 D/PageDataManager(10221): Cancelling loading pages, ignoring: []
+03-10 17:37:48.212 D/NotableAppState(10221): navigate -> editor/fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7
+03-10 17:37:48.223 W/WindowOnBackDispatcher(10221): OnBackInvokedCallback is not enabled for the application.
+03-10 17:37:48.223 W/WindowOnBackDispatcher(10221): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+03-10 17:37:48.282 I/PageView(10221): PageView init
+03-10 17:37:48.283 I/PageView(10221): PageView: using cached bitmap
+03-10 17:37:48.284 I/.ethran.notable(10221): Waiting for a blocking GC ProfileSaver
+03-10 17:37:48.309 I/.ethran.notable(10221): WaitForGcToComplete blocked ProfileSaver on Background for 24.335ms
+03-10 17:37:48.314 I/EditorSurface(10221): recompose surface
+03-10 17:37:48.323 I/DrawCanvas(10221): Initializing Canvas
+03-10 17:37:48.324 D/OpenGLRenderer(10221): Releasing renderer
+03-10 17:37:48.324 V/GLThread(10221): starting thread...
+03-10 17:37:48.325 E/Gralloc4(10221): buffer descriptor contains invalid usage bits 0x100000000
+03-10 17:37:48.338 D/GLFrontBufferedRenderer(10221): Supports KHR_FENCE_SYNC: true
+03-10 17:37:48.338 D/GLFrontBufferedRenderer(10221): Supports ANDROID_NATIVE_FENCE_SYNC: true
+03-10 17:37:48.352 V/CanvasObservers(10221): Refreshing UI!
+03-10 17:37:48.352 D/DrawCanvas(10221): refreshUi: scroll: Offset(0.0, 0.0), zoom: 1.0
+03-10 17:37:48.354 I/EditorView(10221): EditorView: saving
+03-10 17:37:48.357 I/PageViewCache(10221): Init from persist layer, pageId: fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7
+03-10 17:37:48.358 D/PageView(10221): Page loaded (Init with id: fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7)
+03-10 17:37:48.358 V/CanvasObservers(10221): Refreshing UI!
+03-10 17:37:48.359 D/DrawCanvas(10221): refreshUi: scroll: Offset(0.0, 0.0), zoom: 1.0
+03-10 17:37:48.456 D/PageViewCache(10221): Start page, id fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7
+03-10 17:37:48.456 D/PageDataManager(10221): requestPageLoadJoin(fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7)
+03-10 17:37:48.457 D/PageDataManager(10221): getOrStartLoadingJob(fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7)
+03-10 17:37:48.457 D/PageDataManager(10221): Page(fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7) already in memory, stroke number 8
+03-10 17:37:48.458 D/PageViewCache(10221): Got page data (PageView.loadPage). id fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7
+03-10 17:37:48.458 D/PageViewCache(10221): All strokes loaded in 3 ms
+03-10 17:37:48.459 D/SnackState(10221): Removing snack 47512592-43f7-44d9-bdd4-d32356a99e76
+03-10 17:37:48.466 D/PageViewCache(10221): Loaded page from persistent layer fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7
+03-10 17:37:48.467 D/PageDataManager(10221): page(fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7)areListInitialized, true, true, 16
+03-10 17:37:48.479 D/PageDataManager(10221): reduceCache(20)
+03-10 17:37:48.487 W/libc    (10221): Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+03-10 17:37:48.485 W/.ethran.notable(10221): type=1400 audit(0.0:20520): avc:  denied  { read } for  name="u:object_r:vendor_display_prop:s0" dev="tmpfs" ino=10756 scontext=u:r:untrusted_app:s0:c143,c256,c512,c768 tcontext=u:object_r:vendor_display_prop:s0 tclass=file permissive=0 app=com.tailscale.ipn
+03-10 17:37:48.488 I/DrawCanvas(10221): surface created android.view.SurfaceView$2@1eac3cd
+03-10 17:37:48.488 I/DrawCanvas(10221): Update editable surface
+03-10 17:37:48.493 E/Gralloc4(10221): buffer descriptor contains invalid usage bits 0x100000000
+03-10 17:37:48.494 V/DrawCanvas(10221): Surface dimension changed!
+03-10 17:37:48.494 D/PageView(10221): Updating dimensions: 1755 x 2480
+03-10 17:37:48.544 I/.ethran.notable(10221): Compiler allocated 8485KB to compile void com.ethran.notable.editor.ui.InboxToolbarKt.InboxToolbar(java.util.List, java.util.List, boolean, boolean, kotlin.jvm.functions.Function0, kotlin.jvm.functions.Function0, kotlin.jvm.functions.Function1, kotlin.jvm.functions.Function1, kotlin.jvm.functions.Function0, kotlin.jvm.functions.Function0, androidx.compose.runtime.Composer, int)
+03-10 17:37:48.556 D/bitmapUtils(10221): loadPersistBitmap: loaded cached preview 'fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7-sy0.png'
+03-10 17:37:48.572 D/PageView(10221): loaded initial bitmap
+03-10 17:37:48.572 I/DrawCanvas(10221): Update editable surface
+03-10 17:37:48.575 V/GLThread(10221): dispatching request to render for token: 2
+03-10 17:37:48.575 V/GLThread(10221): requesting render for token: 2
+03-10 17:37:48.579 D/EGL     (10221): eglDupNativeFence returned 162
+03-10 17:37:48.598 V/CanvasObservers(10221): Force update, zone: null, Strokes to draw: 8
+03-10 17:37:48.599 D/PageDrawingLog(10221): drawOnCanvasFromPage, zoom: 1.0, background: inbox, type: Native
+03-10 17:37:48.640 V/DrawCanvas(10221): refreshUiSuspend() is called from the non-main thread.
+03-10 17:37:48.640 D/DrawCanvas.waitForDrawing(10221): waiting
+03-10 17:37:48.642 V/einkHelper(10221): onSurfaceInit, (0, 0 - 1755, 2480)
+03-10 17:37:48.643 D/einkHelper(10221): Set update mode HAND_WRITING_REPAINT_MODE
+03-10 17:37:48.644 D/DrawCanvas.waitForDrawing(10221): Finished waiting in 2 ms
+03-10 17:37:48.646 I/einkHelper(10221): Setup editable surface
+03-10 17:37:48.753 I/RawInputReader$a(10221): submitJob finally closeRawInput raw_input-128
+03-10 17:37:48.769 I/RawInputReader$a(10221): submitJob nativeRawReader raw_input-128
+03-10 17:37:48.771 I/lib_touch_reader(10221): find path /dev/input/event1 result name onyx_emp_Wacom I2C Digitizer
+03-10 17:37:48.808 I/einkHelper(10221): Setup editable surface completed
+03-10 17:37:48.809 I/DrawCanvas(10221): Update pen and stroke: pen=FOUNTAIN, mode=Draw
+03-10 17:37:48.817 V/CanvasObservers(10221): Force update, zone: null, Strokes to draw: 8
+03-10 17:37:48.818 D/PageDrawingLog(10221): drawOnCanvasFromPage, zoom: 1.0, background: inbox, type: Native
+03-10 17:37:48.875 V/DrawCanvas(10221): refreshUiSuspend() is called from the non-main thread.
+03-10 17:37:48.875 D/DrawCanvas.waitForDrawing(10221): waiting
+03-10 17:37:48.876 V/einkHelper(10221): onSurfaceInit, (0, 0 - 1755, 2480)
+03-10 17:37:48.876 D/einkHelper(10221): Set update mode HAND_WRITING_REPAINT_MODE
+03-10 17:37:48.878 D/DrawCanvas.waitForDrawing(10221): Finished waiting in 3 ms
+03-10 17:37:48.882 I/einkHelper(10221): Setup editable surface
+03-10 17:37:48.908 I/RawInputReader$a(10221): submitJob finally closeRawInput raw_input-128
+03-10 17:37:48.924 I/RawInputReader$a(10221): submitJob nativeRawReader raw_input-128
+03-10 17:37:48.925 I/lib_touch_reader(10221): find path /dev/input/event1 result name onyx_emp_Wacom I2C Digitizer
+03-10 17:37:48.961 I/einkHelper(10221): Setup editable surface completed
+03-10 17:37:48.962 I/DrawCanvas(10221): Update pen and stroke: pen=FOUNTAIN, mode=Draw
+03-10 17:37:49.360 I/PageDataManager(10221): Persisting batch of bitmaps for pages: [fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7]
+03-10 17:37:49.654 D/bitmapUtils(10221): persistBitmapFull: cached preview saved as fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7-sy0.png (scrollY=0)
+03-10 17:37:50.483 I/GestureReceiver(10221): GestureReceiver got touch at (1300.0, 1323.0), type=Touch, consumed=false
+03-10 17:37:50.522 V/GestureReceiver(10221): Two finger tap
+03-10 17:37:50.523 V/GestureReceiver(10221): horizontalDrag 0, verticalDrag 0.0
+03-10 17:37:51.200 D/DrawCanvas(10221): lock obtained in 0 ms
+03-10 17:37:51.202 D/DrawCanvas(10221): Drawing...
+03-10 17:37:51.205 D/PageDrawingLog(10221): drawOnCanvasFromPage, zoom: 1.0, background: inbox, type: Native
+03-10 17:37:51.222 I/PageDataManager(10221): Persisting batch of bitmaps for pages: [fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7]
+03-10 17:37:51.521 D/bitmapUtils(10221): persistBitmapFull: cached preview saved as fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7-sy0.png (scrollY=0)
+03-10 17:37:51.727 V/CanvasObservers(10221): Commiting to history
+03-10 17:37:51.970 D/DrawCanvas(10221): lock obtained in 0 ms
+03-10 17:37:51.972 D/DrawCanvas(10221): Drawing...
+03-10 17:37:51.979 D/PageDrawingLog(10221): drawOnCanvasFromPage, zoom: 1.0, background: inbox, type: Native
+03-10 17:37:52.223 I/PageDataManager(10221): Persisting batch of bitmaps for pages: [fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7]
+03-10 17:37:52.506 V/CanvasObservers(10221): Commiting to history
+03-10 17:37:52.515 D/bitmapUtils(10221): persistBitmapFull: cached preview saved as fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7-sy0.png (scrollY=0)
+03-10 17:37:52.929 D/DrawCanvas(10221): lock obtained in 0 ms
+03-10 17:37:52.938 D/DrawCanvas(10221): Drawing...
+03-10 17:37:52.944 D/PageDrawingLog(10221): drawOnCanvasFromPage, zoom: 1.0, background: inbox, type: Native
+03-10 17:37:53.154 D/DrawCanvas(10221): lock obtained in 0 ms
+03-10 17:37:53.154 D/DrawCanvas(10221): Drawing...
+03-10 17:37:53.156 D/PageDrawingLog(10221): drawOnCanvasFromPage, zoom: 1.0, background: inbox, type: Native
+03-10 17:37:53.223 I/PageDataManager(10221): Persisting batch of bitmaps for pages: [fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7]
+03-10 17:37:53.518 D/bitmapUtils(10221): persistBitmapFull: cached preview saved as fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7-sy0.png (scrollY=0)
+03-10 17:37:53.673 V/CanvasObservers(10221): Commiting to history
+03-10 17:37:54.987 W/WindowOnBackDispatcher(10221): OnBackInvokedCallback is not enabled for the application.
+03-10 17:37:54.987 W/WindowOnBackDispatcher(10221): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+03-10 17:37:54.994 D/CompatChangeReporter(10221): Compat change id reported: 270674727; UID 10143; state: ENABLED
+03-10 17:37:55.032 W/libc    (10221): Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+03-10 17:37:55.029 W/.ethran.notable(10221): type=1400 audit(0.0:20521): avc:  denied  { read } for  name="u:object_r:vendor_display_prop:s0" dev="tmpfs" ino=10756 scontext=u:r:untrusted_app:s0:c143,c256,c512,c768 tcontext=u:object_r:vendor_display_prop:s0 tclass=file permissive=0 app=com.tailscale.ipn
+03-10 17:37:55.045 D/EditorState(10221): Drawing state should be: false (menus open: true, selection active: false)
+03-10 17:37:55.051 V/CanvasObservers(10221): isDrawing change to false
+03-10 17:37:55.051 I/DrawCanvas(10221): Update is drawing: false
+03-10 17:37:55.052 D/DrawCanvas.waitForDrawing(10221): waiting
+03-10 17:37:55.066 D/DrawCanvas.waitForDrawing(10221): Finished waiting in 13 ms
+03-10 17:37:55.282 D/MainActivity(10221): OnWindowFocusChanged: false
+03-10 17:37:55.286 V/CanvasObservers(10221): App has focus: false
+03-10 17:37:55.287 V/CanvasObservers(10221): drawing state changed to false!
+03-10 17:37:55.692 D/VRI[Pop-up window](10221): updatePointerIcon called with position out of bounds
+03-10 17:37:55.707 D/VRI[Pop-up window](10221): updatePointerIcon called with position out of bounds
+03-10 17:37:55.732 D/VRI[Pop-up window](10221): updatePointerIcon called with position out of bounds
+03-10 17:37:55.760 D/VRI[Pop-up window](10221): updatePointerIcon called with position out of bounds
+03-10 17:37:55.786 D/VRI[Pop-up window](10221): updatePointerIcon called with position out of bounds
+03-10 17:37:55.812 D/VRI[Pop-up window](10221): updatePointerIcon called with position out of bounds
+03-10 17:37:55.839 D/VRI[Pop-up window](10221): updatePointerIcon called with position out of bounds
+03-10 17:37:55.864 D/VRI[Pop-up window](10221): updatePointerIcon called with position out of bounds
+03-10 17:37:55.878 D/VRI[Pop-up window](10221): updatePointerIcon called with position out of bounds
+03-10 17:37:56.026 D/VRI[Pop-up window](10221): updatePointerIcon called with position out of bounds
+03-10 17:37:56.051 D/VRI[Pop-up window](10221): updatePointerIcon called with position out of bounds
+03-10 17:37:56.076 D/VRI[Pop-up window](10221): updatePointerIcon called with position out of bounds
+03-10 17:37:56.103 D/VRI[Pop-up window](10221): updatePointerIcon called with position out of bounds
+03-10 17:37:56.129 D/VRI[Pop-up window](10221): updatePointerIcon called with position out of bounds
+03-10 17:37:56.155 D/VRI[Pop-up window](10221): updatePointerIcon called with position out of bounds
+03-10 17:37:56.181 D/VRI[Pop-up window](10221): updatePointerIcon called with position out of bounds
+03-10 17:37:56.208 D/VRI[Pop-up window](10221): updatePointerIcon called with position out of bounds
+03-10 17:37:56.235 D/VRI[Pop-up window](10221): updatePointerIcon called with position out of bounds
+03-10 17:37:56.261 D/VRI[Pop-up window](10221): updatePointerIcon called with position out of bounds
+03-10 17:37:56.287 D/VRI[Pop-up window](10221): updatePointerIcon called with position out of bounds
+03-10 17:37:56.795 W/WindowOnBackDispatcher(10221): sendCancelIfRunning: isInProgress=false callback=android.view.ViewRootImpl$$ExternalSyntheticLambda12@18021ff
+03-10 17:37:56.818 D/showSnackDuring(10221): Task cancelled
+03-10 17:37:56.819 D/SnackState(10221): Removing snack c1779ee7-a822-4fef-a78a-0d8b9d9958ef
+03-10 17:37:56.830 D/EditorState(10221): Drawing state should be: true (menus open: false, selection active: false)
+03-10 17:37:56.843 V/CanvasObservers(10221): isDrawing change to true
+03-10 17:37:56.845 D/einkHelper(10221): Waiting for screen, Update mode: NORMAL
+03-10 17:37:56.858 D/MainActivity(10221): OnWindowFocusChanged: true
+03-10 17:37:56.862 V/CanvasObservers(10221): App has focus: true
+03-10 17:37:56.862 I/DrawCanvas(10221): Update pen and stroke: pen=FOUNTAIN, mode=Draw
+03-10 17:37:57.038 I/DrawCanvas(10221): Update is drawing: true
+03-10 17:37:59.109 I/InboxSyncEngine(10221): Starting inbox sync for page fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7 with tags: []
+03-10 17:37:59.178 I/InboxSyncEngine(10221): Recognizing all 12 strokes
+03-10 17:37:59.221 D/PageDataManager(10221): Cancelling loading pages, ignoring: []
+03-10 17:37:59.236 W/GestureReceiver(10221): Gesture coroutine canceled
+03-10 17:37:59.236 W/GestureReceiver(10221): androidx.compose.ui.input.pointer.PointerInputResetException: Pointer input was reset
+03-10 17:37:59.236 V/GLThread(10221): dispatching request to detach surface w/ token: 2
+03-10 17:37:59.238 V/GLThread(10221): dispatching request to detach surface w/ token: 3
+03-10 17:37:59.238 I/DrawCanvas(10221): surface destroyed 135858550 - ref 195946126
+03-10 17:37:59.239 V/einkHelper(10221): onSurfaceDestroy, (0, 0 - 1755, 2480)
+03-10 17:37:59.258 E/BufferQueueProducer(10221): [SurfaceView[com.ethran.notable/com.ethran.notable.MainActivity]#3(BLAST Consumer)3](id:27ed00000003,api:0,p:-1,c:10221) disconnect: not connected (req=2)
+03-10 17:37:59.264 D/PageView(10221): Dispose old page
+03-10 17:37:59.264 D/PageDataManager(10221): page(fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7)areListInitialized, true, true, 16
+03-10 17:37:59.264 I/PageDataManager(10221): Page exit, is page loaded: true
+03-10 17:37:59.264 D/PageDataManager(10221): page(fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7)areListInitialized, true, true, 16
+03-10 17:37:59.695 I/OnyxHWREngine(10221): OnyxHWR recognized 24 chars
+03-10 17:37:59.698 I/InboxSyncEngine(10221): Full recognized text: 'This is a note
+03-10 17:37:59.698 I/InboxSyncEngine(10221): More note'
+03-10 17:37:59.876 I/InboxSyncEngine(10221): Written inbox note to /storage/emulated/0/Notes/Study/Study/2026-03-10-17-36-42.md
+03-10 17:37:59.876 I/InboxSyncEngine(10221): Inbox sync complete for page fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7
+03-10 17:37:59.876 I/SyncState(10221): Background sync complete for page fa57c68b-66dd-4eb5-a6dd-9b8ef60a9ff7
+03-10 17:38:01.273 D/QuickSettings(10221): App is paused - maybe quick settings opened?
+03-10 17:38:01.359 D/MainActivity(10221): OnWindowFocusChanged: false
+03-10 17:38:01.415 D/VRI[MainActivity](10221): visibilityChanged oldVisibility=true newVisibility=false
+03-10 17:38:01.550 D/PageDataManager(10221): onTrimMemory: 20, currentCacheSizeMB: 17
+03-10 17:38:01.551 D/PageDataManager(10221): freeMemory(10)
+03-10 17:38:01.552 D/PageDataManager(10221): after trim currentCacheSizeMB: 17
+03-10 17:38:03.316 I/FA      (10221): Application backgrounded at: timestamp_millis: 1773164281312
