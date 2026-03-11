@@ -57,11 +57,16 @@ object InboxSyncEngine {
             false
         }
 
-        // 1. Recognize ALL strokes together to preserve natural text flow
+        // 1. Segment strokes into paragraph groups by vertical gap, then recognize each group
+        //    separately so that: within-paragraph line-wraps collapse to spaces, and intentional
+        //    paragraph breaks (large vertical gaps) produce \n\n in the output.
         var fullText = if (serviceReady && allStrokes.isNotEmpty()) {
-            log.i("Recognizing all ${allStrokes.size} strokes")
-            val result = recognizeStrokesSafe(allStrokes)
-            postProcessRecognition(result)
+            val paragraphGroups = segmentIntoParagraphGroups(allStrokes)
+            log.i("Recognizing ${allStrokes.size} strokes in ${paragraphGroups.size} paragraph group(s)")
+            val parts = paragraphGroups.map { paraStrokes ->
+                formatParagraph(recognizeStrokesSafe(paraStrokes).trim())
+            }
+            postProcessRecognition(parts.joinToString("\n\n"))
         } else ""
 
         log.i("Full recognized text: '${fullText.take(200)}'")
@@ -297,6 +302,8 @@ object InboxSyncEngine {
      * Post-process recognition output:
      * - Normalize any bracket/paren wrapping to [[wiki links]]
      * - Collapse space between # and the following word into a proper #tag
+     *
+     * NOTE: paragraph/newline handling is done upstream in [formatParagraph] before this runs.
      */
     private fun postProcessRecognition(text: String): String {
         var result = text
@@ -360,4 +367,86 @@ object InboxSyncEngine {
         file.writeText(markdown)
         log.i("Written inbox note to ${file.absolutePath}")
     }
+
+    /**
+     * Cluster strokes into paragraph groups by detecting large vertical gaps.
+     *
+     * Strokes are sorted by their vertical midpoint. A gap between the bottom of the current
+     * group and the top of the next stroke that exceeds 1.5× the median stroke height is treated
+     * as an intentional paragraph break.
+     */
+    private fun segmentIntoParagraphGroups(strokes: List<Stroke>): List<List<Stroke>> {
+        if (strokes.isEmpty()) return emptyList()
+
+        val sorted = strokes.sortedBy { (it.top + it.bottom) / 2f }
+        val heights = sorted.map { it.bottom - it.top }.sorted()
+        val medianHeight = heights[heights.size / 2].coerceAtLeast(10f)
+        val paragraphGapThreshold = medianHeight * 1.5f
+
+        val groups = mutableListOf<MutableList<Stroke>>()
+        var current = mutableListOf(sorted.first())
+        var currentGroupBottom = sorted.first().bottom
+
+        for (stroke in sorted.drop(1)) {
+            val gap = stroke.top - currentGroupBottom
+            if (gap > paragraphGapThreshold) {
+                groups.add(current)
+                current = mutableListOf(stroke)
+                currentGroupBottom = stroke.bottom
+            } else {
+                current.add(stroke)
+                if (stroke.bottom > currentGroupBottom) currentGroupBottom = stroke.bottom
+            }
+        }
+        groups.add(current)
+        return groups
+    }
+
+    /**
+     * Format a paragraph's raw recognized text:
+     * - Lines starting with a bullet marker (-, –, •) become markdown `- ` bullets.
+     * - Lines starting with a number + `.` or `)` are kept as-is (numbered list).
+     * - Consecutive non-list lines are joined with a space (collapse line-wrapping).
+     */
+    private fun formatParagraph(text: String): String {
+        val lines = text.split("\n").map { it.trim() }.filter { it.isNotBlank() }
+        if (lines.isEmpty()) return ""
+        if (lines.size == 1) return normalizeLine(lines[0])
+
+        val output = mutableListOf<String>()
+        val pendingWords = mutableListOf<String>()
+
+        for (line in lines) {
+            if (isBulletLine(line) || isNumberedLine(line)) {
+                if (pendingWords.isNotEmpty()) {
+                    output.add(pendingWords.joinToString(" "))
+                    pendingWords.clear()
+                }
+                output.add(normalizeLine(line))
+            } else {
+                pendingWords.add(line)
+            }
+        }
+
+        if (pendingWords.isNotEmpty()) {
+            output.add(pendingWords.joinToString(" "))
+        }
+
+        return output.joinToString("\n")
+    }
+
+    /** True when [line] opens with a bullet marker followed by at least one non-space character. */
+    private fun isBulletLine(line: String): Boolean =
+        line.matches(Regex("""^[•\-–]\s+.+"""))
+
+    /** True when [line] opens with a digit sequence followed by `.` or `)` and a space. */
+    private fun isNumberedLine(line: String): Boolean =
+        line.matches(Regex("""^\d+[.)]\s+.+"""))
+
+    /**
+     * Normalise a single line for markdown output:
+     * - Em-dash and bullet-char markers (–, •) are converted to the standard `- ` prefix.
+     */
+    private fun normalizeLine(line: String): String =
+        line.replace(Regex("""^[•–]\s+"""), "- ")
 }
