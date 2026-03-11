@@ -344,16 +344,15 @@ object InboxSyncEngine {
         val sb = StringBuilder()
         sb.appendLine("---")
         sb.appendLine("created: \"[[$createdDate]]\"")
+        if (pdfRelativeLink != null) {
+            sb.appendLine("pdf: \"[[$pdfRelativeLink]]\"")
+        }
         if (tags.isNotEmpty()) {
             sb.appendLine("tags:")
             tags.forEach { sb.appendLine("  - $it") }
         }
         sb.appendLine("---")
         sb.appendLine()
-        if (pdfRelativeLink != null) {
-            sb.appendLine("PDF: [[$pdfRelativeLink]]")
-            sb.appendLine()
-        }
         sb.appendLine(content.trim())
         return sb.toString()
     }
