@@ -405,7 +405,12 @@ object InboxSyncEngine {
      * Format a paragraph's raw recognized text:
      * - Lines starting with a bullet marker (-, –, •) become markdown `- ` bullets.
      * - Lines starting with a number + `.` or `)` are kept as-is (numbered list).
-     * - Consecutive non-list lines are joined with a space (collapse line-wrapping).
+     * - Non-list lines that follow a list item are treated as its continuation and
+     *   appended to that item with a space (handles wrapped bullet text).
+     * - Non-list lines with no preceding list item are joined as prose.
+     *
+     * This ensures that the last line of a formatted paragraph is always the last list
+     * marker, so [joinParagraphParts] can correctly detect list boundaries between groups.
      */
     private fun formatParagraph(text: String): String {
         val lines = text.split("\n").map { it.trim() }.filter { it.isNotBlank() }
@@ -413,23 +418,40 @@ object InboxSyncEngine {
         if (lines.size == 1) return normalizeLine(lines[0])
 
         val output = mutableListOf<String>()
-        val pendingWords = mutableListOf<String>()
+        var currentListItem: StringBuilder? = null
+        val pendingProse = mutableListOf<String>()
 
-        for (line in lines) {
-            if (isBulletLine(line) || isNumberedLine(line)) {
-                if (pendingWords.isNotEmpty()) {
-                    output.add(pendingWords.joinToString(" "))
-                    pendingWords.clear()
-                }
-                output.add(normalizeLine(line))
-            } else {
-                pendingWords.add(line)
+        fun flushProse() {
+            if (pendingProse.isNotEmpty()) {
+                output.add(pendingProse.joinToString(" "))
+                pendingProse.clear()
             }
         }
 
-        if (pendingWords.isNotEmpty()) {
-            output.add(pendingWords.joinToString(" "))
+        fun flushListItem() {
+            currentListItem?.let { output.add(it.toString()) }
+            currentListItem = null
         }
+
+        for (line in lines) {
+            when {
+                isBulletLine(line) || isNumberedLine(line) -> {
+                    flushProse()
+                    flushListItem()
+                    currentListItem = StringBuilder(normalizeLine(line))
+                }
+                currentListItem != null -> {
+                    // Continuation of the current list item — append rather than split
+                    currentListItem!!.append(" ").append(line)
+                }
+                else -> {
+                    pendingProse.add(line)
+                }
+            }
+        }
+
+        flushProse()
+        flushListItem()
 
         return output.joinToString("\n")
     }
