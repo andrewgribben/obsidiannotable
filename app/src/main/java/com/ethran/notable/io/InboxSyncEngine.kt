@@ -66,7 +66,7 @@ object InboxSyncEngine {
             val parts = paragraphGroups.map { paraStrokes ->
                 formatParagraph(recognizeStrokesSafe(paraStrokes).trim())
             }
-            postProcessRecognition(parts.joinToString("\n\n"))
+            postProcessRecognition(joinParagraphParts(parts))
         } else ""
 
         log.i("Full recognized text: '${fullText.take(200)}'")
@@ -432,6 +432,28 @@ object InboxSyncEngine {
         }
 
         return output.joinToString("\n")
+    }
+
+    /**
+     * Join recognised paragraph parts with either `\n` or `\n\n`:
+     * - If the last line of the previous part AND the first line of the next part are both list
+     *   items (bullet or numbered), join with `\n` so the list stays contiguous.
+     * - Otherwise use `\n\n` for a proper paragraph break.
+     */
+    private fun joinParagraphParts(parts: List<String>): String {
+        if (parts.isEmpty()) return ""
+        val sb = StringBuilder()
+        for (i in parts.indices) {
+            if (i > 0) {
+                val prevLastLine = parts[i - 1].trimEnd().lines().last()
+                val currFirstLine = parts[i].trimStart().lines().first()
+                val prevIsList = isBulletLine(prevLastLine) || isNumberedLine(prevLastLine)
+                val currIsList = isBulletLine(currFirstLine) || isNumberedLine(currFirstLine)
+                sb.append(if (prevIsList && currIsList) "\n" else "\n\n")
+            }
+            sb.append(parts[i])
+        }
+        return sb.toString()
     }
 
     /** True when [line] opens with a bullet marker followed by at least one non-space character. */
