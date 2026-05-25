@@ -12,6 +12,7 @@
 - Treat attachment path "/" as blank when saving settings (normalize to empty string).
 - All exports and Save & Exit PDF go to the vault attachment directory; clipboard links are relative to vault root.
 - Add the PDF link in the note only when export actually succeeds (check return value); show snackbar on export failure.
+- PDF wikilinks in generated MD notes use filename only (no path prefix) since Obsidian resolves unique filenames; format is `PDF: [[filename.pdf]]`, not an embed or full-path link.
 - Default page background for new notes is set via "Set as default for new notes" in the choose-background dialog (native templates only); do not auto-set default when the user changes a note's background.
 
 ## Learned Workspace Facts
@@ -20,4 +21,5 @@
 - Vault root = parent of inbox path; attachment path is always relative to vault root; use `resolveExternalStoragePath` for inbox/attachment and `resolveVaultAttachmentDir(inboxPath, attachmentPath)` for the export directory.
 - For "Documents/..." paths use `getExternalStoragePublicDirectory(DIRECTORY_DOCUMENTS)` on Android 10+ so writes succeed.
 - Boox device: enable USB Debug Mode and allow USB debugging when prompted for `installDebug`.
+- Text recognition (MyScript/InboxSyncEngine): line proximity grouping must run before bullet/list prefix detection; only the first line of a multi-line bullet has a dash — continuation lines do not.
 - See "Always" above: install after app changes.

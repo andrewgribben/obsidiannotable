@@ -3,7 +3,6 @@ package com.ethran.notable.utils
 import android.content.Context
 import android.content.pm.PackageManager
 import com.ethran.notable.BuildConfig
-import com.ethran.notable.ui.showHint
 import io.shipbook.shipbooksdk.ShipBook
 import kotlinx.serialization.json.Json
 import java.net.URL
@@ -148,73 +147,8 @@ fun getCurrentVersionName(context: Context): String? {
 var isLatestVersion: Boolean? = null
 
 fun isLatestVersion(context: Context, force: Boolean = false): Boolean {
-    if (!force && isLatestVersion != null) return isLatestVersion!!
-
-    try {
-        val isNextBuild = BuildConfig.VERSION_NAME.contains("next")
-
-
-        val currentVersion = getCurrentVersionName(context)
-
-        if (isNextBuild) {
-            val latestVersion = getLatestPreReleaseTimestamp("ethran", "notable")
-            //        // If either version is null, we can't compare them
-            if (latestVersion == null || currentVersion == null) {
-                throw Exception("One of the version is null - comparison is impossible")
-            }
-            log.i("Version is $currentVersion and latest on repo is $latestVersion")
-            val latest = Version.fromTimestamp(latestVersion)
-
-            val current = Version.fromString(currentVersion)
-                ?: throw Exception(
-                    "One of the version doesn't match simple semantic - comparison is impossible"
-                )
-
-
-            // If either version does not fit simple semantic version don't compare
-
-            isLatestVersion = current.compareTo(latest) != -1
-            if (!isLatestVersion!!) {
-                showHint(
-                    "A newer preview version is available!\n" +
-                            "You are using released $current, and newest is from ${latest}.",
-                    duration = 5000
-                )
-            }
-            return isLatestVersion!!
-        } else {
-            val latestVersion = getLatestReleaseVersion("ethran", "notable")
-            //        // If either version is null, we can't compare them
-            if (latestVersion == null || currentVersion == null) {
-                throw Exception("One of the version is null - comparison is impossible")
-            }
-            val latest = Version.fromString(latestVersion)
-            val current = Version.fromString(currentVersion)
-
-
-            // If either version does not fit simple semantic version don't compare
-            if (latest == null || current == null) {
-                throw Exception(
-                    "One of the version doesn't match simple semantic - comparison is impossible"
-                )
-            }
-
-            isLatestVersion = current.compareTo(latest) != -1
-            if (!isLatestVersion!!) {
-                showHint(
-                    "A newer stable version is available!\n" +
-                            "You are using ${current}, while the latest is $latest.",
-                    duration = 5000
-                )
-            }
-            return isLatestVersion!!
-        }
-
-
-    } catch (e: Exception) {
-        log.i("Failed to fetch latest release version: ${e.message}")
-        return true
-    }
+    // This build has no public release feed — always report up to date.
+    return true
 }
 
 const val isNext = BuildConfig.IS_NEXT

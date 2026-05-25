@@ -13,7 +13,7 @@ android {
     compileSdk 36
 
     defaultConfig {
-        applicationId "com.ethran.notable"
+        applicationId "com.grib.singularity"
         minSdk 29
         targetSdk 35
 
