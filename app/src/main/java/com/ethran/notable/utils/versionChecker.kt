@@ -3,7 +3,6 @@ package com.ethran.notable.utils
 import android.content.Context
 import android.content.pm.PackageManager
 import com.ethran.notable.BuildConfig
-import com.ethran.notable.data.events.AppEventBus
 import io.shipbook.shipbooksdk.ShipBook
 import kotlinx.serialization.json.Json
 import java.net.URL
@@ -147,7 +146,7 @@ fun getCurrentVersionName(context: Context): String? {
 // cache
 var isLatestVersion: Boolean? = null
 
-fun isLatestVersion(context: Context, appEventBus: AppEventBus, force: Boolean = false): Boolean {
+fun isLatestVersion(context: Context, force: Boolean = false): Boolean {
     // This build has no public release feed — always report up to date.
     return true
 }

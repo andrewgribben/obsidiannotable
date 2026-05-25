@@ -20,7 +20,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.navigation.NavController
+import com.ethran.notable.data.AppRepository
 import com.ethran.notable.data.datastore.EditorSettingCacheManager
 import com.ethran.notable.data.datastore.GlobalAppSettings
 import com.ethran.notable.editor.state.EditorState
@@ -33,13 +34,17 @@ import com.ethran.notable.editor.ui.InboxToolbar
 import com.ethran.notable.editor.ui.ScrollIndicator
 import com.ethran.notable.editor.ui.SelectedBitmap
 import com.ethran.notable.gestures.EditorGestureReceiver
+import com.ethran.notable.io.ExportEngine
 import com.ethran.notable.io.SyncState
 import com.ethran.notable.io.VaultTagScanner
 import com.ethran.notable.io.exportToLinkedFile
 import com.ethran.notable.navigation.NavigationDestination
 import com.ethran.notable.ui.LocalSnackContext
+import com.ethran.notable.ui.SnackConf
+import com.ethran.notable.ui.SnackState
 import com.ethran.notable.ui.convertDpToPixel
 import com.ethran.notable.ui.theme.InkaTheme
+import com.ethran.notable.ui.views.LibraryDestination
 import io.shipbook.shipbooksdk.ShipBook
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -67,22 +72,17 @@ object EditorDestination : NavigationDestination {
 
 @Composable
 fun EditorView(
-    initialPageId: String,
+    editorSettingCacheManager: EditorSettingCacheManager,
+    exportEngine: ExportEngine,
+    navController: NavController,
+    appRepository: AppRepository,
     bookId: String?,
-    isQuickNavOpen: Boolean = false,
-    onPageChange: (String) -> Unit,
-    goToLibrary: (folderId: String?) -> Unit,
-    goToPages: (bookId: String) -> Unit,
-    goToBugReport: () -> Unit,
-    vm: EditorViewModel = hiltViewModel()
+    pageId: String,
+    onPageChange: (String) -> Unit
 ) {
     val context = LocalContext.current
     val snackManager = LocalSnackContext.current
     val scope = rememberCoroutineScope()
-    val appRepository = vm.appRepository
-    val exportEngine = vm.exportEngine
-    val editorSettingCacheManager = vm.editorSettingCacheManager
-    val pageId = initialPageId
 
     var pageExists by remember(pageId) { mutableStateOf<Boolean?>(null) }
     LaunchedEffect(pageId) {
@@ -92,8 +92,22 @@ fun EditorView(
         pageExists = exists
 
         if (!exists) {
-            log.i("Could not find page, navigating to library")
-            goToLibrary(null)
+            // TODO: check if it is correct, and remove exeption throwing
+            throw Exception("Page does not exist")
+            if (bookId != null) {
+                // clean the book
+                log.i("Could not find page, Cleaning book")
+                SnackState.globalSnackFlow.tryEmit(
+                    SnackConf(
+                        text = "Could not find page, cleaning book",
+                        duration = 4000
+                    )
+                )
+                scope.launch(Dispatchers.IO) {
+                    appRepository.bookRepository.removePage(bookId, pageId)
+                }
+            }
+            navController.navigate(LibraryDestination.route)
         }
     }
 
@@ -193,7 +207,7 @@ fun EditorView(
             Row(modifier = Modifier.fillMaxSize()) {
                 // Left-edge sidebar — physically outside the canvas SurfaceView
                 // so finger taps always work even when Onyx SDK raw drawing is active
-                EditorSidebar(exportEngine, goToLibrary, goToPages, goToBugReport, appRepository, editorState, editorControlTower)
+                EditorSidebar(exportEngine, navController, appRepository, editorState, editorControlTower)
                 // Canvas area takes remaining space
                 Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
                     EditorGestureReceiver(controlTower = editorControlTower)
@@ -239,9 +253,9 @@ fun EditorView(
                                     context,
                                     exportEngine
                                 )
-                                goToLibrary(null)
+                                navController.popBackStack()
                             },
-                            onDiscard = { goToLibrary(null) }
+                            onDiscard = { navController.popBackStack() }
                         )
                     }
                     HorizontalScrollIndicator(state = editorState)

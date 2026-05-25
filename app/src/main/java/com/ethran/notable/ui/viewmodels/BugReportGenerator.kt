@@ -1,4 +1,4 @@
-package com.ethran.notable.ui.viewmodels
+package com.ethran.notable.ui.views
 
 import android.content.Context
 import android.content.Intent
@@ -26,8 +26,7 @@ import kotlin.math.pow
 class BugReportGenerator(
     context: Context,
     selectedTags: Map<String, Boolean>,
-    includeLibrariesLogs: Boolean,
-    private val pageDataManager: PageDataManager
+    includeLibrariesLogs: Boolean
 ) {
     val deviceInfo: String = buildDeviceInfo(context)
     private val logs: String = getRecentLogs(selectedTags, includeLibrariesLogs)
@@ -203,7 +202,7 @@ class BugReportGenerator(
         // Memory
         val maxHeap = runtime.maxMemory().toHumanReadable()
         val appUsed = (runtime.totalMemory() - runtime.freeMemory()).toHumanReadable()
-        val pageMemoryMB = pageDataManager.getUsedMemory()
+        val pageMemoryMB = PageDataManager.getUsedMemory()
 
         // Storage
         val dbDir = getDbDir()

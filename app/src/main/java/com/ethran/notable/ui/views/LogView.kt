@@ -1,5 +1,6 @@
 package com.ethran.notable.ui.views
 
+import android.content.Context
 import android.content.Intent
 import android.widget.Toast
 import androidx.compose.foundation.horizontalScroll
@@ -41,8 +42,9 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import com.ethran.notable.navigation.NavigationDestination
 import com.ethran.notable.ui.viewmodels.BugReportUiState
 import com.ethran.notable.ui.viewmodels.BugReportViewModel
@@ -57,7 +59,7 @@ object BugReportDestination : NavigationDestination {
 
 @Composable
 fun BugReportScreen(
-    goBack: () -> Unit, viewModel: BugReportViewModel = hiltViewModel()
+    goBack: () -> Unit, viewModel: BugReportViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current

@@ -15,6 +15,10 @@ import com.ethran.notable.ui.SnackState
 import io.shipbook.shipbooksdk.Log
 import io.shipbook.shipbooksdk.ShipBook
 
+enum class Mode {
+    Draw, Erase, Select, Line
+}
+
 enum class AnnotationMode {
     None, WikiLink, Tag
 }
@@ -134,6 +138,12 @@ class EditorState(
         closeAllMenus()
         selectionState.reset()
     }
+}
+
+// if state is Move then applySelectionDisplace() will delete original strokes and images
+enum class PlacementMode {
+    Move,
+    Paste
 }
 
 object Clipboard {

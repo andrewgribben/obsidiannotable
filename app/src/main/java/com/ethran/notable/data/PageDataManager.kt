@@ -272,10 +272,11 @@ object PageDataManager {
                 preLoadBackground(appRepository, pageId)
             }
 
-            val pageWithData = appRepository.pageRepository.getWithDataById(pageId)
+            val pageWithStrokes = appRepository.pageRepository.getWithStrokeById(pageId)
             // What will happened if page isn't in repository?
-            cacheStrokes(pageId, pageWithData.strokes)
-            cacheImages(pageId, pageWithData.images)
+            cacheStrokes(pageId, pageWithStrokes.strokes)
+            val pageWithImages = appRepository.pageRepository.getWithImageById(pageId)
+            cacheImages(pageId, pageWithImages.images)
             val pageAnnotations = appRepository.annotationRepository.getByPageId(pageId)
             cacheAnnotations(pageId, pageAnnotations)
             recomputeHeight(pageId)

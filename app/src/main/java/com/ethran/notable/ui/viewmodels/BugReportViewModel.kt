@@ -3,8 +3,7 @@ package com.ethran.notable.ui.viewmodels
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.ethran.notable.data.PageDataManager
-import dagger.hilt.android.lifecycle.HiltViewModel
+import com.ethran.notable.ui.views.BugReportGenerator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -12,7 +11,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 data class BugReportUiState(
     val description: String = "",
@@ -28,10 +26,8 @@ data class BugReportUiState(
     val finalMarkdown: String = ""
 )
 
-@HiltViewModel
-class BugReportViewModel @Inject constructor(
-    application: Application,
-) : AndroidViewModel(application) {
+// Using AndroidViewModel because we need the Context to read Battery, Storage, etc.
+class BugReportViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _uiState = MutableStateFlow(
         BugReportUiState(
@@ -79,7 +75,7 @@ class BugReportViewModel @Inject constructor(
             val context = getApplication<Application>()
 
             // Generate the raw data (Logs, Device Info)
-            val generator = BugReportGenerator(context, state.selectedTags, state.includeLibrariesLogs, PageDataManager)
+            val generator = BugReportGenerator(context, state.selectedTags, state.includeLibrariesLogs)
 
             // Format the final markdown string needed for Clipboard/GitHub
             val markdown = generator.rapportMarkdown(

@@ -34,7 +34,7 @@ import kotlin.math.min
 import kotlin.math.sin
 import kotlin.math.sqrt
 
-private val log = ShipBook.getLogger("BackgroundsLog")
+private val backgroundsLog = ShipBook.getLogger("BackgroundsLog")
 
 const val padding = 0
 const val lineHeight = 80
@@ -271,10 +271,10 @@ fun drawBackgroundImages(
         if (imageBitmap != null) {
             drawBitmapToCanvas(canvas, imageBitmap, scroll, scale, repeat)
         } else {
-            log.e("Failed to load image from $backgroundImage")
+            backgroundsLog.e("Failed to load image from $backgroundImage")
         }
     } catch (e: Exception) {
-        log.e("Error loading background image: ${e.message}", e)
+        backgroundsLog.e("Error loading background image: ${e.message}", e)
     }
 }
 
@@ -324,7 +324,7 @@ fun drawPdfPage(
     scale: Float = 1.0f
 ) {
     if (pageNumber < 0) {
-        log.e("Page number should not be ${pageNumber}, uri: $pdfUriString")
+        backgroundsLog.e("Page number should not be ${pageNumber}, uri: $pdfUriString")
         logCallStack("DrawPdfPage")
         return
     }
@@ -342,7 +342,7 @@ fun drawPdfPage(
         }
 
     } catch (e: Exception) {
-        log.e("drawPdfPage: Failed to render PDF", e)
+        backgroundsLog.e("drawPdfPage: Failed to render PDF", e)
     }
 }
 
@@ -409,7 +409,6 @@ fun drawBg(
     page: PageView? = null,
     clipRect: Rect? = null // before the scaling
 ) {
-    log.v("Loading the background")
     clipRect?.let {
         canvas.save()
         canvas.clipRect(scaleRect(it, scale))
@@ -435,7 +434,7 @@ fun drawBg(
                 canvas, background, pageNumber, scroll, page, scale
             )
             else {
-                log.w("Page number $pageNumber is out of bounds")
+                backgroundsLog.w("Page number $pageNumber is out of bounds")
                 canvas.drawColor(Color.WHITE)
             }
         }
@@ -512,7 +511,7 @@ fun drawPaginationLine(canvas: Canvas, scroll: Offset, scale: Float) {
                 "Subpage ${pageNum + 1}", 20f - scroll.x, yPosScaled + 30f, textPaint
             )
         } else {
-            log.d("Skipping line at $yPos (above visible area)")
+            backgroundsLog.d("Skipping line at $yPos (above visible area)")
         }
         yPos += pageHeight
         pageNum++

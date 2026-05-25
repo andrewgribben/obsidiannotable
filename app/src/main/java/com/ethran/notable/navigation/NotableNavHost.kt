@@ -6,11 +6,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.ethran.notable.data.AppRepository
+import com.ethran.notable.data.datastore.EditorSettingCacheManager
 import com.ethran.notable.editor.EditorDestination
 import com.ethran.notable.editor.EditorView
 import com.ethran.notable.io.ExportEngine
@@ -26,14 +28,13 @@ import com.ethran.notable.ui.views.SystemInformationDestination
 import com.ethran.notable.ui.views.SystemInformationView
 import com.ethran.notable.ui.views.WelcomeDestination
 import com.ethran.notable.ui.views.WelcomeView
-import io.shipbook.shipbooksdk.ShipBook
 
-private val log = ShipBook.getLogger("NotableNavHost")
 
 @Composable
 fun NotableNavHost(
     exportEngine: ExportEngine,
     appRepository: AppRepository,
+    editorSettingCacheManager: EditorSettingCacheManager,
     modifier: Modifier = Modifier,
     appNavigator: NotableNavigator
 ) {
@@ -99,14 +100,13 @@ fun NotableNavHost(
                 val currentPageId = appNavigator.resolveAndSyncPageId(backStackEntry)
 
                 EditorView(
-                    goToLibrary = {appNavigator.goToLibrary(it)},
-                    goToPages = { bookId -> appNavigator.goToPages(bookId) },
-                    goToBugReport = { appNavigator.goToBugReport() },
+                    exportEngine = exportEngine,
+                    editorSettingCacheManager = editorSettingCacheManager,
+                    appRepository = appRepository,
+                    navController = appNavigator.navController,
                     bookId = bookId,
-                    initialPageId = currentPageId,
-                    isQuickNavOpen = appNavigator.isQuickNavOpen,
+                    pageId = currentPageId,
                     onPageChange = { newPageId ->
-                        log.d("onPageChange: $newPageId")
                         appNavigator.onPageChange(
                             backStackEntry,
                             newPageId

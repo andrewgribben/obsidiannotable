@@ -4,12 +4,17 @@ import android.content.Context
 import android.database.sqlite.SQLiteBlobTooBigException
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.ethran.notable.data.datastore.GlobalAppSettings
-import com.ethran.notable.data.events.AppEvent
-import com.ethran.notable.data.events.AppEventBus
+import com.ethran.notable.ui.SnackConf
+import com.ethran.notable.ui.SnackState
 import com.ethran.notable.utils.hasFilePermission
 import com.onyx.android.sdk.api.device.epd.EpdController
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.shipbook.shipbooksdk.ShipBook
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
 
@@ -26,14 +31,19 @@ private val log = ShipBook.getLogger("StrokeReencode")
  */
 class StrokeMigrationHelper @Inject constructor(
     private val database: AppDatabase,
-    private val appEventBus: AppEventBus,
     @param:ApplicationContext private val appContext: Context
 ) {
 
     fun reencodeStrokePointsToSB1() {
 
         if (!hasFilePermission(appContext)) {
-            appEventBus.tryEmit(AppEvent.StrokeMigrationPermissionMissing)
+            SnackState.globalSnackFlow.tryEmit(
+                SnackConf(
+                    id = "FilePermissions",
+                    text = "No file permissions! Please grant file permissions and restart the app",
+                    duration = 10000
+                )
+            )
             log.e("No file permission!!!")
             return
         }
@@ -48,6 +58,7 @@ class StrokeMigrationHelper @Inject constructor(
         }
 
         var batchSize = 1500
+        val progressSnackId = "migration_progress"
         val maxPressure = EpdController.getMaxTouchPressure().toLong()
 
         while (true) {
@@ -56,14 +67,20 @@ class StrokeMigrationHelper @Inject constructor(
             if (remaining == 0) {
                 // Finished
                 db.execSQL("DROP TABLE IF EXISTS stroke_old")
-                appEventBus.tryEmit(AppEvent.StrokeMigrationCompleted)
+                SnackState.globalSnackFlow.tryEmit(
+                    SnackConf(
+                        id = progressSnackId, text = "Stroke migration complete.", duration = 3000
+                    )
+                )
                 break
             }
-            appEventBus.tryEmit(
-                AppEvent.StrokeMigrationProgress(
-                    migrated = totalInitial - remaining,
-                    total = totalInitial,
-                    batchSize = batchSize
+            SnackState.cancelGlobalSnack.tryEmit(progressSnackId)
+            val percent = (100.0 * (totalInitial - remaining).toFloat() / totalInitial.toFloat())
+            SnackState.globalSnackFlow.tryEmit(
+                SnackConf(
+                    id = progressSnackId,
+                    text = "Migrating strokes: ${"%.1f".format(percent)}% (${totalInitial - remaining}/$totalInitial) batch=$batchSize",
+                    duration = null
                 )
             )
 
@@ -149,15 +166,23 @@ class StrokeMigrationHelper @Inject constructor(
                             deleteStmt.executeUpdateDelete()
                         } catch (delEx: Exception) {
                             log.e("Failed to delete oversize stroke id=$id", delEx)
-                            appEventBus.tryEmit(
-                                AppEvent.GenericError("Failed to delete oversize stroke $id")
+                            SnackState.globalSnackFlow.tryEmit(
+                                SnackConf(
+                                    id = "oversize_$id",
+                                    text = "Failed to delete oversize stroke $id",
+                                    duration = 4000
+                                )
                             )
                             throw delEx
                         }
                     } catch (rowEx: Exception) {
                         log.e("Failed stroke id=$id; leaving for retry.", rowEx)
-                        appEventBus.tryEmit(
-                            AppEvent.GenericError("Failed stroke id=$id; leaving for retry.")
+                        SnackState.globalSnackFlow.tryEmit(
+                            SnackConf(
+                                id = "oversize_$id",
+                                text = "Failed stroke id=$id; leaving for retry.",
+                                duration = 4000
+                            )
                         )
                         throw rowEx
                     }
@@ -167,8 +192,12 @@ class StrokeMigrationHelper @Inject constructor(
             } catch (rowBlob: SQLiteBlobTooBigException) {
                 // Single-row still too large: mark & skip
                 log.e("Oversize batch $batchSize, trying again with half batchsize.", rowBlob)
-                appEventBus.tryEmit(
-                    AppEvent.GenericError("Oversize batch $batchSize, trying again with half batchsize.")
+                SnackState.globalSnackFlow.tryEmit(
+                    SnackConf(
+                        id = "oversize_$batchSize",
+                        text = "Oversize batch $batchSize, trying again with half batchsize.",
+                        duration = 4000
+                    )
                 )
 
 
@@ -185,11 +214,12 @@ class StrokeMigrationHelper @Inject constructor(
                         if (!deleteOversizeData(db)) break
                         else db.setTransactionSuccessful()
                     } else {
-                        appEventBus.tryEmit(
-                            AppEvent.GenericError(
-                                "Migration failed due to oversized stroke data. Reducing batch size did not help. Enable destructive migrations in Debug Settings."
-                            )
+                        val message = SnackConf(
+                            id = "oversize_$batchSize",
+                            text = "Migration failed due to oversized stroke data. reducing batchSize didn't help. You can choose to use destructive migrations in Debug Settings",
+                            duration = 6000
                         )
+                        tryEmitDelayed(message, 2000)
                         break
                     }
 
@@ -200,17 +230,26 @@ class StrokeMigrationHelper @Inject constructor(
 
             } catch (rowEx: Exception) {
                 // Leave it; remains in stroke_old
-                appEventBus.tryEmit(
-                    AppEvent.GenericError(
-                        "Stroke reencoding failed for batch $batchSize, retrying with smaller batch."
+                SnackState.globalSnackFlow.tryEmit(
+                    SnackConf(
+                        id = "oversize_$batchSize",
+                        text = "Stroke Reencoding, batch size $batchSize, trying again with smaller batchSize",
+                        duration = 4000
+                    )
+                )
+                SnackState.globalSnackFlow.tryEmit(
+                    SnackConf(
+                        id = "oversize2_$batchSize", text = "Error message: $rowEx", duration = 4000
                     )
                 )
                 log.e("Batch failed (size=$batchSize)", rowEx)
                 batchSize /= 2
                 if (batchSize < 2) {
-                    appEventBus.tryEmit(
-                        AppEvent.GenericError(
-                            "Migration failed (batchSize=$batchSize), reducing batch size did not help."
+                    SnackState.globalSnackFlow.tryEmit(
+                        SnackConf(
+                            id = "oversize_$batchSize",
+                            text = "Migration failed(batchSize=$batchSize), reducing batchSize didn't help",
+                            duration = 4000
                         )
                     )
                     break
@@ -250,16 +289,37 @@ class StrokeMigrationHelper @Inject constructor(
       )
     """.trimIndent()
             db.execSQL(sql)
-            appEventBus.tryEmit(
-                AppEvent.StrokeMigrationWarning(corruptedPoints = 1)
+            SnackState.globalSnackFlow.tryEmit(
+                SnackConf(
+                    id = "oversize_1",
+                    text = "Deleted oversized stroke data during migration. Some pen strokes may have been removed.",
+                    duration = 4000
+                )
             )
             return true
         } catch (delEx: Exception) {
             log.e("Failed to delete oversize row(s) during destructive migration", delEx)
-            appEventBus.tryEmit(
-                AppEvent.GenericError("Failed to delete oversize stroke(s): ${delEx.message}")
+            SnackState.globalSnackFlow.tryEmit(
+                SnackConf(
+                    id = "oversize_delete_fail",
+                    text = "Failed to delete oversize stroke(s): ${delEx.message}",
+                    duration = 4000
+                )
             )
             return false
+        }
+    }
+}
+
+// ugly workaround to show snack after the UI was initialized.
+private fun tryEmitDelayed(conf: SnackConf, delayMs: Long = 200L) {
+    val emitScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    emitScope.launch {
+        try {
+            delay(delayMs)
+            SnackState.globalSnackFlow.emit(conf)
+        } catch (t: Throwable) {
+            log.e("Delayed snack emit failed", t)
         }
     }
 }

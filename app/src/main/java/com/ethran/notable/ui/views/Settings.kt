@@ -40,7 +40,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -59,8 +58,7 @@ import com.ethran.notable.BuildConfig
 import com.ethran.notable.R
 import com.ethran.notable.data.datastore.AppSettings
 import com.ethran.notable.navigation.NavigationDestination
-import com.ethran.notable.ui.LocalSnackContext
-import com.ethran.notable.ui.SnackConf
+import com.ethran.notable.ui.SnackState
 import com.ethran.notable.ui.components.DebugSettings
 import com.ethran.notable.ui.components.GeneralSettings
 import com.ethran.notable.ui.components.GesturesSettings
@@ -68,7 +66,6 @@ import com.ethran.notable.ui.theme.InkaTheme
 import com.ethran.notable.ui.viewmodels.GestureRowModel
 import com.ethran.notable.ui.viewmodels.SettingsViewModel
 import com.ethran.notable.utils.isNext
-import kotlinx.coroutines.launch
 
 
 object SettingsDestination : NavigationDestination {
@@ -245,18 +242,10 @@ private fun SettingsTabRow(tabs: List<String>, selectedTab: Int, onTabSelected: 
 @Composable
 fun GitHubSponsorButton(modifier: Modifier = Modifier) {
     val context = LocalContext.current
-    val snackState = LocalSnackContext.current
-    val scope = rememberCoroutineScope()
     Box(
         modifier = modifier
             .background(color = Color(0xFF24292E), shape = RoundedCornerShape(25.dp))
-            .clickable {
-                openInBrowser(context, "https://github.com/sponsors/ethran") {
-                    scope.launch {
-                        snackState.displaySnack(SnackConf(text = it, duration = 3000))
-                    }
-                }
-            },
+            .clickable { openInBrowser(context, "https://github.com/sponsors/ethran") },
         contentAlignment = Alignment.Center
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -283,8 +272,6 @@ fun UpdateActions(
     isLatestVersion: Boolean, onCheckUpdate: (Boolean) -> Unit, modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val snackState = LocalSnackContext.current
-    val scope = rememberCoroutineScope()
     if (!isLatestVersion) {
         Column(modifier = modifier) {
             Text(
@@ -294,13 +281,7 @@ fun UpdateActions(
             )
             Spacer(Modifier.height(10.dp))
             Button(
-                onClick = {
-                    openInBrowser(context, "https://github.com/ethran/notable/releases") {
-                        scope.launch {
-                            snackState.displaySnack(SnackConf(text = it, duration = 3000))
-                        }
-                    }
-                },
+                onClick = { openInBrowser(context, "https://github.com/ethran/notable/releases") },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Icon(Icons.Default.Upgrade, contentDescription = null)
@@ -321,14 +302,17 @@ fun UpdateActions(
 
 
 
-fun openInBrowser(context: Context, uriString: String, onError: (String) -> Unit) {
+fun openInBrowser(context: Context, uriString: String) {
     val urlIntent = Intent(Intent.ACTION_VIEW, uriString.toUri())
     try {
         context.startActivity(urlIntent)
     } catch (_: ActivityNotFoundException) {
-        val message = "No application can handle this request. Please install a web browser."
-        Log.w("openInBrowser", message)
-        onError(message)
+        // log and show error
+        SnackState.logAndShowError(
+            "openInBrowser",
+            "No application can handle this request. Please install a web browser.",
+            Log::w
+        )
     }
 }
 

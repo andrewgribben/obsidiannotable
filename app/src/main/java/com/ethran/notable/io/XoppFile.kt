@@ -20,11 +20,9 @@ import com.ethran.notable.data.db.Page
 import com.ethran.notable.data.db.PageRepository
 import com.ethran.notable.data.db.Stroke
 import com.ethran.notable.data.db.StrokePoint
-import com.ethran.notable.data.events.AppEvent
-import com.ethran.notable.data.events.AppEventBus
 import com.ethran.notable.data.ensureImagesFolder
 import com.ethran.notable.editor.utils.Pen
-
+import com.ethran.notable.ui.showHint
 import com.ethran.notable.utils.ensureNotMainThread
 import com.onyx.android.sdk.api.device.epd.EpdController
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -45,9 +43,14 @@ import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
 import java.io.OutputStreamWriter
+import java.io.StringWriter
 import java.util.UUID
 import javax.inject.Inject
 import javax.xml.parsers.DocumentBuilderFactory
+import javax.xml.transform.OutputKeys
+import javax.xml.transform.TransformerFactory
+import javax.xml.transform.dom.DOMSource
+import javax.xml.transform.stream.StreamResult
 
 // I do not know what pressureFactor should be, I just guest it.
 // it's used to get strokes look relatively good in xournal++
@@ -57,8 +60,7 @@ private const val PRESSURE_FACTOR = 0.5f
 class XoppFile @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val pageRepo: PageRepository,
-    private val bookRepo: BookRepository,
-    private val appEventBus: AppEventBus
+    private val bookRepo: BookRepository
 ) {
     private val log = ShipBook.getLogger("XoppFile")
     private val scaleFactor = A4_WIDTH.toFloat() / SCREEN_WIDTH
@@ -73,34 +75,29 @@ class XoppFile @Inject constructor(
             }
         )
 
-        try {
-            BufferedWriter(OutputStreamWriter(FileOutputStream(tmp), Charsets.UTF_8)).use { writer ->
-                writer.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
-                writer.write("<xournal creator=\"Notable ${BuildConfig.VERSION_NAME}\" version=\"0.4\">\n")
-                when (target) {
-                    is ExportTarget.Book -> {
-                        val book = bookRepo.getById(target.bookId)
-                            ?: throw IOException("Book not found: ${target.bookId}")
-                        book.pageIds.forEach { pageId ->
-                            writePage(pageId, writer)
-                        }
-                    }
-
-                    is ExportTarget.Page -> {
-                        writePage(target.pageId, writer)
+        BufferedWriter(OutputStreamWriter(FileOutputStream(tmp), Charsets.UTF_8)).use { writer ->
+            writer.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
+            writer.write("<xournal creator=\"Notable ${BuildConfig.VERSION_NAME}\" version=\"0.4\">\n")
+            when (target) {
+                is ExportTarget.Book -> {
+                    val book = bookRepo.getById(target.bookId)
+                        ?: throw IOException("Book not found: ${target.bookId}")
+                    book.pageIds.forEach { pageId ->
+                        writePage(pageId, writer)
                     }
                 }
-                writer.write("</xournal>\n")
-            }
 
-            GzipCompressorOutputStream(BufferedOutputStream(output)).use { gz ->
-                tmp.inputStream().use { it.copyTo(gz) }
+                is ExportTarget.Page -> {
+                    writePage(target.pageId, writer)
+                }
             }
-        } finally {
-            if (tmp.exists() && !tmp.delete()) {
-                log.w("Failed to delete temporary export file: ${tmp.absolutePath}")
-            }
+            writer.write("</xournal>\n")
         }
+
+        GzipCompressorOutputStream(BufferedOutputStream(output)).use { gz ->
+            tmp.inputStream().use { it.copyTo(gz) }
+        }
+        tmp.delete()
     }
 
 
@@ -114,174 +111,116 @@ class XoppFile @Inject constructor(
      * @param writer The BufferedWriter to write XML data to.
      */
     private suspend fun writePage(pageId: String, writer: BufferedWriter) {
-        val pageWithData = pageRepo.getWithDataById(pageId)
-        val strokes = pageWithData.strokes
-        val images = pageWithData.images
+        val (_, strokes) = pageRepo.getWithStrokeById(pageId)
+        val (_, images) = pageRepo.getWithImageById(pageId)
+
+        val doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument()
+
+        val root = doc.createElement("page")
         val strokeHeight = if (strokes.isEmpty()) 0 else strokes.maxOf(Stroke::bottom).toInt() + 50
         val height = strokeHeight.coerceAtLeast(SCREEN_HEIGHT) * scaleFactor
 
-        writer.write("<page width=\"")
-        writer.write(A4_WIDTH.toString())
-        writer.write("\" height=\"")
-        writer.write(height.toString())
-        writer.write("\">\n")
-        writer.write("<background type=\"solid\" color=\"#ffffffff\" style=\"plain\"/>\n")
-        writer.write("<layer>\n")
+        root.setAttribute("width", A4_WIDTH.toString())
+        root.setAttribute("height", height.toString())
+        doc.appendChild(root)
+
+        val bcgElement = doc.createElement("background")
+        bcgElement.setAttribute("type", "solid")
+        bcgElement.setAttribute("color", "#ffffffff")
+        bcgElement.setAttribute("style", "plain")
+        root.appendChild(bcgElement)
+
+
+        val layer = doc.createElement("layer")
+        root.appendChild(layer)
+
+
 
         for (stroke in strokes) {
             // skip the small strokes, to avoid error: Wrong count of points (2)
-            if (stroke.points.size < 3) continue
-
-            writer.write("<stroke tool=\"")
-            writer.write(escapeXml(stroke.pen.toString()))
-            writer.write("\" color=\"")
-            writer.write(escapeXml(getColorName(Color(stroke.color))))
-            writer.write("\" width=\"")
-            writer.write((stroke.size * scaleFactor).toString())
-
-            if (stroke.pen == Pen.FOUNTAIN || stroke.pen == Pen.BRUSH || stroke.pen == Pen.PENCIL) {
-                stroke.points.forEach { point ->
-                    writer.write(" ")
-                    writer.write(
-                        (point.pressure?.div(stroke.maxPressure * PRESSURE_FACTOR) ?: 1f).toString()
-                    )
-                }
+            if (stroke.points.size < 3)
+                continue
+            val strokeElement = doc.createElement("stroke")
+            strokeElement.setAttribute("tool", stroke.pen.toString())
+            strokeElement.setAttribute("color", getColorName(Color(stroke.color)))
+            val widthValues = mutableListOf(stroke.size * scaleFactor)
+            if (stroke.pen == Pen.FOUNTAIN || stroke.pen == Pen.BRUSH || stroke.pen == Pen.PENCIL) widthValues += stroke.points.map {
+                it.pressure?.div(stroke.maxPressure * PRESSURE_FACTOR) ?: 1f
             }
+            val widthString = widthValues.joinToString(" ")
 
-            writer.write("\">")
-            var firstPoint = true
-            stroke.points.forEach { point ->
-                if (!firstPoint) writer.write(" ")
-                writer.write((point.x * scaleFactor).toString())
-                writer.write(" ")
-                writer.write((point.y * scaleFactor).toString())
-                firstPoint = false
-            }
-            writer.write("</stroke>\n")
+            strokeElement.setAttribute("width", widthString)
+
+            val pointsString =
+                stroke.points.joinToString(" ") { "${it.x * scaleFactor} ${it.y * scaleFactor}" }
+            strokeElement.textContent = pointsString
+            layer.appendChild(strokeElement)
         }
 
         for (image in images) {
+            val imgElement = doc.createElement("image")
+
             val left = image.x * scaleFactor
             val top = image.y * scaleFactor
             val right = (image.x + image.width) * scaleFactor
             val bottom = (image.y + image.height) * scaleFactor
 
-            val uri = image.uri
-            if (uri.isNullOrBlank()) {
-                appEventBus.tryEmit(AppEvent.ActionHint("Image cannot be loaded."))
-                continue
+            imgElement.setAttribute("left", left.toString())
+            imgElement.setAttribute("top", top.toString())
+            imgElement.setAttribute("right", right.toString())
+            imgElement.setAttribute("bottom", bottom.toString())
+
+            image.uri?.let { uri ->
+                imgElement.setAttribute("filename", uri)
+                imgElement.textContent = convertImageToBase64(image.uri, context)
             }
-
-            writer.write("<image left=\"")
-            writer.write(left.toString())
-            writer.write("\" top=\"")
-            writer.write(top.toString())
-            writer.write("\" right=\"")
-            writer.write(right.toString())
-            writer.write("\" bottom=\"")
-            writer.write(bottom.toString())
-            writer.write("\" filename=\"")
-            writer.write(escapeXml(uri))
-            writer.write("\">")
-
-            val imageWasWritten = writeImageBase64ToWriter(uri, writer)
-            writer.write("</image>\n")
-
-            if (!imageWasWritten) {
-                appEventBus.tryEmit(AppEvent.ActionHint("Image cannot be loaded."))
-            }
+            if (imgElement.textContent.isNotBlank()) layer.appendChild(imgElement)
+            else showHint("Image cannot be loaded.")
         }
 
-        writer.write("</layer>\n")
-        writer.write("</page>\n")
+        val xmlString = convertXmlToString(doc)
+        writer.write(xmlString)
     }
 
 
     /**
      * Opens a file and converts it to a base64 string.
      */
-    private fun writeImageBase64ToWriter(uri: String, writer: BufferedWriter): Boolean {
+    private fun convertImageToBase64(uri: String, context: Context): String {
         return try {
-            context.contentResolver.openInputStream(uri.toUri())?.use { inputStream ->
-                val buffer = ByteArray(DEFAULT_IMAGE_CHUNK_SIZE)
-                val tail = ByteArray(3)
-                var tailSize = 0
-                var hasData = false
-
-                while (true) {
-                    val bytesRead = inputStream.read(buffer)
-                    if (bytesRead <= 0) break
-
-                    var offset = 0
-                    if (tailSize > 0) {
-                        val needed = 3 - tailSize
-                        if (bytesRead >= needed) {
-                            System.arraycopy(buffer, 0, tail, tailSize, needed)
-                            writer.write(Base64.encodeToString(tail, 0, 3, Base64.NO_WRAP))
-                            hasData = true
-                            tailSize = 0
-                            offset = needed
-                        } else {
-                            System.arraycopy(buffer, 0, tail, tailSize, bytesRead)
-                            tailSize += bytesRead
-                            continue
-                        }
-                    }
-
-                    val encodableBytes = ((bytesRead - offset) / 3) * 3
-                    if (encodableBytes > 0) {
-                        writer.write(
-                            Base64.encodeToString(
-                                buffer,
-                                offset,
-                                encodableBytes,
-                                Base64.NO_WRAP
-                            )
-                        )
-                        hasData = true
-                        offset += encodableBytes
-                    }
-
-                    val remainder = bytesRead - offset
-                    if (remainder > 0) {
-                        System.arraycopy(buffer, offset, tail, 0, remainder)
-                        tailSize = remainder
-                    }
-                }
-
-                if (tailSize > 0) {
-                    writer.write(Base64.encodeToString(tail, 0, tailSize, Base64.NO_WRAP))
-                    hasData = true
-                }
-                hasData
-            } ?: false
+            val inputStream = context.contentResolver.openInputStream(uri.toUri())
+            val bytes = inputStream?.readBytes() ?: return ""
+            Base64.encodeToString(bytes, Base64.DEFAULT)
         } catch (e: SecurityException) {
             log.e("convertImageToBase64:" + "Permission denied: ${e.message}")
-            false
+            ""
         } catch (e: FileNotFoundException) {
             log.e("convertImageToBase64:" + "File not found: ${e.message}")
-            false
+            ""
         } catch (e: IOException) {
             log.e("convertImageToBase64:" + "I/O error: ${e.message}")
-            false
-        } catch (e: OutOfMemoryError) {
-            log.e("convertImageToBase64: Not enough memory for image export: ${e.message}")
-            false
+            ""
         }
     }
 
 
-    private fun escapeXml(value: String): String = buildString(value.length) {
-        value.forEach { ch ->
-            when (ch) {
-                '&' -> append("&amp;")
-                '<' -> append("&lt;")
-                '>' -> append("&gt;")
-                '"' -> append("&quot;")
-                '\'' -> append("&apos;")
-                else -> append(ch)
-            }
-        }
+    /**
+     * Converts an XML Document to a formatted string without the XML declaration.
+     *
+     * This is used to convert an individual page's XML structure into a string
+     * before writing it to the output file. The XML declaration is removed to
+     * prevent duplicate headers when merging pages.
+     *
+     * @param document The XML Document to convert.
+     * @return The formatted XML string without the XML declaration.
+     */
+    private fun convertXmlToString(document: Document): String {
+        val transformer = TransformerFactory.newInstance().newTransformer()
+        transformer.setOutputProperty(OutputKeys.INDENT, "yes")
+        transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes") // ❗ Omit XML header
+        val writer = StringWriter()
+        transformer.transform(DOMSource(document), StreamResult(writer))
+        return writer.toString().trim() // Remove extra spaces or newlines
     }
 
 
@@ -552,8 +491,6 @@ class XoppFile @Inject constructor(
     }
 
     companion object {
-        private const val DEFAULT_IMAGE_CHUNK_SIZE = 16 * 1024
-
         // Helper functions to determine file type
         fun isXoppFile(mimeType: String?, fileName: String?): Boolean {
             val isXoppFile = mimeType in listOf(

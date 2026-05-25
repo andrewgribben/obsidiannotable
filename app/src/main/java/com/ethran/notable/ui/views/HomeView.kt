@@ -52,14 +52,16 @@ import com.ethran.notable.data.AppRepository
 import com.ethran.notable.data.db.Folder
 import com.ethran.notable.data.db.Notebook
 import com.ethran.notable.editor.EditorDestination
-import com.ethran.notable.editor.ui.Topbar
+import com.ethran.notable.editor.ui.toolbar.Topbar
 import com.ethran.notable.editor.utils.autoEInkAnimationOnScroll
 import com.ethran.notable.io.ExportEngine
+import com.ethran.notable.io.SyncState
 import com.ethran.notable.navigation.NavigationDestination
-import com.ethran.notable.ui.LocalSnackContext
 import com.ethran.notable.ui.SnackConf
+import com.ethran.notable.ui.SnackState
 import com.ethran.notable.ui.components.BreadCrumb
 import com.ethran.notable.ui.components.NotebookCard
+import com.ethran.notable.ui.components.PagePreview
 import com.ethran.notable.ui.components.ShowPagesRow
 import com.ethran.notable.ui.dialogs.EmptyBookWarningHandler
 import com.ethran.notable.ui.dialogs.FolderConfigDialog
@@ -117,8 +119,7 @@ fun Library(
         onDeleteEmptyBook = viewModel::deleteEmptyBook,
         onCreateNewNotebook = viewModel::onCreateNewNotebook,
         onImportPdf = viewModel::onPdfFile,
-        onImportXopp = viewModel::onXoppFile,
-        onPreviewMissing = viewModel::onPreviewRequested
+        onImportXopp = viewModel::onXoppFile
 
     )
 }
@@ -139,75 +140,115 @@ fun LibraryContent(
     onDeleteEmptyBook: (String) -> Unit,
     onCreateNewNotebook: () -> Unit,
     onImportPdf: (Uri, Boolean) -> Unit,
-    onImportXopp: (Uri) -> Unit,
-    onPreviewMissing: (String) -> Unit
+    onImportXopp: (Uri) -> Unit
 ) {
     Column(Modifier.fillMaxSize()) {
-        Topbar {
-            Row(Modifier.fillMaxWidth()) {
-                Spacer(modifier = Modifier.weight(1f))
-                BadgedBox(
-                    badge = {
-                        if (!uiState.isLatestVersion) Badge(
-                            backgroundColor = Color.Black,
-                            modifier = Modifier.offset((-12).dp, 10.dp)
+        // Slim header
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Singularity",
+                style = androidx.compose.material.MaterialTheme.typography.h5,
+                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+            )
+            BadgedBox(
+                badge = {
+                    if (!uiState.isLatestVersion) Badge(
+                        backgroundColor = Color.Black,
+                        modifier = Modifier.offset((-12).dp, 10.dp)
+                    )
+                }) {
+                Icon(
+                    imageVector = FeatherIcons.Settings, contentDescription = "Settings",
+                    Modifier
+                        .padding(8.dp)
+                        .noRippleClickable(onClick = onNavigateToSettings)
+                )
+            }
+        }
+
+        // Page grid
+        val pages = uiState.singlePages?.reversed() ?: emptyList()
+        LazyVerticalGrid(
+            columns = GridCells.Adaptive(140.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier
+                .padding(horizontal = 16.dp)
+                .autoEInkAnimationOnScroll()
+        ) {
+            // New capture card
+            item {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .aspectRatio(3f / 4f)
+                        .border(2.dp, Color.Black, RectangleShape)
+                        .noRippleClickable(onClick = onCreateNewQuickPage)
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = FeatherIcons.FilePlus,
+                            contentDescription = "New Capture",
+                            tint = Color.Black,
+                            modifier = Modifier.size(48.dp)
                         )
-                    }) {
-                    Icon(
-                        imageVector = FeatherIcons.Settings, contentDescription = "Settings",
-                        Modifier
-                            .padding(8.dp)
-                            .noRippleClickable(onClick = onNavigateToSettings)
+                        Text(
+                            "New Capture",
+                            style = androidx.compose.material.MaterialTheme.typography.body2,
+                            color = Color.DarkGray
+                        )
+                    }
+                }
+            }
+
+            // Existing pages
+            items(pages) { page ->
+                var isPageSelected by remember { mutableStateOf(false) }
+                val isSyncing = page.id in SyncState.syncingPageIds
+                Box {
+                    PagePreview(
+                        modifier = Modifier
+                            .combinedClickable(
+                                onClick = { goToPage(page.id) },
+                                onLongClick = { isPageSelected = true }
+                            )
+                            .aspectRatio(3f / 4f)
+                            .border(1.dp, Color.Gray, RectangleShape),
+                        pageId = page.id
+                    )
+                    if (isSyncing) {
+                        Box(
+                            modifier = Modifier
+                                .aspectRatio(3f / 4f)
+                                .background(Color.White.copy(alpha = 0.7f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                "Syncing...",
+                                style = androidx.compose.material.MaterialTheme.typography.caption,
+                                color = Color.DarkGray
+                            )
+                        }
+                    }
+                    if (isPageSelected) com.ethran.notable.editor.ui.PageMenu(
+                        appRepository = appRepository,
+                        pageId = page.id,
+                        canDelete = true,
+                        onClose = { isPageSelected = false }
                     )
                 }
             }
-            Row(Modifier.padding(10.dp)) {
-                BreadCrumb(
-                    folders = uiState.breadcrumbFolders, onSelectFolderId = onNavigateToFolder
-                )
-            }
-
-        }
-
-        Column(Modifier.padding(10.dp)) {
-            Spacer(Modifier.height(10.dp))
-
-            FolderList(
-                appRepository = appRepository,
-                folders = uiState.folders,
-                onNavigateToFolder = onNavigateToFolder,
-                onCreateNewFolder = onCreateNewFolder
-            )
-
-            Spacer(Modifier.height(10.dp))
-            ShowPagesRow(
-                appRepository = appRepository,
-                pages = uiState.singlePages,
-                currentPageId = null,
-                title = stringResource(R.string.home_quick_pages), onSelectPage = goToPage,
-                showAddQuickPage = true,
-                onCreateNewQuickPage = onCreateNewQuickPage,
-                onPreviewMissing = onPreviewMissing
-            )
-
-            Spacer(Modifier.height(10.dp))
-
-            NotebookGrid(
-                appRepository = appRepository,
-                exportEngine = exportEngine,
-                books = uiState.books,
-                isImporting = uiState.isImporting,
-                onNavigateToEditor = onNavigateToEditor,
-                onDeleteEmptyBook = onDeleteEmptyBook,
-                onCreateNewNotebook = onCreateNewNotebook,
-                onImportPdf = onImportPdf,
-                onImportXopp = onImportXopp,
-                onPreviewMissing = onPreviewMissing
-            )
         }
     }
-
-
 }
 
 @Composable
@@ -279,8 +320,7 @@ fun NotebookGrid(
     onDeleteEmptyBook: (String) -> Unit,
     onCreateNewNotebook: () -> Unit,
     onImportPdf: (Uri, Boolean) -> Unit,
-    onImportXopp: (Uri) -> Unit,
-    onPreviewMissing: (String) -> Unit
+    onImportXopp: (Uri) -> Unit
 ) {
     Text(text = stringResource(R.string.home_notebooks))
     Spacer(Modifier.height(10.dp))
@@ -316,9 +356,7 @@ fun NotebookGrid(
                     pageIds = book.pageIds,
                     openPageId = book.openPageId,
                     onOpen = { bookId, pageId -> onNavigateToEditor(pageId, bookId) },
-                    onOpenSettings = { isSettingsOpen = true },
-                    onPreviewMissing = onPreviewMissing
-                )
+                    onOpenSettings = { isSettingsOpen = true })
 
                 if (isSettingsOpen) {
                     NotebookConfigDialog(
@@ -339,7 +377,6 @@ fun NotebookImportPanel(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val snackState = LocalSnackContext.current
     var showPdfImportChoiceDialog by remember { mutableStateOf<Uri?>(null) }
 
     showPdfImportChoiceDialog?.let { uri ->
@@ -398,7 +435,7 @@ fun NotebookImportPanel(
                     }
                 } catch (e: Exception) {
                     log.e("contentPicker failed: ${e.message}", e)
-                    snackState.showOrUpdateSnack(SnackConf(text = "Importing failed: ${e.message}"))
+                    SnackState.globalSnackFlow.tryEmit(SnackConf(text = "Importing failed: ${e.message}"))
                 }
             }
             // Import Notebook (Bottom Half)
@@ -478,7 +515,6 @@ fun LibraryContentPreview() {
 //        onImportXopp = {})
 }
 
-@Suppress("UnusedVariable")
 @OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
 @Preview(showBackground = true, name = "Library - Update Available & Importing")
 @Composable

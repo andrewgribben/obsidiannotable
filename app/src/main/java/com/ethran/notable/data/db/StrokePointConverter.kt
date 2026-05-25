@@ -1,5 +1,7 @@
 package com.ethran.notable.data.db
 
+import com.ethran.notable.ui.SnackConf
+import com.ethran.notable.ui.SnackState
 import io.shipbook.shipbooksdk.ShipBook
 import net.jpountz.lz4.LZ4Factory
 import java.nio.ByteBuffer
@@ -186,9 +188,13 @@ fun encodeStrokePoints(
     points: List<StrokePoint>, mask: Int = computeStrokeMask(points)
 ): ByteArray {
     if (points.first().y > MAX_PAGE_HEIGHT) {
-        val pageHeight = points.first().y
-        log.e("Page is too large: y=$pageHeight, max=$MAX_PAGE_HEIGHT")
-        throw IllegalArgumentException("Page is too large: y=$pageHeight")
+        log.e("Page is too large!")
+        SnackState.globalSnackFlow.tryEmit(
+            SnackConf(
+                id = "oversize", text = "Page is too large!", duration = 4000
+            )
+        )
+        throw IllegalArgumentException("Page is too large!")
     }
     val count = points.size
     require(count > 0) { "Empty point list" }
@@ -313,7 +319,6 @@ fun decodeStrokePoints(bytes: ByteArray): List<StrokePoint> {
             ByteBuffer.wrap(bytes, HEADER_SIZE, bytes.size - HEADER_SIZE)
                 .order(ByteOrder.LITTLE_ENDIAN)
         }
-
         COMPRESSION_LZ4 -> {
             require(bytes.size > HEADER_SIZE + 4) { "Truncated (missing raw size)" }
             val rawSize = ByteBuffer.wrap(bytes, HEADER_SIZE, 4)

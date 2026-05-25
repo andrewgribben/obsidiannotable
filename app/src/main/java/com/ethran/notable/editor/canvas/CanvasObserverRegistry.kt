@@ -287,8 +287,7 @@ class CanvasObserverRegistry(
                         pageIdToLoad = pageId,
                         expectedWidth = page.viewWidth,
                         expectedHeight = page.viewHeight,
-                        pageNumber = pageNumber,
-                        pageUpdatedAtMs = null
+                        pageNumber = pageNumber
                     )
                 }
 

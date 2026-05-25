@@ -1,6 +1,7 @@
 package com.ethran.notable.data.model
 
 import com.ethran.notable.data.AppRepository
+import com.ethran.notable.ui.SnackState.Companion.logAndShowError
 import io.shipbook.shipbooksdk.ShipBook
 
 private val log = ShipBook.getLogger("BackgroundType")
@@ -23,7 +24,9 @@ sealed class BackgroundType(val key: String, val folderName: String) {
         return try {
             appRepository.getPageNumber(bookId, pageId)
         } catch (e: Exception) {
-            log.e("PageView.currentPageNumber: Error getting page number: ${e.message}")
+            logAndShowError(
+                "PageView.currentPageNumber", "Error getting page number: ${e.message}"
+            )
             null
         }
     }

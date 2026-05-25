@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.Image
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -30,25 +29,12 @@ import com.ethran.notable.data.AppRepository
 import com.ethran.notable.data.db.Folder
 import com.ethran.notable.data.db.Page
 import com.ethran.notable.editor.ui.toolbar.ToolbarButton
-import com.ethran.notable.io.ThumbnailBackfillQueue
-import com.ethran.notable.ui.SnackDispatcher
 import com.ethran.notable.ui.noRippleClickable
 import com.ethran.notable.ui.viewmodels.QuickNavUiState
 import com.ethran.notable.ui.viewmodels.QuickNavViewModel
-import dagger.hilt.EntryPoint
-import dagger.hilt.EntryPoints
-import dagger.hilt.InstallIn
-import dagger.hilt.components.SingletonComponent
 import io.shipbook.shipbooksdk.ShipBook
 
 private val logQuickNav = ShipBook.getLogger("QuickNav")
-
-@EntryPoint
-@InstallIn(SingletonComponent::class)
-interface QuickNavEntryPoint {
-    fun thumbnailBackfillQueue(): ThumbnailBackfillQueue
-    fun snackDispatcher(): SnackDispatcher
-}
 
 
 
@@ -62,20 +48,12 @@ fun QuickNav(
     goToFolder: (String?) -> Unit,
 ) {
     val context = LocalContext.current
-    val entryPoint = remember(context) {
-        EntryPoints.get(context.applicationContext, QuickNavEntryPoint::class.java)
-    }
-    val thumbnailBackfillQueue = entryPoint.thumbnailBackfillQueue()
 
     // Provide the ViewModel using a custom Factory to inject appRepository
     val viewModel: QuickNavViewModel = viewModel(factory = object : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return QuickNavViewModel(
-                appRepository = appRepository,
-                thumbnailBackfillQueue = thumbnailBackfillQueue,
-                snackDispatcher = entryPoint.snackDispatcher()
-            ) as T
+            return QuickNavViewModel(appRepository) as T
         }
     })
 
@@ -96,7 +74,6 @@ fun QuickNav(
         },
         onNavigateBreadcrumb = { goToFolder(it) },
         onToggleFavorite = viewModel::toggleFavorite,
-        onGenerateBookPreviews = viewModel::generateThumbnailsForCurrentBook,
         onScrubStart = viewModel::onScrubStart,
         onScrubPreview = viewModel::onScrubPreview,
         onScrubEnd = viewModel::onScrubEnd,
@@ -107,12 +84,11 @@ fun QuickNav(
 
 @Composable
 fun QuickNavContent(
-    appRepository: AppRepository?,
+    appRepository: AppRepository,
     uiState: QuickNavUiState,
     onClose: () -> Unit,
     onNavigateBreadcrumb: (String?) -> Unit,
     onToggleFavorite: () -> Unit,
-    onGenerateBookPreviews: () -> Unit,
     onScrubStart: () -> Unit,
     onScrubPreview: (Int) -> Unit,
     onScrubEnd: (Int) -> Unit,
@@ -152,21 +128,17 @@ fun QuickNavContent(
                 folders = uiState.breadcrumbFolders,
                 isFavorite = uiState.isCurrentPageFavorite,
                 canToggleFavorite = uiState.currentPageId != null,
-                canGeneratePreviews = uiState.bookPageIds.isNotEmpty(),
                 onNavigateBreadcrumb = onNavigateBreadcrumb,
-                onToggleFavorite = onToggleFavorite,
-                onGenerateBookPreviews = onGenerateBookPreviews
+                onToggleFavorite = onToggleFavorite
             )
 
-            if (appRepository != null) {
-                ShowPagesRow(
-                    appRepository = appRepository,
-                    pages = uiState.favoritePages,
-                    currentPageId = uiState.currentPageId,
-                    title = "Favorite pages",
-                    onSelectPage = { goToPage(it) }
-                )
-            }
+            ShowPagesRow(
+                appRepository = appRepository,
+                pages = uiState.favoritePages,
+                currentPageId = uiState.currentPageId,
+                title = "Favorite pages",
+                onSelectPage = { goToPage(it) }
+            )
 
             // Scrubber block only renders if we have a valid book
             if (uiState.bookPageCount >= 2) {
@@ -193,10 +165,8 @@ private fun QuickNavHeaderRow(
     folders: List<Folder>,
     isFavorite: Boolean,
     canToggleFavorite: Boolean,
-    canGeneratePreviews: Boolean,
     onNavigateBreadcrumb: (String?) -> Unit,
-    onToggleFavorite: () -> Unit,
-    onGenerateBookPreviews: () -> Unit
+    onToggleFavorite: () -> Unit
 ) {
     Row(modifier = Modifier.fillMaxWidth()) {
         BreadCrumb(
@@ -214,44 +184,31 @@ private fun QuickNavHeaderRow(
                     logQuickNav.w("favorite toggle ignored, pageId=null")
                 }
             })
-
-        ToolbarButton(
-            imageVector = Icons.Filled.Image,
-            onSelect = {
-                if (canGeneratePreviews) {
-                    onGenerateBookPreviews()
-                } else {
-                    logQuickNav.w("generate previews ignored, no book pages")
-                }
-            }
-        )
     }
 }
 
 
-@Preview(showBackground = true)
+@Preview(showBackground = false)
 @Composable
 fun QuickNavContentPreview() {
-    QuickNavContent(
-        appRepository = null,
-        uiState = QuickNavUiState(
-            favoritePages = listOf(Page(id = "page1")),
-            isLoading = false,
-            currentPageId = "page1",
-            folderId = "folder1",
-            isCurrentPageFavorite = true,
-            bookPageCount = 10,
-            currentBookIndex = 4,
-            favoriteIndexesInBook = listOf(0, 4, 9)
-        ),
-        onClose = {},
-        onNavigateBreadcrumb = {},
-        onToggleFavorite = {},
-        onGenerateBookPreviews = {},
-        onScrubStart = {},
-        onScrubPreview = {},
-        onScrubEnd = {},
-        onReturnClick = {},
-        goToPage = {},
-    )
+//    QuickNavContent(
+//        uiState = QuickNavUiState(
+//            favoritePages = listOf(Page(id = "page1")),
+//            isLoading = false,
+//            currentPageId = "page1",
+//            folderId = "folder1",
+//            isCurrentPageFavorite = true,
+//            bookPageCount = 10,
+//            currentBookIndex = 4,
+//            favoriteIndexesInBook = listOf(0, 4, 9)
+//        ),
+//        onClose = {},
+//        onNavigateBreadcrumb = {},
+//        onToggleFavorite = {},
+//        onScrubStart = {},
+//        onScrubPreview = {},
+//        onScrubEnd = {},
+//        onReturnClick = {},
+//        goToPage = {},
+//    )
 }

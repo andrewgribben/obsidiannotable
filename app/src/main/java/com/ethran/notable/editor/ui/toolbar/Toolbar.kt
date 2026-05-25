@@ -347,7 +347,6 @@ fun Toolbar(
                 )
                 EraserToolbarButton(
                     isSelected = state.mode == Mode.Erase,
-                    isMenuOpen = state.menuStates.isStrokeSelectionOpen,
                     onSelect = {
                         handleEraser()
                     },

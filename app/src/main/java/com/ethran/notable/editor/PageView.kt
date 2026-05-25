@@ -449,7 +449,7 @@ class PageView(
 
     // load background, fast, if it is accurate enough.
     private fun loadInitialBitmap(): Boolean {
-        val bitmapFromDisc = loadPersistBitmap(context, currentPageId, scroll, zoomLevel.value, null, true)
+        val bitmapFromDisc = loadPersistBitmap(context, currentPageId, scroll, zoomLevel.value, true)
         if (bitmapFromDisc != null) {
             // let's control that the last preview fits the present orientation. Otherwise we'll ask for a redraw.
             if (bitmapFromDisc.height == windowedCanvas.height && bitmapFromDisc.width == windowedCanvas.width) {
