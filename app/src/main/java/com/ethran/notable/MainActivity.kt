@@ -36,7 +36,9 @@ import com.ethran.notable.data.db.StrokeMigrationHelper
 import com.ethran.notable.editor.canvas.CanvasEventBus
 import com.ethran.notable.io.ExportEngine
 import com.ethran.notable.io.VaultTagScanner
+import com.ethran.notable.ui.AppEventUiBridge
 import com.ethran.notable.ui.LocalSnackContext
+import com.ethran.notable.ui.SnackDispatcher
 import com.ethran.notable.ui.SnackState
 import com.ethran.notable.ui.components.NotableApp
 import com.ethran.notable.ui.theme.InkaTheme
@@ -63,7 +65,7 @@ var SCREEN_HEIGHT = EpdController.getEpdWidth().toInt()
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
-    // Delay the init till we have the permisions required
+    // Delay the init till we have the permissions required
     @Inject
     lateinit var kvProxy: dagger.Lazy<KvProxy>
 
@@ -73,12 +75,17 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var editorSettingCacheManager: dagger.Lazy<EditorSettingCacheManager>
 
-    // 1. Use dagger.Lazy to defer DB initialization until after permissions
     @Inject
     lateinit var appRepositoryLazy: dagger.Lazy<AppRepository>
 
     @Inject
     lateinit var exportEngineLazy: dagger.Lazy<ExportEngine>
+
+    @Inject
+    lateinit var snackDispatcher: SnackDispatcher
+
+    @Inject
+    lateinit var appEventUiBridge: AppEventUiBridge
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -92,10 +99,8 @@ class MainActivity : ComponentActivity() {
         SCREEN_WIDTH = applicationContext.resources.displayMetrics.widthPixels
         SCREEN_HEIGHT = applicationContext.resources.displayMetrics.heightPixels
 
+
         val snackState = SnackState()
-        snackState.registerGlobalSnackObserver()
-        snackState.registerCancelGlobalSnackObserver()
-        PageDataManager.registerComponentCallbacks(this)
 
         // Load vault paths from app-private storage so getDbDir() uses the correct path
         // before we open the DB (which holds the full settings).
@@ -129,9 +134,10 @@ class MainActivity : ComponentActivity() {
                                 savedSettings.obsidianInboxPath,
                                 savedSettings.obsidianAttachmentPath
                             )
-
-                            editorSettingCacheManager.get().init()
                             strokeMigrationHelper.get().reencodeStrokePointsToSB1()
+                            PageDataManager
+                                .registerComponentCallbacks(this@MainActivity.applicationContext)
+                            editorSettingCacheManager.get().init()
                             VaultTagScanner.refreshCache(savedSettings.obsidianInboxPath)
                         }
                         fullInitDone = true
@@ -160,8 +166,8 @@ class MainActivity : ComponentActivity() {
                         !isInitialized -> ShowInitMessage()
                         showMainApp -> NotableApp(
                             exportEngine = exportEngineLazy.get(),
-                            editorSettingCacheManager = editorSettingCacheManager.get(),
                             snackState = snackState,
+                            snackDispatcher = snackDispatcher,
                             appRepository = appRepositoryLazy.get()
                         )
                         showFirstLaunchWelcome -> WelcomeView(

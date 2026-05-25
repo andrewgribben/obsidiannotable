@@ -9,10 +9,11 @@ import com.ethran.notable.editor.PageView
 import com.ethran.notable.editor.utils.annotationBounds
 import com.ethran.notable.editor.utils.imageBoundsInt
 import com.ethran.notable.editor.utils.strokeBounds
-import com.ethran.notable.ui.SnackConf
-import com.ethran.notable.ui.SnackState
 import com.ethran.notable.utils.logCallStack
+import io.shipbook.shipbooksdk.ShipBook
 import kotlinx.coroutines.CompletableDeferred
+
+private val log = ShipBook.getLogger("History")
 
 
 sealed class Operation {
@@ -59,12 +60,7 @@ class History(pageView: PageView) {
                     //moved to refresh after drawing
                     CanvasEventBus.refreshUi.emit(Unit)
                 } else {
-                    SnackState.globalSnackFlow.emit(
-                        SnackConf(
-                            text = "Nothing to undo/redo",
-                            duration = 3000,
-                        )
-                    )
+                    log.i("Nothing to undo/redo")
                 }
             }
 

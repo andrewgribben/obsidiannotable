@@ -8,9 +8,11 @@ import com.ethran.notable.data.datastore.GlobalAppSettings
 import com.ethran.notable.data.db.Folder
 import com.ethran.notable.data.db.Page
 import com.ethran.notable.editor.canvas.CanvasEventBus
+import com.ethran.notable.io.ThumbnailBackfillQueue
 import com.ethran.notable.ui.SnackConf
-import com.ethran.notable.ui.SnackState
+import com.ethran.notable.ui.SnackDispatcher
 import com.ethran.notable.ui.components.getFolderList
+import io.shipbook.shipbooksdk.ShipBook
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -38,14 +40,17 @@ data class QuickNavUiState(
 
 class QuickNavViewModel(
     private val appRepository: AppRepository,
+    private val thumbnailBackfillQueue: ThumbnailBackfillQueue,
+    private val snackDispatcher: SnackDispatcher,
 ) : ViewModel() {
     private val pageRepository = appRepository.pageRepository
     private val bookRepository = appRepository.bookRepository
     private val kv = appRepository.kvProxy
+    private val log = ShipBook.getLogger("QuickNavViewModel")
 
     private val _uiState = MutableStateFlow(QuickNavUiState())
     val uiState: StateFlow<QuickNavUiState> = _uiState.asStateFlow()
-
+    private var lastScrubEndTargetPageId: String? = null
 
     // Initialize data when the ViewModel is created or when a new page is opened
     fun loadPageData(currentPageId: String?) {
@@ -131,6 +136,7 @@ class QuickNavViewModel(
     // --- Scrubber Actions ---
 
     fun onScrubStart() {
+        lastScrubEndTargetPageId = null
         CanvasEventBus.saveCurrent.tryEmit(Unit)
     }
 
@@ -142,20 +148,32 @@ class QuickNavViewModel(
     }
 
     fun onScrubEnd(index: Int) {
+        log.v("onScrubEnd: $index")
         CanvasEventBus.restoreCanvas.tryEmit(Unit)
+
         val pageIds = _uiState.value.bookPageIds
-        if (index in pageIds.indices) {
-            CanvasEventBus.changePage.tryEmit(pageIds[index])
-        }
+        val targetPageId = pageIds.getOrNull(index) ?: return
+
+        // Gesture end callbacks can fire more than once; ignore repeated commit for same target.
+        if (targetPageId == lastScrubEndTargetPageId) return
+        lastScrubEndTargetPageId = targetPageId
+
+        CanvasEventBus.changePage.tryEmit(targetPageId)
     }
 
     fun onReturnClick(quickNavSourcePageId: String?) {
         if (quickNavSourcePageId == null) {
-            SnackState.globalSnackFlow.tryEmit(
+            snackDispatcher.showOrUpdateSnack(
                 SnackConf(text = "Can't go back, no QuickNav source page", duration = 4000)
             )
         } else {
             CanvasEventBus.changePage.tryEmit(quickNavSourcePageId)
         }
+    }
+
+    fun generateThumbnailsForCurrentBook() {
+        val pageIds = _uiState.value.bookPageIds
+        if (pageIds.isEmpty()) return
+        thumbnailBackfillQueue.enqueue(pageIds)
     }
 }
