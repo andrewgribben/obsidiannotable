@@ -6,18 +6,19 @@ import com.ethran.notable.data.db.BookRepository
 import com.ethran.notable.data.db.FolderRepository
 import com.ethran.notable.data.db.ImageRepository
 import com.ethran.notable.data.db.KvProxy
-import com.ethran.notable.data.db.KvRepository
 import com.ethran.notable.data.db.Page
 import com.ethran.notable.data.db.PageRepository
 import com.ethran.notable.data.db.StrokeRepository
 import com.ethran.notable.data.db.getPageIndex
 import com.ethran.notable.data.db.newPage
 import com.ethran.notable.data.model.BackgroundType
-import com.ethran.notable.ui.SnackState.Companion.logAndShowError
+import io.shipbook.shipbooksdk.ShipBook
 import java.util.Date
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
+
+private val log = ShipBook.getLogger("appRepository")
 
 @Singleton
 class AppRepository @Inject constructor(
@@ -68,16 +69,15 @@ class AppRepository @Inject constructor(
     }
 
     suspend fun duplicatePage(pageId: String) {
-        val pageWithStrokes = pageRepository.getWithStrokeById(pageId)
-        val pageWithImages = pageRepository.getWithImageById(pageId)
-        val duplicatedPage = pageWithStrokes.page.copy(
+        val pageWithData = pageRepository.getWithDataById(pageId)
+        val duplicatedPage = pageWithData.page.copy(
             id = UUID.randomUUID().toString(),
             scroll = 0,
             createdAt = Date(),
             updatedAt = Date()
         )
         pageRepository.create(duplicatedPage)
-        strokeRepository.create(pageWithStrokes.strokes.map {
+        strokeRepository.create(pageWithData.strokes.map {
             it.copy(
                 id = UUID.randomUUID().toString(),
                 pageId = duplicatedPage.id,
@@ -85,7 +85,7 @@ class AppRepository @Inject constructor(
                 createdAt = Date()
             )
         })
-        imageRepository.create(pageWithImages.images.map {
+        imageRepository.create(pageWithData.images.map {
             it.copy(
                 id = UUID.randomUUID().toString(),
                 pageId = duplicatedPage.id,
@@ -93,11 +93,10 @@ class AppRepository @Inject constructor(
                 createdAt = Date()
             )
         })
-        require(pageWithStrokes.page.notebookId == pageWithImages.page.notebookId) { "pageWithStrokes.page.notebookId != pageWithImages.page.notebookId" }
-        val notebookId = pageWithStrokes.page.notebookId
+        val notebookId = pageWithData.page.notebookId
         if (notebookId != null) {
             val book = bookRepository.getById(notebookId) ?: return
-            val pageIndex = book.getPageIndex(pageWithImages.page.id)
+            val pageIndex = book.getPageIndex(pageWithData.page.id)
             if (pageIndex == -1) return
             val pageIds = book.pageIds.toMutableList()
             pageIds.add(pageIndex + 1, duplicatedPage.id)
@@ -127,10 +126,8 @@ class AppRepository @Inject constructor(
         return book.getPageIndex(pageId)
     }
 
-    suspend fun createNewQuickPage(parentFolderId: String? = null) : String? {
+    suspend fun createNewQuickPage(parentFolderId: String? = null): String? {
         val defaultBg = GlobalAppSettings.current.defaultNativeTemplate
-        // Quick pages with inbox path set become capture notes (Save & Exit toolbar shown by EditorView
-        // based on notebookId == null + inboxPath set). Visual background uses the user's default template.
         val background = if (defaultBg.isNotBlank()) defaultBg else "blank"
         val page = Page(
             notebookId = null,
@@ -141,10 +138,8 @@ class AppRepository @Inject constructor(
         try {
             pageRepository.create(page)
         } catch (e: android.database.sqlite.SQLiteConstraintException) {
-            logAndShowError(
-                "createNewPAge",
-                "failed to create page ${e.message}"
-            )
+            log.e("Failed to create page: ${e.message}")
+            // it should return something like a result
             return null
         }
         return page.id
@@ -159,10 +154,7 @@ class AppRepository @Inject constructor(
             bookRepository.addPage(notebookId, page.id, index)
             return page.id
         } catch (e: Exception) {
-            logAndShowError(
-                "newPageInBook",
-                "failed to create page  ${e.message}"
-            )
+            log.e("Failed to create page in book: ${e.message}")
             return null
         }
     }

@@ -45,7 +45,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import androidx.core.net.toUri
-import androidx.navigation.NavController
 import com.ethran.notable.R
 import com.ethran.notable.data.AppRepository
 import com.ethran.notable.data.copyImageToDatabase
@@ -65,8 +64,7 @@ import com.ethran.notable.io.ExportEngine
 import com.ethran.notable.ui.convertDpToPixel
 import com.ethran.notable.ui.dialogs.BackgroundSelector
 import com.ethran.notable.ui.noRippleClickable
-import com.ethran.notable.ui.views.BugReportDestination
-import com.ethran.notable.ui.views.LibraryDestination
+
 import compose.icons.FeatherIcons
 import compose.icons.feathericons.EyeOff
 import compose.icons.feathericons.RefreshCcw
@@ -90,7 +88,9 @@ private const val ICON_SIZE = 26
 @Composable
 fun EditorSidebar(
     exportEngine: ExportEngine,
-    navController: NavController,
+    goToLibrary: (folderId: String?) -> Unit,
+    goToPages: (bookId: String) -> Unit,
+    goToBugReport: () -> Unit,
     appRepository: AppRepository,
     state: EditorState,
     controlTower: EditorControlTower,
@@ -413,7 +413,7 @@ fun EditorSidebar(
         SidebarIconButton(
             iconId = R.drawable.home,
             contentDescription = "home",
-            onClick = { navController.navigate("library") }
+            onClick = { goToLibrary(null) }
         )
 
         // Menu
@@ -428,7 +428,7 @@ fun EditorSidebar(
             if (state.menuStates.isMenuOpen) {
                 ToolbarMenu(
                     exportEngine = exportEngine,
-                    goToBugReport = { navController.navigate(BugReportDestination.route) },
+                    goToBugReport = goToBugReport,
                     goToLibrary = {
                         scope.launch {
                             val page = withContext(Dispatchers.IO) {
@@ -437,7 +437,7 @@ fun EditorSidebar(
                             val parentFolder = withContext(Dispatchers.IO) {
                                 page?.getParentFolder(appRepository.bookRepository)
                             }
-                            navController.navigate(LibraryDestination.createRoute(parentFolder))
+                            goToLibrary(parentFolder)
                         }
                     },
                     currentPageId = state.currentPageId,

@@ -13,8 +13,8 @@ import com.ethran.notable.data.db.AnnotationType
 import com.ethran.notable.data.db.Stroke
 import com.ethran.notable.data.datastore.GlobalAppSettings
 import com.ethran.notable.io.resolveExternalStoragePath
-import com.ethran.notable.ui.SnackConf
-import com.ethran.notable.ui.SnackState
+import com.ethran.notable.data.events.AppEvent
+import com.ethran.notable.data.events.AppEventBus
 import io.shipbook.shipbooksdk.ShipBook
 import androidx.core.net.toUri
 import java.io.File
@@ -36,11 +36,12 @@ object InboxSyncEngine {
         pageId: String,
         tags: List<String>,
         context: Context,
-        exportEngine: ExportEngine
+        exportEngine: ExportEngine,
+        appEventBus: AppEventBus? = null
     ) {
         log.i("Starting inbox sync for page $pageId with tags: $tags")
 
-        val pageWithStrokes = appRepository.pageRepository.getWithStrokeById(pageId)
+        val pageWithStrokes = appRepository.pageRepository.getWithDataById(pageId)
         val page = pageWithStrokes.page
         val allStrokes = pageWithStrokes.strokes
         val annotations = appRepository.annotationRepository.getByPageId(pageId)
@@ -177,16 +178,16 @@ object InboxSyncEngine {
                     link
                 } else if (result.contains("(app storage)")) {
                     log.w("Inbox sync: PDF saved to app storage (grant All files access for vault)")
-                    SnackState.globalSnackFlow.tryEmit(SnackConf(text = "PDF saved to app storage. Grant All files access in Settings to save to vault.", duration = 6000))
+                    appEventBus?.tryEmit(AppEvent.ActionHint("PDF saved to app storage. Grant All files access in Settings to save to vault.", 6000))
                     null
                 } else {
                     log.e("PDF export for inbox failed: $result")
-                    SnackState.globalSnackFlow.tryEmit(SnackConf(text = "PDF export failed: $result", duration = 5000))
+                    appEventBus?.tryEmit(AppEvent.ActionHint("PDF export failed: $result", 5000))
                     null
                 }
             } catch (e: Exception) {
                 log.e("PDF export for inbox failed: ${e.message}", e)
-                SnackState.globalSnackFlow.tryEmit(SnackConf(text = "PDF export failed: ${e.message}", duration = 5000))
+                appEventBus?.tryEmit(AppEvent.ActionHint("PDF export failed: ${e.message}", 5000))
                 null
             }
         } else {
