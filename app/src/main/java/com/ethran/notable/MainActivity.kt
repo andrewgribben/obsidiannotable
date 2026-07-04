@@ -36,6 +36,7 @@ import com.ethran.notable.data.db.StrokeMigrationHelper
 import com.ethran.notable.editor.canvas.CanvasEventBus
 import com.ethran.notable.io.ExportEngine
 import com.ethran.notable.io.VaultTagScanner
+import com.ethran.notable.navigation.DeepLinks
 import com.ethran.notable.ui.LocalSnackContext
 import com.ethran.notable.ui.SnackState
 import com.ethran.notable.ui.components.NotableApp
@@ -47,6 +48,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import io.shipbook.shipbooksdk.Log
 import io.shipbook.shipbooksdk.ShipBook
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -80,9 +82,13 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var exportEngineLazy: dagger.Lazy<ExportEngine>
 
+    // Pending notable:// deep link, consumed by NotableApp once navigation is up.
+    private val pendingDeepLinkRoute = MutableStateFlow<String?>(null)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableFullScreen()
+        pendingDeepLinkRoute.value = intent?.data?.let(DeepLinks::routeFor)
         ShipBook.start(
             this.application, BuildConfig.SHIPBOOK_APP_ID, BuildConfig.SHIPBOOK_APP_KEY
         )
@@ -170,7 +176,9 @@ class MainActivity : ComponentActivity() {
                             exportEngine = exportEngineLazy.get(),
                             editorSettingCacheManager = editorSettingCacheManager.get(),
                             snackState = snackState,
-                            appRepository = appRepositoryLazy.get()
+                            appRepository = appRepositoryLazy.get(),
+                            deepLinkRoute = pendingDeepLinkRoute,
+                            onDeepLinkConsumed = { pendingDeepLinkRoute.value = null }
                         )
                         showFirstLaunchWelcome -> WelcomeView(
                             requireVaultPaths = true,
@@ -182,6 +190,11 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        intent.data?.let(DeepLinks::routeFor)?.let { pendingDeepLinkRoute.value = it }
     }
 
     override fun onRestart() {

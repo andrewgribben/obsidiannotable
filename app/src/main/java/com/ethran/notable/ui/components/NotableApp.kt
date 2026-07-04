@@ -6,6 +6,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -18,6 +21,8 @@ import com.ethran.notable.navigation.NotableNavHost
 import com.ethran.notable.navigation.rememberNotableAppState
 import com.ethran.notable.ui.SnackBar
 import com.ethran.notable.ui.SnackState
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 
 
 @Composable
@@ -25,9 +30,20 @@ fun NotableApp(
     exportEngine: ExportEngine,
     editorSettingCacheManager: EditorSettingCacheManager,
     snackState: SnackState,
-    appRepository: AppRepository
+    appRepository: AppRepository,
+    deepLinkRoute: StateFlow<String?> = MutableStateFlow(null),
+    onDeepLinkConsumed: () -> Unit = {}
 ) {
     val appNavState = rememberNotableAppState()
+
+    // Navigate to a notable:// deep link target (initial intent or onNewIntent).
+    val pendingDeepLink by deepLinkRoute.collectAsState()
+    LaunchedEffect(pendingDeepLink) {
+        pendingDeepLink?.let { route ->
+            appNavState.navController.navigate(route)
+            onDeepLinkConsumed()
+        }
+    }
     Box(
         Modifier
             .background(Color.White)

@@ -21,6 +21,7 @@ import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -41,8 +42,10 @@ import com.ethran.notable.data.datastore.GlobalAppSettings
 import com.ethran.notable.io.VaultFileStore
 import com.ethran.notable.io.markdown.MarkdownRenderer
 import com.ethran.notable.io.markdown.RenderedMarkdown
+import com.ethran.notable.io.vault.NoteEditGuard
 import com.ethran.notable.io.vault.VaultIndexRegistry
 import com.ethran.notable.io.vault.vaultRootDir
+import com.ethran.notable.navigation.DeepLinks
 import com.ethran.notable.navigation.NavigationDestination
 import com.ethran.notable.io.markdown.MarkdownEdits
 import com.ethran.notable.ui.SnackConf
@@ -56,6 +59,7 @@ import compose.icons.feathericons.Check
 import compose.icons.feathericons.ChevronDown
 import compose.icons.feathericons.ChevronRight
 import compose.icons.feathericons.Edit2
+import compose.icons.feathericons.ExternalLink
 import compose.icons.feathericons.Layers
 import compose.icons.feathericons.PenTool
 import compose.icons.feathericons.RotateCcw
@@ -65,6 +69,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.util.UUID
 
 object NoteReaderDestination : NavigationDestination {
     override val route = "vaultnote"
@@ -122,6 +127,29 @@ fun NoteReaderView(
     var conflictContent by remember { mutableStateOf<String?>(null) }
     val annotationState = remember(relativePath) { ReaderAnnotationState() }
 
+    // Single-writer guard: only one window/surface may edit this note at a time.
+    val editOwner = remember { UUID.randomUUID().toString() }
+    val guardKey = activeVault?.let { NoteEditGuard.noteKey(it.id, relativePath) }
+
+    fun enterAnnotationMode() {
+        if (guardKey != null && !NoteEditGuard.tryAcquire(guardKey, editOwner)) {
+            SnackState.globalSnackFlow.tryEmit(
+                SnackConf(text = "Note is being edited in another window", duration = 4000)
+            )
+            return
+        }
+        annotationMode = true
+    }
+
+    fun exitAnnotationMode() {
+        annotationMode = false
+        guardKey?.let { NoteEditGuard.release(it, editOwner) }
+    }
+
+    DisposableEffect(guardKey) {
+        onDispose { guardKey?.let { NoteEditGuard.release(it, editOwner) } }
+    }
+
     val state = remember(relativePath, vaultRoot) {
         NoteReaderState(
             file = File(vaultRoot, relativePath.replace('/', File.separatorChar)),
@@ -136,7 +164,7 @@ fun NoteReaderView(
         val edits = annotationState.toEdits(rendered)
         if (edits.isEmpty()) {
             annotationState.clear()
-            annotationMode = false
+            exitAnnotationMode()
             return
         }
         val newContent = MarkdownEdits.apply(content, edits)
@@ -145,7 +173,7 @@ fun NoteReaderView(
                 is VaultFileStore.WriteResult.Success -> {
                     withContext(Dispatchers.Main) {
                         annotationState.clear()
-                        annotationMode = false
+                        exitAnnotationMode()
                         state.load()
                     }
                     SnackState.globalSnackFlow.tryEmit(
@@ -254,7 +282,7 @@ fun NoteReaderView(
                         .size(26.dp)
                         .noRippleClickable {
                             annotationState.clear()
-                            annotationMode = false
+                            exitAnnotationMode()
                         }
                 )
             } else {
@@ -264,7 +292,7 @@ fun NoteReaderView(
                     modifier = Modifier
                         .padding(horizontal = 8.dp)
                         .size(26.dp)
-                        .noRippleClickable { annotationMode = true }
+                        .noRippleClickable { enterAnnotationMode() }
                 )
                 Icon(
                     imageVector = FeatherIcons.PenTool,
@@ -273,6 +301,16 @@ fun NoteReaderView(
                         .padding(horizontal = 8.dp)
                         .size(26.dp)
                         .noRippleClickable { onHandwriteInto(relativePath) }
+                )
+                Icon(
+                    imageVector = FeatherIcons.ExternalLink,
+                    contentDescription = "Open in new window",
+                    modifier = Modifier
+                        .padding(horizontal = 8.dp)
+                        .size(26.dp)
+                        .noRippleClickable {
+                            DeepLinks.openNoteInNewWindow(context, relativePath)
+                        }
                 )
                 Icon(
                     imageVector = FeatherIcons.Search,
@@ -358,7 +396,7 @@ fun NoteReaderView(
             onReload = {
                 conflictContent = null
                 annotationState.clear()
-                annotationMode = false
+                exitAnnotationMode()
                 state.load()
             },
             onSaveCopy = {
@@ -373,7 +411,7 @@ fun NoteReaderView(
                     )
                     withContext(Dispatchers.Main) {
                         annotationState.clear()
-                        annotationMode = false
+                        exitAnnotationMode()
                         state.load()
                     }
                 }

@@ -12,6 +12,7 @@ import com.ethran.notable.io.VaultFileStore
 import com.ethran.notable.io.VaultWriteQueue
 import com.ethran.notable.io.excalidraw.ExcalidrawSerializer
 import com.ethran.notable.io.vault.FLIP_SIDE_SUFFIX
+import com.ethran.notable.io.vault.NoteEditGuard
 import com.ethran.notable.io.vault.flipSideFileFor
 import com.ethran.notable.io.vault.vaultRootDir
 import com.ethran.notable.ui.SnackConf
@@ -20,6 +21,8 @@ import io.shipbook.shipbooksdk.ShipBook
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.serializer
 import java.io.File
+import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 
 private val log = ShipBook.getLogger("FlipSideManager")
 
@@ -57,6 +60,30 @@ object FlipSideManager {
     private fun noteKey(vaultId: String, relativePath: String) = "FLIP_PAGE:$vaultId:$relativePath"
     private fun pageKey(pageId: String) = "FLIP_NOTE:$pageId"
 
+    /** Open editing sessions: pageId -> (NoteEditGuard key, guard owner token). */
+    private val editSessions = ConcurrentHashMap<String, Pair<String, String>>()
+
+    /** Acquires the single-writer guard for a note, snacking on refusal. */
+    private fun acquireGuard(vaultId: String, relativePath: String, pageId: String): Boolean {
+        val key = NoteEditGuard.noteKey(vaultId, relativePath)
+        val owner = UUID.randomUUID().toString()
+        if (!NoteEditGuard.tryAcquire(key, owner)) {
+            SnackState.globalSnackFlow.tryEmit(
+                SnackConf(
+                    text = "Note is being edited in another window",
+                    duration = 4000
+                )
+            )
+            return false
+        }
+        editSessions[pageId] = key to owner
+        return true
+    }
+
+    private fun releaseGuard(pageId: String) {
+        editSessions.remove(pageId)?.let { (key, owner) -> NoteEditGuard.release(key, owner) }
+    }
+
     /**
      * Finds or creates the drawing page for the flip side of [noteRelativePath] in the
      * active vault. Imports strokes from the flip-side file when it's new or changed
@@ -75,6 +102,7 @@ object FlipSideManager {
         val fileHash = VaultFileStore.currentHash(flipFile)
 
         if (existingLink != null && existingPage != null) {
+            if (!acquireGuard(vault.id, noteRelativePath, existingLink.pageId)) return null
             if (fileHash != existingLink.fileHash && fileHash != VaultFileStore.HASH_MISSING) {
                 reimportFromFile(appRepository, existingLink.pageId, flipFile)
                 saveLink(appRepository, existingLink.copy(fileHash = fileHash))
@@ -90,10 +118,12 @@ object FlipSideManager {
             background = "blank",
             backgroundType = BackgroundType.Native.key
         )
+        if (!acquireGuard(vault.id, noteRelativePath, page.id)) return null
         try {
             appRepository.pageRepository.create(page)
         } catch (e: Exception) {
             log.e("Failed to create flip-side page: ${e.message}")
+            releaseGuard(page.id)
             return null
         }
 
@@ -190,10 +220,12 @@ object FlipSideManager {
             background = "blank",
             backgroundType = BackgroundType.Native.key
         )
+        if (!acquireGuard(vault.id, noteRelativePath, page.id)) return null
         try {
             appRepository.pageRepository.create(page)
         } catch (e: Exception) {
             log.e("Failed to create insert page: ${e.message}")
+            releaseGuard(page.id)
             return null
         }
         val link = FlipSideLink(
@@ -232,6 +264,7 @@ object FlipSideManager {
         } catch (e: Exception) {
             log.w("Failed to delete insert page $pageId: ${e.message}")
         }
+        releaseGuard(pageId)
     }
 
     /** End index (exclusive) of the YAML frontmatter block, or 0 when there is none. */
@@ -256,13 +289,18 @@ object FlipSideManager {
         // is impossible (queue is keyed by file), so resolve link synchronously via a
         // lightweight queue keyed by a placeholder when needed.
         VaultWriteQueue.enqueue(File("flipside-$pageId"), "flip-side save") {
-            val link = appRepository.kvProxy.get(pageKey(pageId), FlipSideLink.serializer())
-                ?: return@enqueue
-            // Insert-purpose pages are scratch surfaces for HWR text entry — no sidecar export.
-            if (link.purpose != PURPOSE_FLIP) return@enqueue
-            val vault = settings.vaults.find { it.id == link.vaultId }
-                ?: GlobalAppSettings.current.activeVault ?: return@enqueue
-            saveFlipSide(appRepository, link, vault)
+            try {
+                val link = appRepository.kvProxy.get(pageKey(pageId), FlipSideLink.serializer())
+                    ?: return@enqueue
+                // Insert-purpose pages are scratch surfaces for HWR text entry — no sidecar export.
+                if (link.purpose != PURPOSE_FLIP) return@enqueue
+                val vault = settings.vaults.find { it.id == link.vaultId }
+                    ?: GlobalAppSettings.current.activeVault ?: return@enqueue
+                saveFlipSide(appRepository, link, vault)
+            } finally {
+                // Editor closed: this window is done editing the note.
+                releaseGuard(pageId)
+            }
         }
     }
 
