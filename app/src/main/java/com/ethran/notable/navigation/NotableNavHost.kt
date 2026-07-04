@@ -157,10 +157,9 @@ fun NotableNavHost(
             ) {
                 VaultBrowserView(
                     dir = it.arguments?.getString(VaultBrowserDestination.DIR_ARG),
+                    appRepository = appRepository,
                     onOpenNote = { path -> appNavigator.goToVaultNote(path) },
-                    onBack = { appNavigator.goBack() },
-                    onOpenDir = { dir -> appNavigator.goToVaultBrowser(dir) },
-                    onVaultSwitched = { vault -> appNavigator.switchVault(appRepository, vault) }
+                    onBack = { appNavigator.goBack() }
                 )
                 appNavigator.cleanCurrentPageId()
             }

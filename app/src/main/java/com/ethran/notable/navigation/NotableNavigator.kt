@@ -13,11 +13,9 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.ethran.notable.data.AppRepository
 import com.ethran.notable.data.datastore.GlobalAppSettings
-import com.ethran.notable.data.datastore.VaultConfig
 import com.ethran.notable.editor.EditorDestination
 import com.ethran.notable.editor.canvas.CanvasEventBus
 import com.ethran.notable.editor.utils.refreshScreen
-import com.ethran.notable.io.VaultTagScanner
 import com.ethran.notable.io.flipside.FlipSideManager
 import com.ethran.notable.ui.views.LibraryDestination
 import com.ethran.notable.ui.views.NoteReaderDestination
@@ -153,16 +151,6 @@ class NotableNavigator(
 
     fun goToVaultNote(relativePath: String) {
         navController.navigate(NoteReaderDestination.createRoute(relativePath))
-    }
-
-    /** Switches the active vault: persists the setting and refreshes vault-scoped caches. */
-    fun switchVault(appRepository: AppRepository, vault: VaultConfig) {
-        coroutineScope.launch(Dispatchers.IO) {
-            appRepository.kvProxy.setAppSettings(
-                GlobalAppSettings.current.copy(activeVaultId = vault.id)
-            )
-            VaultTagScanner.refreshCache(vault.inboxPath)
-        }
     }
 
     /**

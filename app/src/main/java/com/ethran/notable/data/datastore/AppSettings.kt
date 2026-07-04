@@ -97,6 +97,10 @@ data class AppSettings(
     // Note reader font scale (1.0 = default 17sp body).
     val readerFontScale: Float = 1f,
 
+    // Vault browser presentation: file sort order (see VaultSort) and list vs grid.
+    val vaultSortMode: String = "name",
+    val vaultBrowserGrid: Boolean = false,
+
     // Debug
     val showWelcome: Boolean = true,
     // [system information -- does not have a setting]

@@ -111,7 +111,7 @@ fun Library(
         uiState = uiState,
         onNavigateToFolder = { id -> navController.navigate(LibraryDestination.createRoute(id)) },
         onNavigateToSettings = { navController.navigate("settings") },
-        onNavigateToVault = { navController.navigate(VaultBrowserDestination.route) },
+        onOpenVaultNote = { path -> navController.navigate(NoteReaderDestination.createRoute(path)) },
         onNavigateToEditor = { pageId, bookId ->
             navController.navigate(EditorDestination.createRoute(pageId, bookId))
         },
@@ -135,7 +135,7 @@ fun LibraryContent(
     uiState: LibraryUiState,
     onNavigateToFolder: (String?) -> Unit,
     onNavigateToSettings: () -> Unit,
-    onNavigateToVault: () -> Unit = {},
+    onOpenVaultNote: (String) -> Unit = {},
     onNavigateToEditor: (String, String) -> Unit,
     goToPage: (String) -> Unit,
     onCreateNewQuickPage: () -> Unit,
@@ -145,6 +145,8 @@ fun LibraryContent(
     onImportPdf: (Uri, Boolean) -> Unit,
     onImportXopp: (Uri) -> Unit
 ) {
+    var showVaultBrowser by remember { mutableStateOf(false) }
+
     Column(Modifier.fillMaxSize()) {
         // Slim header
         Row(
@@ -163,7 +165,7 @@ fun LibraryContent(
                 imageVector = FeatherIcons.BookOpen, contentDescription = "Vault",
                 Modifier
                     .padding(8.dp)
-                    .noRippleClickable(onClick = onNavigateToVault)
+                    .noRippleClickable { showVaultBrowser = true }
             )
             BadgedBox(
                 badge = {
@@ -257,6 +259,17 @@ fun LibraryContent(
                 }
             }
         }
+    }
+
+    if (showVaultBrowser) {
+        VaultBrowserModal(
+            appRepository = appRepository,
+            onOpenNote = { path ->
+                showVaultBrowser = false
+                onOpenVaultNote(path)
+            },
+            onDismiss = { showVaultBrowser = false }
+        )
     }
 }
 
