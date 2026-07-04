@@ -4,7 +4,11 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -20,21 +24,24 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.unit.dp
 import com.ethran.notable.editor.utils.InkGestureClassifier
 import com.ethran.notable.io.markdown.MarkdownEdit
 import com.ethran.notable.io.markdown.MarkdownEdits
 import com.ethran.notable.io.markdown.RenderedMarkdown
 
 /** What a recognized annotation gesture will do to the markdown source on save. */
-enum class AnnotationKind { HIGHLIGHT, BOLD, STRIKETHROUGH, DELETE }
+enum class AnnotationKind { HIGHLIGHT, BOLD, STRIKETHROUGH }
 
 /** A staged (not yet saved) ink annotation over the rendered note. */
 class PendingAnnotation(
     val kind: AnnotationKind,
     /** Range in the display text (AnnotatedString offsets). */
     val displayRange: IntRange,
-    /** The raw ink points, for drawing the pending mark. */
+    /** The raw ink points (overlay coordinates), for drawing the pending mark. */
     val inkPoints: List<Offset>,
     /** The affected display text, for showing what will change. */
     val affectedText: String
@@ -64,7 +71,6 @@ class ReaderAnnotationState {
                 AnnotationKind.HIGHLIGHT -> MarkdownEdit.Highlight(sourceRange)
                 AnnotationKind.BOLD -> MarkdownEdit.Bold(sourceRange)
                 AnnotationKind.STRIKETHROUGH -> MarkdownEdit.Strikethrough(sourceRange)
-                AnnotationKind.DELETE -> MarkdownEdit.Delete(sourceRange)
             }
         }
     }
@@ -77,12 +83,20 @@ class ReaderAnnotationState {
  */
 private const val UNDERLINE_PREV_LINE_BAND = 0.25f
 
+/** Extra ink-capture space below the last line so it can be underlined/circled. */
+private val CAPTURE_OVERSCAN_BOTTOM = 90.dp
+
+/** Horizontal text inset inside the full-width capture area. */
+private val TEXT_HORIZONTAL_PADDING = 20.dp
+
 /**
  * Classifies a completed ink stroke against the text layout and produces the staged
- * annotation, or null when the gesture doesn't map to any text.
+ * annotation, or null when the gesture doesn't map to any text. [points] must be in
+ * the text layout's coordinate space.
  *
  * Gesture mapping: circle → highlight, underline → bold (markdown has no underline),
- * strike through the x-height band → strikethrough, dense scrawl → delete.
+ * strike through the letters → strikethrough. (Scribble-to-delete was removed: a
+ * misread circle deleting words is far worse than no gesture at all.)
  */
 fun buildPendingAnnotation(
     points: List<Offset>,
@@ -98,10 +112,6 @@ fun buildPendingAnnotation(
     when (classification.gesture) {
         InkGestureClassifier.InkGesture.CIRCLE -> {
             kind = AnnotationKind.HIGHLIGHT
-            probeY = (classification.top + classification.bottom) / 2f
-        }
-        InkGestureClassifier.InkGesture.SCRAWL -> {
-            kind = AnnotationKind.DELETE
             probeY = (classification.top + classification.bottom) / 2f
         }
         InkGestureClassifier.InkGesture.HORIZONTAL_LINE -> {
@@ -148,7 +158,10 @@ fun buildPendingAnnotation(
 
 /**
  * The reader body: rendered markdown text plus, in annotation mode, an ink capture
- * and pending-mark overlay drawn in the same coordinate space as the text.
+ * and pending-mark overlay. The capture area spans the full width (screen edge to
+ * edge, the text itself is inset) and extends below the last line, so marks that
+ * start in the margins or under the final line still register. Stroke points are
+ * translated into the text layout's coordinate space before hit-testing.
  */
 @Composable
 fun AnnotatableReaderBody(
@@ -159,28 +172,41 @@ fun AnnotatableReaderBody(
     onGestureRejected: () -> Unit
 ) {
     var layout by remember { mutableStateOf<TextLayoutResult?>(null) }
+    var boxOrigin by remember { mutableStateOf(Offset.Zero) }
+    var textOrigin by remember { mutableStateOf(Offset.Zero) }
 
-    Box(Modifier.fillMaxWidth()) {
-        Text(
-            text = rendered.text,
-            lineHeight = rendered.theme.lineHeight,
-            onTextLayout = { layout = it },
-            modifier = Modifier
-                .fillMaxWidth()
-                .pointerInput(rendered, annotationMode) {
-                    if (annotationMode) return@pointerInput
-                    detectTapGestures { position ->
-                        val textLayout = layout ?: return@detectTapGestures
-                        val offset = textLayout.getOffsetForPosition(position)
-                        rendered.links
-                            .firstOrNull { offset >= it.displayStart && offset < it.displayEnd }
-                            ?.let(onLinkTap)
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .onGloballyPositioned { boxOrigin = it.positionInRoot() }
+    ) {
+        Column(Modifier.fillMaxWidth()) {
+            Text(
+                text = rendered.text,
+                lineHeight = rendered.theme.lineHeight,
+                onTextLayout = { layout = it },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = TEXT_HORIZONTAL_PADDING)
+                    .onGloballyPositioned { textOrigin = it.positionInRoot() }
+                    .pointerInput(rendered, annotationMode) {
+                        if (annotationMode) return@pointerInput
+                        detectTapGestures { position ->
+                            val textLayout = layout ?: return@detectTapGestures
+                            val offset = textLayout.getOffsetForPosition(position)
+                            rendered.links
+                                .firstOrNull { offset >= it.displayStart && offset < it.displayEnd }
+                                ?.let(onLinkTap)
+                        }
                     }
-                }
-        )
+            )
+            if (annotationMode) Spacer(Modifier.height(CAPTURE_OVERSCAN_BOTTOM))
+        }
 
         if (annotationMode) {
             val currentPoints = remember { mutableStateListOf<Offset>() }
+            // Overlay coords → text layout coords (text is inset within the overlay)
+            val textOffset = textOrigin - boxOrigin
             Canvas(
                 modifier = Modifier
                     .matchParentSize()
@@ -201,8 +227,18 @@ fun AnnotatableReaderBody(
                                 val textLayout = layout
                                 if (textLayout != null) {
                                     val annotation = buildPendingAnnotation(
-                                        stroke, textLayout, rendered.text.text
-                                    )
+                                        stroke.map { it - textOffset },
+                                        textLayout,
+                                        rendered.text.text
+                                    )?.let { translated ->
+                                        // Keep the raw overlay points for drawing
+                                        PendingAnnotation(
+                                            kind = translated.kind,
+                                            displayRange = translated.displayRange,
+                                            inkPoints = stroke,
+                                            affectedText = translated.affectedText
+                                        )
+                                    }
                                     if (annotation != null) {
                                         annotationState.pending.add(annotation)
                                     } else {

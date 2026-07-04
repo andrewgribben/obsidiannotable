@@ -137,6 +137,10 @@ fun NoteReaderView(
     var fontScale by remember { mutableStateOf(settings.readerFontScale) }
     val annotationState = remember(relativePath) { ReaderAnnotationState() }
 
+    // Undo for the last applied annotation save: (content before the save, file hash
+    // right after it). Valid until the file changes again from anywhere else.
+    var undoSnapshot by remember(relativePath) { mutableStateOf<Pair<String, String>?>(null) }
+
     fun setFontScale(value: Float) {
         val clamped = (Math.round(value * 10f) / 10f).coerceIn(0.7f, 1.8f)
         fontScale = clamped
@@ -196,12 +200,13 @@ fun NoteReaderView(
             when (val result = VaultFileStore.write(state.file, newContent, expectedHash = hash)) {
                 is VaultFileStore.WriteResult.Success -> {
                     withContext(Dispatchers.Main) {
+                        undoSnapshot = content to VaultFileStore.hashOf(newContent)
                         annotationState.clear()
                         exitAnnotationMode()
                         state.load(fontScale)
                     }
                     SnackState.globalSnackFlow.tryEmit(
-                        SnackConf(text = "Annotations saved", duration = 2000)
+                        SnackConf(text = "Annotations saved — undo with ↺", duration = 3000)
                     )
                 }
                 is VaultFileStore.WriteResult.Conflict -> {
@@ -210,6 +215,39 @@ fun NoteReaderView(
                 is VaultFileStore.WriteResult.Error -> {
                     SnackState.globalSnackFlow.tryEmit(
                         SnackConf(text = "Save failed: ${result.message}", duration = 5000)
+                    )
+                }
+            }
+        }
+    }
+
+    fun undoLastSave() {
+        val (previousContent, expectedHash) = undoSnapshot ?: return
+        scope.launch(Dispatchers.IO) {
+            val onDisk = VaultFileStore.read(state.file)
+            if (onDisk == null || onDisk.hash != expectedHash) {
+                SnackState.globalSnackFlow.tryEmit(
+                    SnackConf(
+                        text = "Note has changed since that save — cannot undo",
+                        duration = 4000
+                    )
+                )
+                withContext(Dispatchers.Main) { undoSnapshot = null }
+                return@launch
+            }
+            when (val result = VaultFileStore.write(state.file, previousContent, onDisk.hash)) {
+                is VaultFileStore.WriteResult.Success -> {
+                    withContext(Dispatchers.Main) {
+                        undoSnapshot = null
+                        state.load(fontScale)
+                    }
+                    SnackState.globalSnackFlow.tryEmit(
+                        SnackConf(text = "Annotation save undone", duration = 2500)
+                    )
+                }
+                else -> {
+                    SnackState.globalSnackFlow.tryEmit(
+                        SnackConf(text = "Undo failed: $result", duration = 4000)
                     )
                 }
             }
@@ -316,6 +354,16 @@ fun NoteReaderView(
                         }
                 )
             } else {
+                if (undoSnapshot != null) {
+                    Icon(
+                        imageVector = FeatherIcons.RotateCcw,
+                        contentDescription = "Undo last annotation save",
+                        modifier = Modifier
+                            .padding(horizontal = 8.dp)
+                            .size(26.dp)
+                            .noRippleClickable { undoLastSave() }
+                    )
+                }
                 Icon(
                     imageVector = FeatherIcons.Type,
                     contentDescription = "Text size",
@@ -400,15 +448,19 @@ fun NoteReaderView(
                 }
             }
             rendered != null -> {
+                // Horizontal inset lives inside AnnotatableReaderBody so ink capture
+                // reaches the screen edges; other children add their own inset.
                 Column(
                     Modifier
                         .fillMaxSize()
                         .verticalScroll(rememberScrollState(), enabled = !annotationMode)
-                        .padding(horizontal = 20.dp, vertical = 12.dp)
+                        .padding(vertical = 12.dp)
                 ) {
                     if (rendered.frontmatter.isNotEmpty()) {
-                        FrontmatterBlock(rendered.frontmatter) { target ->
-                            openLink(target, isWikilink = true)
+                        Box(Modifier.padding(horizontal = 20.dp)) {
+                            FrontmatterBlock(rendered.frontmatter) { target ->
+                                openLink(target, isWikilink = true)
+                            }
                         }
                         Spacer(Modifier.height(12.dp))
                     }

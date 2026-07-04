@@ -7,23 +7,23 @@ import kotlin.math.hypot
  * Geometric classifier for ink annotation gestures drawn over rendered text.
  *
  * Pure geometry — no Android types — so thresholds can be unit-tested and tuned.
- * The reader's annotation layer maps [InkGesture.HORIZONTAL_LINE] to strike-through or
- * underline(bold) based on where the line sits relative to the text line band, which
- * the classifier itself doesn't know about.
+ *
+ * Only two gesture families exist (the scribble-to-delete gesture was removed as too
+ * destructive when misclassified): loops and horizontal lines. Anything that encloses
+ * area is a circle/highlight; anything wide and flat is a line (strike or underline,
+ * decided by the annotation layer from its vertical position). Only tiny marks and
+ * tall narrow strokes are rejected, which keeps "gesture not recognized" rare.
  */
 object InkGestureClassifier {
 
     data class Point(val x: Float, val y: Float)
 
     enum class InkGesture {
-        /** Closed loop enclosing text → highlight. */
+        /** Closed-ish loop enclosing text → highlight. */
         CIRCLE,
 
-        /** Roughly horizontal single line → strike-through or underline by position. */
+        /** Roughly horizontal line → strike-through or underline by position. */
         HORIZONTAL_LINE,
-
-        /** Dense zigzag scribble over text → delete. */
-        SCRAWL,
 
         /** Anything else: ignored by the annotation layer. */
         OTHER
@@ -42,31 +42,33 @@ object InkGestureClassifier {
     /** Max distance between stroke start and end, as a fraction of bbox diagonal, to count as closed. */
     const val CLOSURE_MAX_FRACTION = 0.5f
 
-    /** Min enclosed area as a fraction of bbox area for a closed loop (filters back-and-forth lines). */
-    const val LOOP_MIN_AREA_FRACTION = 0.25f
+    /** Min net enclosed area as a fraction of bbox area for a closed-ish loop.
+     *  Real circles land ≥ 0.5; a zigzag whose ends happen to meet nets ~0.2. */
+    const val LOOP_MIN_AREA_FRACTION = 0.3f
 
     /**
      * Net (shoelace) area fraction above which a stroke counts as a loop even when its
-     * ends don't meet or it has scrawl-like reversals — catches big sloppy circles,
-     * open C-shapes, and overdrawn (1.5-turn) loops, whose net area stays large, while
-     * a deletion scribble's back-and-forth passes mostly cancel out.
+     * ends are far apart — catches big sloppy circles, open C-shapes, and overdrawn
+     * (1.5-turn) loops. A wavy line's net area mostly cancels, so it stays a line.
      */
-    const val LOOP_STRONG_AREA_FRACTION = 0.65f
+    const val LOOP_STRONG_AREA_FRACTION = 0.6f
+
+    /** Loops can be flat ovals, but not this flat — beyond it, it's a sagging line. */
+    const val LOOP_MAX_ASPECT = 7f
+
+    /**
+     * Max x-direction reversals for a loop. Tracing any single loop flips horizontal
+     * direction at most twice (about 3 when overdrawn); a back-and-forth scribble
+     * flips once per pass, so this cleanly keeps scribbles out of the circle branch
+     * (their alternate passes enclose area too, so net area alone can't tell them apart).
+     */
+    const val LOOP_MAX_X_REVERSALS = 3
 
     /** Min bbox diagonal for any gesture — smaller marks are accidental dots. */
     const val MIN_DIAGONAL = 12f
 
     /** A horizontal line's bbox must be at least this many times wider than tall. */
-    const val LINE_MIN_ASPECT = 2.0f
-
-    /** Max direction reversals along x for a clean line (more = scribble). */
-    const val LINE_MAX_REVERSALS = 2
-
-    /** Min x-direction reversals for a scrawl. */
-    const val SCRAWL_MIN_REVERSALS = 3
-
-    /** Min ink-length : bbox-diagonal ratio for a scrawl (density of coverage). */
-    const val SCRAWL_MIN_DENSITY = 2.2f
+    const val LINE_MIN_ASPECT = 1.5f
 
     fun classify(points: List<Point>): Classification {
         if (points.size < 3) return classification(InkGesture.OTHER, points)
@@ -81,34 +83,27 @@ object InkGestureClassifier {
 
         if (diagonal < MIN_DIAGONAL) return classification(InkGesture.OTHER, points)
 
-        val reversals = countXReversals(points)
-        val inkLength = pathLength(points)
-        val density = if (diagonal > 0f) inkLength / diagonal else 0f
-
         val closure = hypot(points.first().x - points.last().x, points.first().y - points.last().y)
-        val area = abs(signedArea(points))
         val bboxArea = width * height
-        val areaFraction = if (bboxArea > 0f) area / bboxArea else 0f
+        val areaFraction = if (bboxArea > 0f) abs(signedArea(points)) / bboxArea else 0f
+        val aspect = if (height > 0.01f) width / height else Float.MAX_VALUE
+        val reversals = countXReversals(points)
 
-        // Dense zigzag over an area → scrawl/delete. The area guard keeps overdrawn
-        // circles (which also rack up x reversals) out of this branch: a scribble's
-        // net area mostly cancels, a loop's doesn't.
-        if (reversals >= SCRAWL_MIN_REVERSALS && density >= SCRAWL_MIN_DENSITY &&
-            areaFraction < LOOP_STRONG_AREA_FRACTION
-        ) {
-            return Classification(InkGesture.SCRAWL, left, top, right, bottom)
-        }
-
-        // Loop → circle/highlight: either reasonably closed with enough enclosed area,
-        // or clearly loop-shaped by net area alone (big sloppy or unclosed circles).
-        if ((closure <= diagonal * CLOSURE_MAX_FRACTION && areaFraction >= LOOP_MIN_AREA_FRACTION) ||
-            areaFraction >= LOOP_STRONG_AREA_FRACTION
-        ) {
+        // Loop → circle/highlight: loop-like direction profile plus either reasonably
+        // closed with enough enclosed area, or clearly loop-shaped by net area alone
+        // (sloppy/open/overdrawn circles) as long as it isn't so flat that it's
+        // really a sagging underline.
+        val isLoop = reversals <= LOOP_MAX_X_REVERSALS &&
+                ((closure <= diagonal * CLOSURE_MAX_FRACTION &&
+                        areaFraction >= LOOP_MIN_AREA_FRACTION) ||
+                        (areaFraction >= LOOP_STRONG_AREA_FRACTION && aspect <= LOOP_MAX_ASPECT))
+        if (isLoop) {
             return Classification(InkGesture.CIRCLE, left, top, right, bottom)
         }
 
-        // Horizontal line: wide, flat, few reversals
-        if (height <= 0.01f || (width / height >= LINE_MIN_ASPECT && reversals <= LINE_MAX_REVERSALS)) {
+        // Wide and flat → horizontal line. Waviness or scribbly reversals don't
+        // disqualify it: the worst case is a strike-through, which is easily undone.
+        if (aspect >= LINE_MIN_ASPECT) {
             return Classification(InkGesture.HORIZONTAL_LINE, left, top, right, bottom)
         }
 
@@ -137,14 +132,6 @@ object InkGestureClassifier {
             anchorX = point.x
         }
         return reversals
-    }
-
-    fun pathLength(points: List<Point>): Float {
-        var length = 0f
-        for (i in 1 until points.size) {
-            length += hypot(points[i].x - points[i - 1].x, points[i].y - points[i - 1].y)
-        }
-        return length
     }
 
     /** Shoelace signed area of the polygon formed by the stroke. */

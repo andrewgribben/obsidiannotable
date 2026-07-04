@@ -53,9 +53,8 @@ class InkGestureClassifierTest {
     }
 
     @Test
-    fun `overdrawn circle with extra reversals classifies as circle not scrawl`() {
-        // 1.5 turns around the same loop — reversal count looks scrawl-like but the
-        // net enclosed area stays large.
+    fun `overdrawn circle classifies as circle`() {
+        // 1.5 turns around the same loop — net enclosed area stays large.
         val points = (0..54).map { i ->
             val angle = 2.0 * Math.PI * i / 36
             Point(
@@ -75,7 +74,20 @@ class InkGestureClassifierTest {
     }
 
     @Test
-    fun `dense zigzag classifies as scrawl`() {
+    fun `wavy underline classifies as line, not circle`() {
+        // A sagging/wavy line has high area fraction but is far too flat for a loop
+        val points = (0..40).map { i ->
+            val x = i * 8f
+            Point(x, 100f + 12f * sin(Math.PI * i / 40.0).toFloat())
+        }
+        val result = InkGestureClassifier.classify(points)
+        assertEquals(InkGesture.HORIZONTAL_LINE, result.gesture)
+    }
+
+    @Test
+    fun `zigzag scribble maps to line, delete gesture removed`() {
+        // Dense back-and-forth over text: safest interpretation is a strike-through
+        // (undoable), never a deletion.
         val points = mutableListOf<Point>()
         var y = 100f
         repeat(6) { pass ->
@@ -84,7 +96,7 @@ class InkGestureClassifierTest {
             y += 3f
         }
         val result = InkGestureClassifier.classify(points)
-        assertEquals(InkGesture.SCRAWL, result.gesture)
+        assertEquals(InkGesture.HORIZONTAL_LINE, result.gesture)
     }
 
     @Test
@@ -109,16 +121,5 @@ class InkGestureClassifierTest {
         assertEquals(200f, result.right, 0f)
         assertEquals(100f, result.top, 0f)
         assertEquals(100f, result.bottom, 0f)
-    }
-
-    @Test
-    fun `x reversal counting ignores jitter`() {
-        val clean = (0..10).map { Point(it * 10f, 0f) }
-        assertEquals(0, InkGestureClassifier.countXReversals(clean))
-
-        val zigzag = listOf(
-            Point(0f, 0f), Point(50f, 0f), Point(0f, 5f), Point(50f, 10f), Point(0f, 15f)
-        )
-        assertEquals(3, InkGestureClassifier.countXReversals(zigzag))
     }
 }
