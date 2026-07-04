@@ -16,8 +16,11 @@ import com.ethran.notable.data.datastore.GlobalAppSettings
 import com.ethran.notable.editor.EditorDestination
 import com.ethran.notable.editor.canvas.CanvasEventBus
 import com.ethran.notable.editor.utils.refreshScreen
+import com.ethran.notable.io.flipside.FlipSideManager
 import com.ethran.notable.ui.views.LibraryDestination
+import com.ethran.notable.ui.views.NoteReaderDestination
 import com.ethran.notable.ui.views.SystemInformationDestination
+import com.ethran.notable.ui.views.VaultBrowserDestination
 import com.ethran.notable.ui.views.WelcomeDestination
 import com.ethran.notable.utils.hasFilePermission
 import io.shipbook.shipbooksdk.ShipBook
@@ -139,6 +142,45 @@ class NotableNavigator(
             val url = EditorDestination.createRoute(pageId, bookId)
             log.d("navigate -> $url")
             navController.navigate(url)
+        }
+    }
+
+    fun goToVaultBrowser(dir: String? = null) {
+        navController.navigate(VaultBrowserDestination.createRoute(dir))
+    }
+
+    fun goToVaultNote(relativePath: String) {
+        navController.navigate(NoteReaderDestination.createRoute(relativePath))
+    }
+
+    /**
+     * Opens the flip side of a vault note: finds or creates the drawing page linked to
+     * the note's flip-side file and opens it in the editor.
+     */
+    fun goToFlipSide(appRepository: AppRepository, noteRelativePath: String) {
+        coroutineScope.launch {
+            val pageId = withContext(Dispatchers.IO) {
+                FlipSideManager.openFlipSide(appRepository, noteRelativePath)
+            }
+            if (pageId != null) {
+                navController.navigate(EditorDestination.createRoute(pageId, null))
+            } else {
+                log.e("Could not open flip side for $noteRelativePath")
+            }
+        }
+    }
+
+    /** Opens a scratch handwriting page whose recognized text appends to the vault note. */
+    fun goToHandwritingInsert(appRepository: AppRepository, noteRelativePath: String) {
+        coroutineScope.launch {
+            val pageId = withContext(Dispatchers.IO) {
+                FlipSideManager.openInsertPage(appRepository, noteRelativePath)
+            }
+            if (pageId != null) {
+                navController.navigate(EditorDestination.createRoute(pageId, null))
+            } else {
+                log.e("Could not open handwriting insert page for $noteRelativePath")
+            }
         }
     }
 

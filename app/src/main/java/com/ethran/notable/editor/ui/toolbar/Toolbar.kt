@@ -498,19 +498,6 @@ fun Toolbar(
                         ToolbarMenu(
                             exportEngine = exportEngine,
                             goToBugReport = { navController.navigate(BugReportDestination.route) },
-                            goToLibrary = {
-                                scope.launch {
-                                    val page = withContext(Dispatchers.IO) {
-                                        appRepository.pageRepository.getById(state.currentPageId)
-                                    }
-                                    val parentFolder = withContext(Dispatchers.IO) {
-                                        page?.getParentFolder(appRepository.bookRepository)
-                                    }
-                                    navController.navigate(
-                                        LibraryDestination.createRoute(parentFolder)
-                                    )
-                                }
-                            },
                             currentPageId = state.currentPageId,
                             currentBookId = state.bookId,
                             onClose = { state.menuStates.isMenuOpen = false },

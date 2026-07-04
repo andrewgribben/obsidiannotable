@@ -61,12 +61,16 @@ class SettingsViewModel @Inject constructor(
      * 2. Persisting to the database in a background scope.
      */
     fun updateSettings(newSettings: AppSettings) {
-        // 1. Update the Global state (immediate recomposition)
-        GlobalAppSettings.update(newSettings)
+        // Normalize the vault registry (migration, active-vault mirroring) so the
+        // in-memory state matches what setAppSettings will persist.
+        val normalized = newSettings.normalizedVaults()
 
-        // 2. Persist to DB in the background
+        // 1. Update the Global state (immediate recomposition)
+        GlobalAppSettings.update(normalized)
+
+        // 2. Persist to DB in the background (also updates the vault-path bootstrap)
         viewModelScope.launch(Dispatchers.IO) {
-            kvProxy.setKv(APP_SETTINGS_KEY, newSettings, AppSettings.serializer())
+            kvProxy.setAppSettings(normalized)
         }
     }
 

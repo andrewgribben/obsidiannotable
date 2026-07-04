@@ -27,6 +27,27 @@ private val log = ShipBook.getLogger("InboxSyncEngine")
 object InboxSyncEngine {
 
     /**
+     * Recognizes [strokes] into markdown text using the same pipeline as inbox capture:
+     * paragraph grouping by vertical gaps, bullet/numbered-list formatting, and
+     * wikilink/tag post-processing. Returns "" when HWR is unavailable.
+     */
+    suspend fun recognizeStrokesToMarkdown(context: Context, strokes: List<Stroke>): String {
+        if (strokes.isEmpty()) return ""
+        val serviceReady = try {
+            OnyxHWREngine.bindAndAwait(context)
+        } catch (e: Exception) {
+            log.e("OnyxHWR bind failed: ${e.message}")
+            false
+        }
+        if (!serviceReady) return ""
+        val paragraphGroups = segmentIntoParagraphGroups(strokes)
+        val parts = paragraphGroups.map { paraStrokes ->
+            formatParagraph(recognizeStrokesSafe(paraStrokes).trim())
+        }
+        return postProcessRecognition(joinParagraphParts(parts)).trim()
+    }
+
+    /**
      * Sync an inbox page to Obsidian. Tags come from the UI (pill selection),
      * content is recognized from all strokes on the page via Onyx HWR (MyScript).
      * Annotation boxes mark regions to wrap in [[wiki links]] or #tags.
@@ -363,8 +384,12 @@ object InboxSyncEngine {
         val dir = resolveExternalStoragePath(inboxPath)
         dir.mkdirs()
         val file = File(dir, fileName)
-        file.writeText(markdown)
-        log.i("Written inbox note to ${file.absolutePath}")
+        when (val result = VaultFileStore.write(file, markdown)) {
+            is VaultFileStore.WriteResult.Success ->
+                log.i("Written inbox note to ${file.absolutePath}")
+            else ->
+                log.e("Failed to write inbox note to ${file.absolutePath}: $result")
+        }
     }
 
     /**

@@ -28,6 +28,7 @@ import com.ethran.notable.editor.state.EditorState
 import com.ethran.notable.editor.state.History
 import com.ethran.notable.editor.ui.EditorSidebar
 import com.ethran.notable.editor.ui.EditorSurface
+import com.ethran.notable.editor.ui.FlipSideToolbar
 import com.ethran.notable.editor.ui.SIDEBAR_WIDTH
 import com.ethran.notable.editor.ui.HorizontalScrollIndicator
 import com.ethran.notable.editor.ui.InboxToolbar
@@ -38,6 +39,8 @@ import com.ethran.notable.io.ExportEngine
 import com.ethran.notable.io.SyncState
 import com.ethran.notable.io.VaultTagScanner
 import com.ethran.notable.io.exportToLinkedFile
+import com.ethran.notable.io.flipside.FlipSideLink
+import com.ethran.notable.io.flipside.FlipSideManager
 import com.ethran.notable.navigation.NavigationDestination
 import com.ethran.notable.ui.LocalSnackContext
 import com.ethran.notable.ui.SnackConf
@@ -159,13 +162,20 @@ fun EditorView(
         // Read tags reactively — updates when VaultTagScanner.refreshCache() runs
         val suggestedTags = VaultTagScanner.cachedTags
 
+        var flipSideLink by remember { mutableStateOf<FlipSideLink?>(null) }
+
         LaunchedEffect(pageId) {
             val pageData = withContext(Dispatchers.IO) {
                 appRepository.pageRepository.getById(pageId)
             }
-            val inbox = pageData?.notebookId == null &&
+            // Flip-side drawing pages are not inbox captures — they save to their vault file.
+            val link = withContext(Dispatchers.IO) {
+                FlipSideManager.linkForPage(appRepository, pageId)
+            }
+            flipSideLink = link
+            val inbox = link == null && (pageData?.notebookId == null &&
                 GlobalAppSettings.current.obsidianInboxPath.isNotBlank() ||
-                pageData?.background == "inbox"
+                pageData?.background == "inbox")
             isInboxPage = inbox
             editorState.isInboxPage = inbox
         }
@@ -176,6 +186,8 @@ fun EditorView(
                 editorState.selectionState.applySelectionDisplace(page)
                 if (bookId != null)
                     exportToLinkedFile(exportEngine, bookId, appRepository.bookRepository)
+                // Flip-side pages export to their vault .excalidraw.md in the background
+                FlipSideManager.scheduleSaveIfFlipPage(appRepository, pageId)
                 page.disposeOldPage()
             }
         }
@@ -207,7 +219,10 @@ fun EditorView(
             Row(modifier = Modifier.fillMaxSize()) {
                 // Left-edge sidebar — physically outside the canvas SurfaceView
                 // so finger taps always work even when Onyx SDK raw drawing is active
-                EditorSidebar(exportEngine, navController, appRepository, editorState, editorControlTower)
+                EditorSidebar(
+                    exportEngine, navController, appRepository, editorState,
+                    editorControlTower, flipSideLink = flipSideLink
+                )
                 // Canvas area takes remaining space
                 Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
                     EditorGestureReceiver(controlTower = editorControlTower)
@@ -256,6 +271,15 @@ fun EditorView(
                                 navController.popBackStack()
                             },
                             onDiscard = { navController.popBackStack() }
+                        )
+                    }
+                    val flipLink = flipSideLink
+                    if (flipLink != null && flipLink.purpose == FlipSideManager.PURPOSE_INSERT) {
+                        FlipSideToolbar(
+                            appRepository = appRepository,
+                            pageId = pageId,
+                            noteRelativePath = flipLink.relativePath,
+                            onExit = { navController.popBackStack() }
                         )
                     }
                     HorizontalScrollIndicator(state = editorState)

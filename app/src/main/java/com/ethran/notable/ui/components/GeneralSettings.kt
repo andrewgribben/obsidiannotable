@@ -1,5 +1,8 @@
 package com.ethran.notable.ui.components
 
+import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -33,10 +36,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
 import com.ethran.notable.R
 import com.ethran.notable.data.datastore.AppSettings
+import com.ethran.notable.data.datastore.VaultConfig
 import com.ethran.notable.io.VaultTagScanner
 import com.ethran.notable.io.isAttachmentPathSet
+import com.ethran.notable.io.pathFromTreeUri
 
 
 @Composable
@@ -185,13 +191,34 @@ private fun InboxCaptureSettings(
     settings: AppSettings,
     onSettingsChange: (AppSettings) -> Unit
 ) {
-    val focusManager = LocalFocusManager.current
-    var pathInput by remember { mutableStateOf(settings.obsidianInboxPath) }
-    var attachmentPathInput by remember { mutableStateOf(settings.obsidianAttachmentPath) }
-    LaunchedEffect(settings.obsidianInboxPath, settings.obsidianAttachmentPath) {
-        pathInput = settings.obsidianInboxPath
-        attachmentPathInput = settings.obsidianAttachmentPath
-    }
+    val context = LocalContext.current
+    val normalized = settings.normalizedVaults()
+    val vaults = normalized.vaults
+    var expandedVaultId by remember { mutableStateOf<String?>(null) }
+
+    // Single SAF launcher shared by all vault rows; pendingPick tracks the target.
+    var pendingPick by remember { mutableStateOf<Pair<String, VaultPickTarget>?>(null) }
+    val persistFlags =
+        Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+    val folderPicker =
+        rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+            val pick = pendingPick
+            pendingPick = null
+            if (uri == null || pick == null) return@rememberLauncherForActivityResult
+            context.contentResolver.takePersistableUriPermission(uri, persistFlags)
+            val path = pathFromTreeUri(context, uri) ?: return@rememberLauncherForActivityResult
+            val updated = vaults.map { vault ->
+                if (vault.id != pick.first) vault
+                else when (pick.second) {
+                    VaultPickTarget.Inbox -> vault.copy(inboxPath = path)
+                    VaultPickTarget.Attachment -> vault.copy(attachmentPath = path)
+                }
+            }
+            onSettingsChange(normalized.copy(vaults = updated))
+            if (pick.first == normalized.activeVaultId && pick.second == VaultPickTarget.Inbox) {
+                VaultTagScanner.refreshCache(path)
+            }
+        }
 
     Column(
         modifier = Modifier
@@ -200,7 +227,7 @@ private fun InboxCaptureSettings(
             .padding(16.dp)
     ) {
         Text(
-            "Capture",
+            "Vaults",
             style = MaterialTheme.typography.h6,
             fontWeight = FontWeight.Bold
         )
@@ -208,97 +235,253 @@ private fun InboxCaptureSettings(
         Spacer(modifier = Modifier.height(4.dp))
 
         Text(
-            "Handwritten captures are recognized and saved as markdown to your Obsidian vault. " +
-                    "Tags are loaded from existing notes in the inbox folder. " +
-                    "Exports (PDF, images) are saved to the attachment folder; clipboard links are relative to vault root.",
+            "Register your Obsidian vaults. The active vault receives handwritten captures and exports, " +
+                    "and is the one you browse and read. The first vault also stores the app's database.",
             style = MaterialTheme.typography.body2,
             color = Color.Gray
         )
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        Text(
-            "Vault inbox folder",
-            style = MaterialTheme.typography.body1,
-            fontWeight = FontWeight.Medium
-        )
-
-        Spacer(modifier = Modifier.height(4.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            BasicTextField(
-                value = pathInput,
-                onValueChange = { pathInput = it },
-                textStyle = TextStyle(fontSize = 16.sp, color = Color.Black),
-                singleLine = true,
-                cursorBrush = SolidColor(Color.Black),
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                keyboardActions = KeyboardActions(onDone = {
-                    val attachment = attachmentPathInput.trim().takeIf { isAttachmentPathSet(it) }.orEmpty()
-                    onSettingsChange(settings.copy(obsidianInboxPath = pathInput, obsidianAttachmentPath = attachment))
-                    VaultTagScanner.refreshCache(pathInput)
-                    focusManager.clearFocus()
-                }),
-                modifier = Modifier
-                    .weight(1f)
-                    .border(1.dp, Color.Gray, RoundedCornerShape(6.dp))
-                    .padding(horizontal = 12.dp, vertical = 10.dp)
+        vaults.forEachIndexed { index, vault ->
+            VaultRow(
+                vault = vault,
+                isActive = vault.id == normalized.activeVaultId,
+                isPrimary = index == 0,
+                isExpanded = vault.id == expandedVaultId,
+                onActivate = {
+                    onSettingsChange(normalized.copy(activeVaultId = vault.id))
+                    VaultTagScanner.refreshCache(vault.inboxPath)
+                },
+                onToggleExpand = {
+                    expandedVaultId = if (expandedVaultId == vault.id) null else vault.id
+                },
+                onChange = { changed ->
+                    val cleaned = changed.copy(
+                        attachmentPath = changed.attachmentPath.trim()
+                            .takeIf { isAttachmentPathSet(it) }.orEmpty()
+                    )
+                    onSettingsChange(normalized.copy(vaults = vaults.map { v ->
+                        if (v.id == vault.id) cleaned else v
+                    }))
+                },
+                onPickInbox = {
+                    pendingPick = vault.id to VaultPickTarget.Inbox
+                    folderPicker.launch(null)
+                },
+                onPickAttachment = {
+                    pendingPick = vault.id to VaultPickTarget.Attachment
+                    folderPicker.launch(null)
+                },
+                onRemove = if (index == 0) null else {
+                    {
+                        val remaining = vaults.filter { it.id != vault.id }
+                        val newActive =
+                            if (normalized.activeVaultId == vault.id) remaining.first().id
+                            else normalized.activeVaultId
+                        onSettingsChange(
+                            normalized.copy(vaults = remaining, activeVaultId = newActive)
+                        )
+                    }
+                }
             )
+            Spacer(modifier = Modifier.height(8.dp))
         }
 
-        Spacer(modifier = Modifier.height(4.dp))
-
-        Text(
-            "Relative to /storage/emulated/0/. Press Done to save.",
-            style = MaterialTheme.typography.caption,
-            color = Color.Gray
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Text(
-            "Vault attachment folder",
-            style = MaterialTheme.typography.body1,
-            fontWeight = FontWeight.Medium
-        )
-
-        Spacer(modifier = Modifier.height(4.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
+        Box(
+            modifier = Modifier
+                .border(1.dp, Color.Gray, RoundedCornerShape(6.dp))
+                .clickable {
+                    val newVault = VaultConfig(name = "New vault")
+                    onSettingsChange(normalized.copy(vaults = vaults + newVault))
+                    expandedVaultId = newVault.id
+                }
+                .padding(horizontal = 16.dp, vertical = 10.dp)
         ) {
-            BasicTextField(
-                value = attachmentPathInput,
-                onValueChange = { attachmentPathInput = it },
-                textStyle = TextStyle(fontSize = 16.sp, color = Color.Black),
-                singleLine = true,
-                cursorBrush = SolidColor(Color.Black),
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                keyboardActions = KeyboardActions(onDone = {
-                    val attachment = attachmentPathInput.trim().takeIf { isAttachmentPathSet(it) }.orEmpty()
-                    onSettingsChange(settings.copy(obsidianInboxPath = pathInput, obsidianAttachmentPath = attachment))
-                    VaultTagScanner.refreshCache(pathInput)
-                    focusManager.clearFocus()
-                }),
-                modifier = Modifier
-                    .weight(1f)
-                    .border(1.dp, Color.Gray, RoundedCornerShape(6.dp))
-                    .padding(horizontal = 12.dp, vertical = 10.dp)
-            )
+            Text("+ Add vault", fontSize = 14.sp, fontWeight = FontWeight.Medium)
         }
-
-        Spacer(modifier = Modifier.height(4.dp))
-
-        Text(
-            "Full path (e.g. Documents/primary/attachments) as from the folder picker, or relative to inbox (e.g. Attachments). Leave blank to save PDF next to the note.",
-            style = MaterialTheme.typography.caption,
-            color = Color.Gray
-        )
     }
 
     SettingsDivider()
+}
+
+private enum class VaultPickTarget { Inbox, Attachment }
+
+@Composable
+private fun VaultRow(
+    vault: VaultConfig,
+    isActive: Boolean,
+    isPrimary: Boolean,
+    isExpanded: Boolean,
+    onActivate: () -> Unit,
+    onToggleExpand: () -> Unit,
+    onChange: (VaultConfig) -> Unit,
+    onPickInbox: () -> Unit,
+    onPickAttachment: () -> Unit,
+    onRemove: (() -> Unit)?
+) {
+    val focusManager = LocalFocusManager.current
+    var nameInput by remember(vault.id) { mutableStateOf(vault.name) }
+    var inboxInput by remember(vault.id, vault.inboxPath) { mutableStateOf(vault.inboxPath) }
+    var attachmentInput by remember(vault.id, vault.attachmentPath) {
+        mutableStateOf(vault.attachmentPath)
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(
+                width = if (isActive) 2.dp else 1.dp,
+                color = if (isActive) Color.Black else Color.LightGray,
+                shape = RoundedCornerShape(6.dp)
+            )
+            .padding(12.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Active selector
+            Box(
+                modifier = Modifier
+                    .border(1.dp, Color.Black, RoundedCornerShape(10.dp))
+                    .background(
+                        if (isActive) Color.Black else Color.White,
+                        RoundedCornerShape(10.dp)
+                    )
+                    .clickable { if (!isActive) onActivate() }
+                    .padding(horizontal = 10.dp, vertical = 4.dp)
+            ) {
+                Text(
+                    if (isActive) "Active" else "Activate",
+                    color = if (isActive) Color.White else Color.Black,
+                    fontSize = 12.sp
+                )
+            }
+            Spacer(modifier = Modifier.padding(horizontal = 6.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    vault.displayName + if (isPrimary) "  (primary)" else "",
+                    style = MaterialTheme.typography.body1,
+                    fontWeight = FontWeight.Medium
+                )
+                Text(
+                    vault.inboxPath.ifBlank { "No inbox folder set" },
+                    style = MaterialTheme.typography.caption,
+                    color = Color.Gray
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .clickable { onToggleExpand() }
+                    .padding(horizontal = 10.dp, vertical = 4.dp)
+            ) {
+                Text(if (isExpanded) "Done" else "Edit", fontSize = 13.sp)
+            }
+        }
+
+        if (isExpanded) {
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Text("Name", style = MaterialTheme.typography.caption, color = Color.Gray)
+            BasicTextField(
+                value = nameInput,
+                onValueChange = { nameInput = it },
+                textStyle = TextStyle(fontSize = 16.sp, color = Color.Black),
+                singleLine = true,
+                cursorBrush = SolidColor(Color.Black),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = {
+                    onChange(vault.copy(name = nameInput.trim()))
+                    focusManager.clearFocus()
+                }),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(1.dp, Color.Gray, RoundedCornerShape(6.dp))
+                    .padding(horizontal = 12.dp, vertical = 8.dp)
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text("Inbox folder", style = MaterialTheme.typography.caption, color = Color.Gray)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                BasicTextField(
+                    value = inboxInput,
+                    onValueChange = { inboxInput = it },
+                    textStyle = TextStyle(fontSize = 16.sp, color = Color.Black),
+                    singleLine = true,
+                    cursorBrush = SolidColor(Color.Black),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = {
+                        onChange(vault.copy(inboxPath = inboxInput.trim()))
+                        VaultTagScanner.refreshCache(inboxInput.trim())
+                        focusManager.clearFocus()
+                    }),
+                    modifier = Modifier
+                        .weight(1f)
+                        .border(1.dp, Color.Gray, RoundedCornerShape(6.dp))
+                        .padding(horizontal = 12.dp, vertical = 8.dp)
+                )
+                Spacer(modifier = Modifier.padding(horizontal = 3.dp))
+                Box(
+                    modifier = Modifier
+                        .border(1.dp, Color.Gray, RoundedCornerShape(6.dp))
+                        .clickable { onPickInbox() }
+                        .padding(horizontal = 12.dp, vertical = 8.dp)
+                ) { Text("Browse", fontSize = 13.sp) }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                "Attachment folder (blank = next to note)",
+                style = MaterialTheme.typography.caption,
+                color = Color.Gray
+            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                BasicTextField(
+                    value = attachmentInput,
+                    onValueChange = { attachmentInput = it },
+                    textStyle = TextStyle(fontSize = 16.sp, color = Color.Black),
+                    singleLine = true,
+                    cursorBrush = SolidColor(Color.Black),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = {
+                        onChange(vault.copy(attachmentPath = attachmentInput.trim()))
+                        focusManager.clearFocus()
+                    }),
+                    modifier = Modifier
+                        .weight(1f)
+                        .border(1.dp, Color.Gray, RoundedCornerShape(6.dp))
+                        .padding(horizontal = 12.dp, vertical = 8.dp)
+                )
+                Spacer(modifier = Modifier.padding(horizontal = 3.dp))
+                Box(
+                    modifier = Modifier
+                        .border(1.dp, Color.Gray, RoundedCornerShape(6.dp))
+                        .clickable { onPickAttachment() }
+                        .padding(horizontal = 12.dp, vertical = 8.dp)
+                ) { Text("Browse", fontSize = 13.sp) }
+            }
+
+            if (onRemove != null) {
+                Spacer(modifier = Modifier.height(10.dp))
+                Box(
+                    modifier = Modifier
+                        .border(1.dp, Color.Red, RoundedCornerShape(6.dp))
+                        .clickable { onRemove() }
+                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                ) {
+                    Text("Remove vault", color = Color.Red, fontSize = 13.sp)
+                }
+            } else if (isPrimary) {
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    "The primary vault stores the app database and cannot be removed.",
+                    style = MaterialTheme.typography.caption,
+                    color = Color.Gray
+                )
+            }
+        }
+    }
 }

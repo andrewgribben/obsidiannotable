@@ -42,7 +42,6 @@ import kotlinx.coroutines.launch
 fun ToolbarMenu(
     exportEngine: ExportEngine,
     goToBugReport: () -> Unit,
-    goToLibrary: () -> Unit,
     currentPageId: String,
     currentBookId: String?,
     onClose: () -> Unit,
@@ -61,7 +60,6 @@ fun ToolbarMenu(
         ToolbarMenuContent(
             exportEngine = exportEngine,
             goToBugReport = goToBugReport,
-            goToLibrary = goToLibrary,
             currentPageId = currentPageId,
             currentBookId = currentBookId,
             onClose = onClose,
@@ -74,7 +72,6 @@ fun ToolbarMenu(
 private fun ToolbarMenuContent(
     exportEngine: ExportEngine,
     goToBugReport: () -> Unit,
-    goToLibrary: () -> Unit,
     currentPageId: String,
     currentBookId: String?,
     onClose: () -> Unit,
@@ -104,14 +101,6 @@ private fun ToolbarMenuContent(
             .background(Color.White)
             .width(IntrinsicSize.Max)
     ) {
-        // Library
-        MenuItem(stringResource(R.string.home_view_name)) {
-//
-            goToLibrary()
-            onClose()
-        }
-        DividerCentered()
-
         // Book exports
         if (currentBookId != null) {
             MenuItem(stringResource(R.string.export_book_to, "PDF")) {
