@@ -205,6 +205,13 @@ dependencies {
     // for PDF support:
     implementation("com.artifex.mupdf:fitz:1.26.10")
 
+    // Markdown parsing for the vault reader (source spans power ink annotation)
+    def commonmark_version = "0.27.0"
+    implementation "org.commonmark:commonmark:$commonmark_version"
+    implementation "org.commonmark:commonmark-ext-gfm-strikethrough:$commonmark_version"
+    implementation "org.commonmark:commonmark-ext-task-list-items:$commonmark_version"
+    implementation "org.commonmark:commonmark-ext-yaml-front-matter:$commonmark_version"
+
     // Jetpack Ink API — stroke rendering + geometry
     def ink_version = "1.0.0"
     implementation "androidx.ink:ink-nativeloader:$ink_version"

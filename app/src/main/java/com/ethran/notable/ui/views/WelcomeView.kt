@@ -166,10 +166,20 @@ fun WelcomeView(
                 val t = pickedAttachment.trim().trim('/')
                 if (t == "/" || t.isEmpty()) "" else t
             } else attachmentRaw
+            val current = GlobalAppSettings.current
+            // Update the active vault in the registry (or let normalization migrate
+            // the legacy fields into vaults[0] on first launch).
+            val updatedVaults = if (current.vaults.isEmpty()) current.vaults
+            else current.vaults.map { vault ->
+                if (vault.id == (current.activeVault?.id ?: "")) {
+                    vault.copy(inboxPath = inbox, attachmentPath = attachment)
+                } else vault
+            }
             GlobalAppSettings.update(
-                GlobalAppSettings.current.copy(
+                current.copy(
                     obsidianInboxPath = inbox,
                     obsidianAttachmentPath = attachment,
+                    vaults = updatedVaults,
                     showWelcome = false
                 )
             )

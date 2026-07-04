@@ -120,19 +120,27 @@ class MainActivity : ComponentActivity() {
                     if (hasBootstrap) {
                         withContext(Dispatchers.IO) {
                             val savedSettings =
-                                kvProxy.get().get(APP_SETTINGS_KEY, AppSettings.serializer())
-                                    ?: AppSettings(version = 1)
+                                (kvProxy.get().get(APP_SETTINGS_KEY, AppSettings.serializer())
+                                    ?: AppSettings(version = 1))
 
-                            GlobalAppSettings.update(savedSettings)
-                            VaultPathBootstrap.save(
-                                this@MainActivity,
-                                savedSettings.obsidianInboxPath,
-                                savedSettings.obsidianAttachmentPath
-                            )
+                            val normalized = savedSettings.normalizedVaults()
+                            if (normalized != savedSettings) {
+                                // Persist the migrated vault registry (also updates
+                                // GlobalAppSettings and the bootstrap to the primary vault).
+                                kvProxy.get().setAppSettings(normalized)
+                            } else {
+                                GlobalAppSettings.update(normalized)
+                                val dbHome = normalized.primaryVault
+                                VaultPathBootstrap.save(
+                                    this@MainActivity,
+                                    dbHome?.inboxPath ?: normalized.obsidianInboxPath,
+                                    dbHome?.attachmentPath ?: normalized.obsidianAttachmentPath
+                                )
+                            }
 
                             editorSettingCacheManager.get().init()
                             strokeMigrationHelper.get().reencodeStrokePointsToSB1()
-                            VaultTagScanner.refreshCache(savedSettings.obsidianInboxPath)
+                            VaultTagScanner.refreshCache(GlobalAppSettings.current.obsidianInboxPath)
                         }
                         fullInitDone = true
                     }

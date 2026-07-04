@@ -123,9 +123,17 @@ class KvProxy @Inject constructor(
     }
 
     suspend fun setAppSettings(value: AppSettings) {
-        setKv(APP_SETTINGS_KEY, value, AppSettings.serializer())
-        GlobalAppSettings.update(value)
-        VaultPathBootstrap.save(context, value.obsidianInboxPath, value.obsidianAttachmentPath)
+        val normalized = value.normalizedVaults()
+        setKv(APP_SETTINGS_KEY, normalized, AppSettings.serializer())
+        GlobalAppSettings.update(normalized)
+        // The bootstrap determines the DB location before settings load, so it must
+        // track the *primary* vault — switching the active vault must never move the DB.
+        val dbHome = normalized.primaryVault
+        VaultPathBootstrap.save(
+            context,
+            dbHome?.inboxPath ?: normalized.obsidianInboxPath,
+            dbHome?.attachmentPath ?: normalized.obsidianAttachmentPath
+        )
     }
 
 }

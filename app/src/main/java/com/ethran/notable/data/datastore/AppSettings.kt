@@ -2,6 +2,7 @@ package com.ethran.notable.data.datastore
 
 import androidx.compose.runtime.mutableStateOf
 import kotlinx.serialization.Serializable
+import java.util.UUID
 
 
 // Define the target page size (A4 in points: 595 x 842)
@@ -17,6 +18,35 @@ object GlobalAppSettings {
 
     fun update(settings: AppSettings) {
         _current.value = settings
+    }
+}
+
+/**
+ * A registered Obsidian vault. The vault root is the parent of [inboxPath].
+ * [attachmentPath] uses the same semantics as the legacy setting: blank = next to
+ * the note, otherwise absolute-ish storage path or relative to inbox.
+ */
+@Serializable
+data class VaultConfig(
+    val id: String = UUID.randomUUID().toString(),
+    val name: String = "",
+    val inboxPath: String = "",
+    val attachmentPath: String = "",
+) {
+    /** Display name falling back to the vault root folder name. */
+    val displayName: String
+        get() = name.ifBlank { defaultVaultName(inboxPath) }
+
+    companion object {
+        /** Vault name derived from the inbox path: the parent folder of the inbox. */
+        fun defaultVaultName(inboxPath: String): String {
+            val segments = inboxPath.trim().trim('/').split('/').filter { it.isNotBlank() }
+            return when {
+                segments.size >= 2 -> segments[segments.size - 2]
+                segments.size == 1 -> segments[0]
+                else -> "Vault"
+            }
+        }
     }
 }
 
@@ -49,9 +79,16 @@ data class AppSettings(
     val enableQuickNav: Boolean = true,
 
 
-    // Inbox Capture
+    // Inbox Capture — legacy single-vault fields. These always mirror the *active*
+    // vault so existing consumers keep working; the registry below is the source of truth.
     val obsidianInboxPath: String = "Documents/primary/inbox",
     val obsidianAttachmentPath: String = "Documents/primary/attachments",
+
+    // Vault registry. vaults[0] is the "primary" vault whose attachment dir hosts the
+    // app database (never moved by switching); activeVaultId selects the vault used for
+    // capture, browsing and exports.
+    val vaults: List<VaultConfig> = emptyList(),
+    val activeVaultId: String = "",
 
     // Debug
     val showWelcome: Boolean = true,
@@ -63,6 +100,47 @@ data class AppSettings(
     val destructiveMigrations: Boolean = false,
 
     ) {
+
+    /** The currently active vault, falling back to the primary vault. */
+    val activeVault: VaultConfig?
+        get() = vaults.find { it.id == activeVaultId } ?: vaults.firstOrNull()
+
+    /** The primary vault: hosts the app database. Never changes with active-vault switching. */
+    val primaryVault: VaultConfig?
+        get() = vaults.firstOrNull()
+
+    /**
+     * Normalizes the vault registry:
+     * 1. Migrates the legacy single-vault fields into `vaults[0]` when the registry is empty.
+     * 2. Ensures `activeVaultId` points at a registered vault.
+     * 3. Mirrors the active vault's paths into the legacy fields so existing consumers
+     *    (capture, exports, tag scanning) follow the active vault.
+     */
+    fun normalizedVaults(): AppSettings {
+        var result = this
+        if (result.vaults.isEmpty() && result.obsidianInboxPath.isNotBlank()) {
+            val migrated = VaultConfig(
+                name = VaultConfig.defaultVaultName(result.obsidianInboxPath),
+                inboxPath = result.obsidianInboxPath,
+                attachmentPath = result.obsidianAttachmentPath
+            )
+            result = result.copy(vaults = listOf(migrated), activeVaultId = migrated.id)
+        }
+        if (result.vaults.isNotEmpty() && result.vaults.none { it.id == result.activeVaultId }) {
+            result = result.copy(activeVaultId = result.vaults.first().id)
+        }
+        val active = result.activeVault
+        if (active != null &&
+            (active.inboxPath != result.obsidianInboxPath || active.attachmentPath != result.obsidianAttachmentPath)
+        ) {
+            result = result.copy(
+                obsidianInboxPath = active.inboxPath,
+                obsidianAttachmentPath = active.attachmentPath
+            )
+        }
+        return result
+    }
+
     companion object {
         val defaultDoubleTapAction get() = GestureAction.Undo
         val defaultTwoFingerTapAction get() = GestureAction.ChangeTool

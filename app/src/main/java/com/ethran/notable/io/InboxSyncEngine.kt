@@ -363,8 +363,12 @@ object InboxSyncEngine {
         val dir = resolveExternalStoragePath(inboxPath)
         dir.mkdirs()
         val file = File(dir, fileName)
-        file.writeText(markdown)
-        log.i("Written inbox note to ${file.absolutePath}")
+        when (val result = VaultFileStore.write(file, markdown)) {
+            is VaultFileStore.WriteResult.Success ->
+                log.i("Written inbox note to ${file.absolutePath}")
+            else ->
+                log.e("Failed to write inbox note to ${file.absolutePath}: $result")
+        }
     }
 
     /**
