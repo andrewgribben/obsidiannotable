@@ -2,7 +2,6 @@ package com.ethran.notable.ui.views
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -31,13 +30,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import com.ethran.notable.data.AppRepository
 import com.ethran.notable.data.datastore.GlobalAppSettings
 import com.ethran.notable.io.VaultFileStore
@@ -46,15 +44,22 @@ import com.ethran.notable.io.markdown.RenderedMarkdown
 import com.ethran.notable.io.vault.VaultIndexRegistry
 import com.ethran.notable.io.vault.vaultRootDir
 import com.ethran.notable.navigation.NavigationDestination
+import com.ethran.notable.io.markdown.MarkdownEdits
 import com.ethran.notable.ui.SnackConf
 import com.ethran.notable.ui.SnackState
+import com.ethran.notable.ui.components.AnnotatableReaderBody
 import com.ethran.notable.ui.components.QuickSwitcher
+import com.ethran.notable.ui.components.ReaderAnnotationState
 import com.ethran.notable.ui.noRippleClickable
 import compose.icons.FeatherIcons
+import compose.icons.feathericons.Check
 import compose.icons.feathericons.ChevronDown
 import compose.icons.feathericons.ChevronRight
+import compose.icons.feathericons.Edit2
 import compose.icons.feathericons.Layers
+import compose.icons.feathericons.RotateCcw
 import compose.icons.feathericons.Search
+import compose.icons.feathericons.X
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -111,12 +116,50 @@ fun NoteReaderView(
     val index = activeVault?.let { VaultIndexRegistry.forVault(it) }
 
     var showQuickSwitcher by remember { mutableStateOf(false) }
+    var annotationMode by remember { mutableStateOf(false) }
+    var conflictContent by remember { mutableStateOf<String?>(null) }
+    val annotationState = remember(relativePath) { ReaderAnnotationState() }
 
     val state = remember(relativePath, vaultRoot) {
         NoteReaderState(
             file = File(vaultRoot, relativePath.replace('/', File.separatorChar)),
             relativePath = relativePath
         ).also { it.load() }
+    }
+
+    fun saveAnnotations() {
+        val content = state.content ?: return
+        val hash = state.contentHash
+        val rendered = state.rendered ?: return
+        val edits = annotationState.toEdits(rendered)
+        if (edits.isEmpty()) {
+            annotationState.clear()
+            annotationMode = false
+            return
+        }
+        val newContent = MarkdownEdits.apply(content, edits)
+        scope.launch(Dispatchers.IO) {
+            when (val result = VaultFileStore.write(state.file, newContent, expectedHash = hash)) {
+                is VaultFileStore.WriteResult.Success -> {
+                    withContext(Dispatchers.Main) {
+                        annotationState.clear()
+                        annotationMode = false
+                        state.load()
+                    }
+                    SnackState.globalSnackFlow.tryEmit(
+                        SnackConf(text = "Annotations saved", duration = 2000)
+                    )
+                }
+                is VaultFileStore.WriteResult.Conflict -> {
+                    withContext(Dispatchers.Main) { conflictContent = newContent }
+                }
+                is VaultFileStore.WriteResult.Error -> {
+                    SnackState.globalSnackFlow.tryEmit(
+                        SnackConf(text = "Save failed: ${result.message}", duration = 5000)
+                    )
+                }
+            }
+        }
     }
 
     // Record this note in the per-vault recents list
@@ -175,22 +218,69 @@ fun NoteReaderView(
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f)
             )
-            Icon(
-                imageVector = FeatherIcons.Search,
-                contentDescription = "Quick open",
-                modifier = Modifier
-                    .padding(horizontal = 8.dp)
-                    .size(26.dp)
-                    .noRippleClickable { showQuickSwitcher = true }
-            )
-            Icon(
-                imageVector = FeatherIcons.Layers,
-                contentDescription = "Flip side",
-                modifier = Modifier
-                    .padding(start = 4.dp)
-                    .size(26.dp)
-                    .noRippleClickable { onOpenFlipSide(relativePath) }
-            )
+            if (annotationMode) {
+                // Annotation toolbar: pending count, undo, save, exit
+                if (annotationState.pending.isNotEmpty()) {
+                    Text(
+                        "${annotationState.pending.size}",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 6.dp)
+                    )
+                }
+                Icon(
+                    imageVector = FeatherIcons.RotateCcw,
+                    contentDescription = "Undo mark",
+                    modifier = Modifier
+                        .padding(horizontal = 8.dp)
+                        .size(26.dp)
+                        .noRippleClickable { annotationState.undo() }
+                )
+                Icon(
+                    imageVector = FeatherIcons.Check,
+                    contentDescription = "Save annotations",
+                    modifier = Modifier
+                        .padding(horizontal = 8.dp)
+                        .size(26.dp)
+                        .noRippleClickable { saveAnnotations() }
+                )
+                Icon(
+                    imageVector = FeatherIcons.X,
+                    contentDescription = "Discard annotations",
+                    modifier = Modifier
+                        .padding(start = 4.dp)
+                        .size(26.dp)
+                        .noRippleClickable {
+                            annotationState.clear()
+                            annotationMode = false
+                        }
+                )
+            } else {
+                Icon(
+                    imageVector = FeatherIcons.Edit2,
+                    contentDescription = "Annotate",
+                    modifier = Modifier
+                        .padding(horizontal = 8.dp)
+                        .size(26.dp)
+                        .noRippleClickable { annotationMode = true }
+                )
+                Icon(
+                    imageVector = FeatherIcons.Search,
+                    contentDescription = "Quick open",
+                    modifier = Modifier
+                        .padding(horizontal = 8.dp)
+                        .size(26.dp)
+                        .noRippleClickable { showQuickSwitcher = true }
+                )
+                Icon(
+                    imageVector = FeatherIcons.Layers,
+                    contentDescription = "Flip side",
+                    modifier = Modifier
+                        .padding(start = 4.dp)
+                        .size(26.dp)
+                        .noRippleClickable { onOpenFlipSide(relativePath) }
+                )
+            }
         }
 
         Box(
@@ -211,7 +301,7 @@ fun NoteReaderView(
                 Column(
                     Modifier
                         .fillMaxSize()
-                        .verticalScroll(rememberScrollState())
+                        .verticalScroll(rememberScrollState(), enabled = !annotationMode)
                         .padding(horizontal = 20.dp, vertical = 12.dp)
                 ) {
                     if (rendered.frontmatter.isNotEmpty()) {
@@ -220,9 +310,19 @@ fun NoteReaderView(
                         }
                         Spacer(Modifier.height(12.dp))
                     }
-                    ReaderBody(
+                    AnnotatableReaderBody(
                         rendered = rendered,
-                        onLinkTap = { link -> openLink(link.target, link.isWikilink) }
+                        annotationMode = annotationMode,
+                        annotationState = annotationState,
+                        onLinkTap = { link -> openLink(link.target, link.isWikilink) },
+                        onGestureRejected = {
+                            SnackState.globalSnackFlow.tryEmit(
+                                SnackConf(
+                                    text = "Gesture not recognized — try circle, line, or scribble over text",
+                                    duration = 2500
+                                )
+                            )
+                        }
                     )
                     Spacer(Modifier.height(48.dp))
                 }
@@ -241,30 +341,79 @@ fun NoteReaderView(
             onDismiss = { showQuickSwitcher = false }
         )
     }
+
+    val pendingConflict = conflictContent
+    if (pendingConflict != null) {
+        AnnotationConflictDialog(
+            onReload = {
+                conflictContent = null
+                annotationState.clear()
+                annotationMode = false
+                state.load()
+            },
+            onSaveCopy = {
+                conflictContent = null
+                scope.launch(Dispatchers.IO) {
+                    val copy = VaultFileStore.writeConflictCopy(state.file, pendingConflict)
+                    SnackState.globalSnackFlow.tryEmit(
+                        SnackConf(
+                            text = if (copy != null) "Saved as ${copy.name}" else "Could not save conflict copy",
+                            duration = 5000
+                        )
+                    )
+                    withContext(Dispatchers.Main) {
+                        annotationState.clear()
+                        annotationMode = false
+                        state.load()
+                    }
+                }
+            }
+        )
+    }
 }
 
 @Composable
-private fun ReaderBody(
-    rendered: RenderedMarkdown,
-    onLinkTap: (com.ethran.notable.io.markdown.MarkdownLink) -> Unit
+private fun AnnotationConflictDialog(
+    onReload: () -> Unit,
+    onSaveCopy: () -> Unit
 ) {
-    var layout by remember { mutableStateOf<TextLayoutResult?>(null) }
-    Text(
-        text = rendered.text,
-        lineHeight = 26.sp,
-        onTextLayout = { layout = it },
-        modifier = Modifier
-            .fillMaxWidth()
-            .pointerInput(rendered) {
-                detectTapGestures { position ->
-                    val textLayout = layout ?: return@detectTapGestures
-                    val offset = textLayout.getOffsetForPosition(position)
-                    rendered.links
-                        .firstOrNull { offset >= it.displayStart && offset < it.displayEnd }
-                        ?.let(onLinkTap)
-                }
+    Dialog(onDismissRequest = onReload) {
+        Column(
+            Modifier
+                .border(2.dp, Color.Black, RoundedCornerShape(8.dp))
+                .background(Color.White, RoundedCornerShape(8.dp))
+                .padding(20.dp)
+        ) {
+            Text(
+                "Note changed elsewhere",
+                style = MaterialTheme.typography.h6,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                "This note was modified outside the app (e.g. by Obsidian Sync) while you were annotating. " +
+                        "Your annotations were not saved to avoid overwriting those changes.",
+                fontSize = 14.sp,
+                color = Color.DarkGray
+            )
+            Spacer(Modifier.height(16.dp))
+            Row {
+                Box(
+                    Modifier
+                        .border(1.dp, Color.Black, RoundedCornerShape(6.dp))
+                        .noRippleClickable { onSaveCopy() }
+                        .padding(horizontal = 14.dp, vertical = 8.dp)
+                ) { Text("Save conflict copy", fontSize = 14.sp) }
+                Spacer(Modifier.width(10.dp))
+                Box(
+                    Modifier
+                        .background(Color.Black, RoundedCornerShape(6.dp))
+                        .noRippleClickable { onReload() }
+                        .padding(horizontal = 14.dp, vertical = 8.dp)
+                ) { Text("Reload note", color = Color.White, fontSize = 14.sp) }
             }
-    )
+        }
+    }
 }
 
 @Composable
