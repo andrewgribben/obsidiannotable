@@ -49,7 +49,6 @@ import androidx.navigation.NavController
 import com.ethran.notable.R
 import com.ethran.notable.data.AppRepository
 import com.ethran.notable.data.copyImageToDatabase
-import com.ethran.notable.data.db.getParentFolder
 import com.ethran.notable.data.datastore.GlobalAppSettings
 import com.ethran.notable.editor.EditorControlTower
 import com.ethran.notable.editor.canvas.CanvasEventBus
@@ -62,14 +61,19 @@ import com.ethran.notable.editor.utils.Eraser
 import com.ethran.notable.editor.utils.Pen
 import com.ethran.notable.editor.utils.PenSetting
 import com.ethran.notable.io.ExportEngine
+import com.ethran.notable.io.flipside.FlipSideLink
+import com.ethran.notable.io.flipside.FlipSideManager
+import com.ethran.notable.ui.SnackConf
+import com.ethran.notable.ui.SnackState
 import com.ethran.notable.ui.convertDpToPixel
 import com.ethran.notable.ui.dialogs.BackgroundSelector
 import com.ethran.notable.ui.noRippleClickable
 import com.ethran.notable.ui.views.BugReportDestination
-import com.ethran.notable.ui.views.LibraryDestination
 import compose.icons.FeatherIcons
+import compose.icons.feathericons.ArrowLeft
 import compose.icons.feathericons.EyeOff
 import compose.icons.feathericons.RefreshCcw
+import compose.icons.feathericons.Type
 import compose.icons.feathericons.Clipboard
 import com.onyx.android.sdk.api.device.epd.EpdController
 import com.onyx.android.sdk.api.device.epd.UpdateMode
@@ -94,7 +98,8 @@ fun EditorSidebar(
     appRepository: AppRepository,
     state: EditorState,
     controlTower: EditorControlTower,
-    topPadding: Int = 0
+    topPadding: Int = 0,
+    flipSideLink: FlipSideLink? = null
 ) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -187,6 +192,11 @@ fun EditorSidebar(
     var isPenPickerOpen by remember { mutableStateOf(false) }
     var isEraserMenuOpen by remember { mutableStateOf(false) }
 
+    // Flip-side HWR: recognized text pending the replace/append choice
+    var isRecognizingFlip by remember { mutableStateOf(false) }
+    var flipPreviewText by remember { mutableStateOf<String?>(null) }
+    val isFlipDrawingPage = flipSideLink?.purpose == FlipSideManager.PURPOSE_FLIP
+
     // Pause drawing when popups are open
     LaunchedEffect(isPenPickerOpen, isEraserMenuOpen) {
         state.isDrawing = !(isPenPickerOpen || isEraserMenuOpen)
@@ -219,6 +229,16 @@ fun EditorSidebar(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        // Back to the previous screen (e.g. flip back from a flip side to its note)
+        SidebarIconButton(
+            vectorIcon = FeatherIcons.ArrowLeft,
+            contentDescription = "back",
+            onClick = {
+                log.i("Back button tapped")
+                navController.popBackStack()
+            }
+        )
+
         // Close sidebar
         SidebarIconButton(
             vectorIcon = FeatherIcons.EyeOff,
@@ -409,6 +429,37 @@ fun EditorSidebar(
             }
         )
 
+        // Flip side: recognize the sketch as text (preview, then replace/append)
+        if (isFlipDrawingPage) {
+            SidebarIconButton(
+                vectorIcon = FeatherIcons.Type,
+                contentDescription = "flip side to text",
+                isSelected = isRecognizingFlip,
+                onClick = {
+                    if (isRecognizingFlip) return@SidebarIconButton
+                    isRecognizingFlip = true
+                    scope.launch(Dispatchers.IO) {
+                        val text = FlipSideManager.recognizeFlipSide(
+                            appRepository, context, state.currentPageId
+                        )
+                        withContext(Dispatchers.Main) {
+                            isRecognizingFlip = false
+                            if (text == null) {
+                                SnackState.globalSnackFlow.tryEmit(
+                                    SnackConf(
+                                        text = "Nothing recognized on this flip side",
+                                        duration = 3000
+                                    )
+                                )
+                            } else {
+                                flipPreviewText = text
+                            }
+                        }
+                    }
+                }
+            )
+        }
+
         // Home
         SidebarIconButton(
             iconId = R.drawable.home,
@@ -429,17 +480,6 @@ fun EditorSidebar(
                 ToolbarMenu(
                     exportEngine = exportEngine,
                     goToBugReport = { navController.navigate(BugReportDestination.route) },
-                    goToLibrary = {
-                        scope.launch {
-                            val page = withContext(Dispatchers.IO) {
-                                appRepository.pageRepository.getById(state.currentPageId)
-                            }
-                            val parentFolder = withContext(Dispatchers.IO) {
-                                page?.getParentFolder(appRepository.bookRepository)
-                            }
-                            navController.navigate(LibraryDestination.createRoute(parentFolder))
-                        }
-                    },
                     currentPageId = state.currentPageId,
                     currentBookId = state.bookId,
                     onClose = { state.menuStates.isMenuOpen = false },
@@ -449,6 +489,21 @@ fun EditorSidebar(
                 )
             }
         }
+    }
+
+    val previewText = flipPreviewText
+    if (previewText != null) {
+        FlipTextPreviewDialog(
+            appRepository = appRepository,
+            pageId = state.currentPageId,
+            text = previewText,
+            onApplied = {
+                flipPreviewText = null
+                // Flip back to the (now updated) note
+                navController.popBackStack()
+            },
+            onDismiss = { flipPreviewText = null }
+        )
     }
 }
 

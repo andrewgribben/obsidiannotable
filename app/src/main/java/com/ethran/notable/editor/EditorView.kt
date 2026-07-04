@@ -219,7 +219,10 @@ fun EditorView(
             Row(modifier = Modifier.fillMaxSize()) {
                 // Left-edge sidebar — physically outside the canvas SurfaceView
                 // so finger taps always work even when Onyx SDK raw drawing is active
-                EditorSidebar(exportEngine, navController, appRepository, editorState, editorControlTower)
+                EditorSidebar(
+                    exportEngine, navController, appRepository, editorState,
+                    editorControlTower, flipSideLink = flipSideLink
+                )
                 // Canvas area takes remaining space
                 Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
                     EditorGestureReceiver(controlTower = editorControlTower)
@@ -271,12 +274,11 @@ fun EditorView(
                         )
                     }
                     val flipLink = flipSideLink
-                    if (flipLink != null) {
+                    if (flipLink != null && flipLink.purpose == FlipSideManager.PURPOSE_INSERT) {
                         FlipSideToolbar(
                             appRepository = appRepository,
                             pageId = pageId,
                             noteRelativePath = flipLink.relativePath,
-                            isInsertMode = flipLink.purpose == FlipSideManager.PURPOSE_INSERT,
                             onExit = { navController.popBackStack() }
                         )
                     }

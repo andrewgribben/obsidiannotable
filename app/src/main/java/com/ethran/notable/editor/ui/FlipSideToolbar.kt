@@ -43,165 +43,127 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
- * Toolbar shown in the editor for flip-side pages.
+ * Bottom bar for handwritten-entry pages (writing new text into an existing note):
+ * "Save to note" appends the recognized markdown and discards the scratch page.
  *
- * Flip purpose: the flip side is first and foremost a drawing surface — the sketch
- * auto-exports to the Excalidraw-compatible sidecar when the editor closes, no action
- * needed. A compact bar along the top edge names the note and offers the *optional*
- * "To text" action: HWR over the sketch, preview, then replace-or-append into the note.
- *
- * Insert purpose (handwritten entry into an existing note): a bottom bar with
- * "Save to note" (appends the recognized markdown, discards the scratch page)
- * and "Discard".
+ * Flip-side drawing pages have no bar — the sketch auto-saves to its sidecar, and
+ * the optional HWR "To text" action lives in the editor sidebar
+ * (with [FlipTextPreviewDialog] for the replace/append choice).
  */
 @Composable
 fun FlipSideToolbar(
     appRepository: AppRepository,
     pageId: String,
     noteRelativePath: String,
-    isInsertMode: Boolean,
     onExit: () -> Unit
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var isRecognizing by remember { mutableStateOf(false) }
-    var previewText by remember { mutableStateOf<String?>(null) }
-
-    fun snack(text: String, duration: Int = 4000) {
-        SnackState.globalSnackFlow.tryEmit(SnackConf(text = text, duration = duration))
-    }
 
     Box(Modifier.fillMaxSize()) {
-        if (isInsertMode) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(bottom = 14.dp)
-                    .border(1.dp, Color.Black, RoundedCornerShape(8.dp))
-                    .background(Color.White, RoundedCornerShape(8.dp))
-                    .padding(horizontal = 12.dp, vertical = 8.dp)
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 14.dp)
+                .border(1.dp, Color.Black, RoundedCornerShape(8.dp))
+                .background(Color.White, RoundedCornerShape(8.dp))
+                .padding(horizontal = 12.dp, vertical = 8.dp)
+        ) {
+            Text(
+                text = "Write into: " + flipSideNoteName(noteRelativePath),
+                fontSize = 13.sp,
+                color = Color.DarkGray
+            )
+            Spacer(Modifier.width(14.dp))
+            ToolbarButton(
+                label = if (isRecognizing) "Recognizing…" else "Save to note",
+                filled = true,
+                enabled = !isRecognizing
             ) {
-                Text(
-                    text = "Write into: " + flipSideNoteName(noteRelativePath),
-                    fontSize = 13.sp,
-                    color = Color.DarkGray
-                )
-                Spacer(Modifier.width(14.dp))
-                ToolbarButton(
-                    label = if (isRecognizing) "Recognizing…" else "Save to note",
-                    filled = true,
-                    enabled = !isRecognizing
-                ) {
-                    isRecognizing = true
-                    scope.launch(Dispatchers.IO) {
-                        val message =
-                            FlipSideManager.completeInsertPage(appRepository, context, pageId)
-                        withContext(Dispatchers.Main) {
-                            isRecognizing = false
-                            snack(message)
-                            if (!message.startsWith("Nothing")) onExit()
-                        }
-                    }
-                }
-                Spacer(Modifier.width(8.dp))
-                ToolbarButton(label = "Discard", filled = false) {
-                    scope.launch(Dispatchers.IO) {
-                        FlipSideManager.discardInsertPage(appRepository, pageId)
-                        withContext(Dispatchers.Main) { onExit() }
+                isRecognizing = true
+                scope.launch(Dispatchers.IO) {
+                    val message =
+                        FlipSideManager.completeInsertPage(appRepository, context, pageId)
+                    withContext(Dispatchers.Main) {
+                        isRecognizing = false
+                        SnackState.globalSnackFlow.tryEmit(
+                            SnackConf(text = message, duration = 4000)
+                        )
+                        if (!message.startsWith("Nothing")) onExit()
                     }
                 }
             }
-        } else {
-            // Drawing is the default: strokes save to the sidecar automatically on exit.
-            // "To text" (HWR → replace/append) is an optional extra, kept out of the way
-            // at the top edge.
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(top = 8.dp, end = 12.dp)
-                    .border(1.dp, Color.Gray, RoundedCornerShape(8.dp))
-                    .background(Color.White, RoundedCornerShape(8.dp))
-                    .padding(horizontal = 10.dp, vertical = 6.dp)
-            ) {
-                Text(
-                    text = "Flip side · " + flipSideNoteName(noteRelativePath),
-                    fontSize = 13.sp,
-                    color = Color.DarkGray
-                )
-                Spacer(Modifier.width(12.dp))
-                ToolbarButton(
-                    label = if (isRecognizing) "Recognizing…" else "To text",
-                    filled = false,
-                    enabled = !isRecognizing
-                ) {
-                    isRecognizing = true
-                    scope.launch(Dispatchers.IO) {
-                        val text = FlipSideManager.recognizeFlipSide(appRepository, context, pageId)
-                        withContext(Dispatchers.Main) {
-                            isRecognizing = false
-                            if (text == null) snack("Nothing recognized on this flip side")
-                            else previewText = text
-                        }
-                    }
+            Spacer(Modifier.width(8.dp))
+            ToolbarButton(label = "Discard", filled = false) {
+                scope.launch(Dispatchers.IO) {
+                    FlipSideManager.discardInsertPage(appRepository, pageId)
+                    withContext(Dispatchers.Main) { onExit() }
                 }
             }
         }
     }
+}
 
-    val preview = previewText
-    if (preview != null) {
-        Dialog(onDismissRequest = { previewText = null }) {
-            Column(
-                Modifier
-                    .border(2.dp, Color.Black, RoundedCornerShape(8.dp))
-                    .background(Color.White, RoundedCornerShape(8.dp))
-                    .padding(16.dp)
-            ) {
-                Text(
-                    "Recognized text",
-                    style = MaterialTheme.typography.h6,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    preview,
-                    fontSize = 14.sp,
-                    fontFamily = FontFamily.Monospace,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = 340.dp)
-                        .verticalScroll(rememberScrollState())
-                        .border(1.dp, Color.LightGray, RoundedCornerShape(6.dp))
-                        .padding(10.dp)
-                )
-                Spacer(Modifier.height(14.dp))
-                Row {
-                    ToolbarButton(label = "Replace note body", filled = false) {
-                        previewText = null
-                        scope.launch(Dispatchers.IO) {
-                            val message = FlipSideManager.applyTextToNote(
-                                appRepository, pageId, preview,
-                                FlipSideManager.HwrApplyMode.REPLACE
-                            )
-                            snack(message)
-                        }
-                    }
-                    Spacer(Modifier.width(10.dp))
-                    ToolbarButton(label = "Append to note", filled = true) {
-                        previewText = null
-                        scope.launch(Dispatchers.IO) {
-                            val message = FlipSideManager.applyTextToNote(
-                                appRepository, pageId, preview,
-                                FlipSideManager.HwrApplyMode.APPEND
-                            )
-                            snack(message)
-                        }
-                    }
-                    Spacer(Modifier.width(10.dp))
-                    ToolbarButton(label = "Cancel", filled = false) { previewText = null }
+/**
+ * Preview of a flip side's recognized text with the replace/append choice.
+ * [onApplied] runs after the text is written to the note (used to navigate back to
+ * it); Cancel just closes and stays on the drawing.
+ */
+@Composable
+fun FlipTextPreviewDialog(
+    appRepository: AppRepository,
+    pageId: String,
+    text: String,
+    onApplied: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    val scope = rememberCoroutineScope()
+
+    fun apply(mode: FlipSideManager.HwrApplyMode) {
+        scope.launch(Dispatchers.IO) {
+            val message = FlipSideManager.applyTextToNote(appRepository, pageId, text, mode)
+            SnackState.globalSnackFlow.tryEmit(SnackConf(text = message, duration = 4000))
+            withContext(Dispatchers.Main) { onApplied() }
+        }
+    }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Column(
+            Modifier
+                .border(2.dp, Color.Black, RoundedCornerShape(8.dp))
+                .background(Color.White, RoundedCornerShape(8.dp))
+                .padding(16.dp)
+        ) {
+            Text(
+                "Recognized text",
+                style = MaterialTheme.typography.h6,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text,
+                fontSize = 14.sp,
+                fontFamily = FontFamily.Monospace,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 340.dp)
+                    .verticalScroll(rememberScrollState())
+                    .border(1.dp, Color.LightGray, RoundedCornerShape(6.dp))
+                    .padding(10.dp)
+            )
+            Spacer(Modifier.height(14.dp))
+            Row {
+                ToolbarButton(label = "Replace note body", filled = false) {
+                    apply(FlipSideManager.HwrApplyMode.REPLACE)
                 }
+                Spacer(Modifier.width(10.dp))
+                ToolbarButton(label = "Append to note", filled = true) {
+                    apply(FlipSideManager.HwrApplyMode.APPEND)
+                }
+                Spacer(Modifier.width(10.dp))
+                ToolbarButton(label = "Cancel", filled = false) { onDismiss() }
             }
         }
     }
