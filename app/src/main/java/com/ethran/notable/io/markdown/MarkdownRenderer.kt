@@ -10,11 +10,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextIndent
 import androidx.compose.ui.unit.sp
+import org.commonmark.ext.autolink.AutolinkExtension
 import org.commonmark.ext.front.matter.YamlFrontMatterBlock
 import org.commonmark.ext.front.matter.YamlFrontMatterExtension
 import org.commonmark.ext.front.matter.YamlFrontMatterVisitor
 import org.commonmark.ext.gfm.strikethrough.Strikethrough
 import org.commonmark.ext.gfm.strikethrough.StrikethroughExtension
+import org.commonmark.ext.gfm.tables.TableBlock
+import org.commonmark.ext.gfm.tables.TableCell
+import org.commonmark.ext.gfm.tables.TableHead
+import org.commonmark.ext.gfm.tables.TableRow
+import org.commonmark.ext.gfm.tables.TablesExtension
 import org.commonmark.ext.task.list.items.TaskListItemMarker
 import org.commonmark.ext.task.list.items.TaskListItemsExtension
 import org.commonmark.node.BlockQuote
@@ -56,33 +62,38 @@ data class RenderedMarkdown(
     val links: List<MarkdownLink>,
     val frontmatter: Map<String, List<String>>,
     /** Source offset where the body (after frontmatter) starts. */
-    val bodySourceStart: Int
+    val bodySourceStart: Int,
+    /** Theme (and font scale) this document was rendered with. */
+    val theme: MarkdownTheme
 )
 
 /**
  * Bear-style e-ink theme: high contrast, typographic hierarchy, no color noise.
- * Tags and wikilinks stay visible but styled.
+ * Tags and wikilinks stay visible but styled. [scale] multiplies every font size —
+ * it backs the reader's font-size control (bigger text is also easier to hit with
+ * annotation gestures).
  */
-object MarkdownTheme {
-    val bodySize = 17.sp
-    val ink = Color.Black
-    val subtle = Color(0xFF555555)
-    val faint = Color(0xFF999999)
-    val chipBackground = Color(0xFFEEEEEE)
+class MarkdownTheme(val scale: Float = 1f) {
+    val bodySize = 17.sp * scale
+    val lineHeight = (26f * scale).sp
 
-    val h1 = SpanStyle(fontSize = 28.sp, fontWeight = FontWeight.Bold, color = ink)
-    val h2 = SpanStyle(fontSize = 24.sp, fontWeight = FontWeight.Bold, color = ink)
-    val h3 = SpanStyle(fontSize = 20.sp, fontWeight = FontWeight.Bold, color = ink)
-    val h4plus = SpanStyle(fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = ink)
+    val h1 = SpanStyle(fontSize = 28.sp * scale, fontWeight = FontWeight.Bold, color = ink)
+    val h2 = SpanStyle(fontSize = 24.sp * scale, fontWeight = FontWeight.Bold, color = ink)
+    val h3 = SpanStyle(fontSize = 20.sp * scale, fontWeight = FontWeight.Bold, color = ink)
+    val h4plus = SpanStyle(fontSize = 18.sp * scale, fontWeight = FontWeight.SemiBold, color = ink)
     val body = SpanStyle(fontSize = bodySize, color = ink)
     val bold = SpanStyle(fontWeight = FontWeight.Bold)
     val italic = SpanStyle(fontStyle = FontStyle.Italic)
-    val strikethrough = SpanStyle(textDecoration = TextDecoration.LineThrough, color = subtle)
-    val highlight = SpanStyle(background = Color(0xFFDDDDDD))
+
+    // E-ink: keep struck text full black — a gray line-through dithers away on the panel.
+    val strikethrough = SpanStyle(textDecoration = TextDecoration.LineThrough, color = ink)
+
+    // E-ink: mid-gray background so the highlight survives 16-level grayscale.
+    val highlight = SpanStyle(background = Color(0xFFBDBDBD), color = ink)
     val code = SpanStyle(
         fontFamily = FontFamily.Monospace,
-        fontSize = 15.sp,
-        background = Color(0xFFF2F2F2)
+        fontSize = 15.sp * scale,
+        background = Color(0xFFE8E8E8)
     )
     val tag = SpanStyle(color = subtle, background = chipBackground, fontWeight = FontWeight.Medium)
     val wikilink = SpanStyle(color = ink, fontWeight = FontWeight.Medium, textDecoration = TextDecoration.Underline)
@@ -95,6 +106,13 @@ object MarkdownTheme {
         2 -> h2
         3 -> h3
         else -> h4plus
+    }
+
+    companion object {
+        val ink = Color.Black
+        val subtle = Color(0xFF555555)
+        val faint = Color(0xFF999999)
+        val chipBackground = Color(0xFFDDDDDD)
     }
 }
 
@@ -113,19 +131,22 @@ object MarkdownRenderer {
             listOf(
                 StrikethroughExtension.create(),
                 TaskListItemsExtension.create(),
-                YamlFrontMatterExtension.create()
+                YamlFrontMatterExtension.create(),
+                TablesExtension.create(),
+                AutolinkExtension.create()
             )
         )
         .includeSourceSpans(IncludeSourceSpans.BLOCKS_AND_INLINES)
         .build()
 
-    fun render(source: String): RenderedMarkdown {
+    fun render(source: String, fontScale: Float = 1f): RenderedMarkdown {
         val document = parser.parse(source)
 
         val frontmatterVisitor = YamlFrontMatterVisitor()
         document.accept(frontmatterVisitor)
 
-        val builder = Builder(source)
+        val theme = MarkdownTheme(fontScale)
+        val builder = Builder(source, theme)
         builder.renderBlocks(document as Document)
 
         var bodyStart = 0
@@ -143,11 +164,12 @@ object MarkdownRenderer {
             sourceMap = MarkdownSourceMap(builder.segments),
             links = builder.links,
             frontmatter = frontmatterVisitor.data,
-            bodySourceStart = bodyStart
+            bodySourceStart = bodyStart,
+            theme = theme
         )
     }
 
-    private class Builder(val source: String) {
+    private class Builder(val source: String, val theme: MarkdownTheme) {
         val annotated = AnnotatedString.Builder()
         val segments = mutableListOf<MarkdownSourceMap.Segment>()
         val links = mutableListOf<MarkdownLink>()
@@ -180,7 +202,7 @@ object MarkdownRenderer {
         }
 
         fun renderBlocks(document: Document) {
-            annotated.pushStyle(MarkdownTheme.body)
+            annotated.pushStyle(theme.body)
             var node = document.firstChild
             while (node != null) {
                 renderBlock(node)
@@ -201,14 +223,14 @@ object MarkdownRenderer {
                     blockSpacing()
                     val start = length
                     renderInlines(node.firstChild)
-                    annotated.addStyle(MarkdownTheme.headingStyle(node.level), start, length)
+                    annotated.addStyle(theme.headingStyle(node.level), start, length)
                 }
                 is Paragraph -> {
                     blockSpacing()
-                    if (quoteDepth > 0) appendDecoration("▎ ", MarkdownTheme.quote)
+                    if (quoteDepth > 0) appendDecoration("▎ ", theme.quote)
                     val start = length
                     renderInlines(node.firstChild)
-                    if (quoteDepth > 0) annotated.addStyle(MarkdownTheme.quote, start, length)
+                    if (quoteDepth > 0) annotated.addStyle(theme.quote, start, length)
                 }
                 is BulletList -> renderList(node, ordered = false, quoteDepth, indent)
                 is OrderedList -> renderList(node, ordered = true, quoteDepth, indent)
@@ -225,7 +247,7 @@ object MarkdownRenderer {
                     val spans = node.sourceSpans
                     val sourceStart = spans.firstOrNull()?.inputIndex ?: 0
                     val sourceEnd = spans.lastOrNull()?.let { it.inputIndex + it.length } ?: 0
-                    appendMapped(literal, sourceStart, sourceEnd, linear = false, MarkdownTheme.code)
+                    appendMapped(literal, sourceStart, sourceEnd, linear = false, theme.code)
                 }
                 is IndentedCodeBlock -> {
                     blockSpacing()
@@ -233,12 +255,13 @@ object MarkdownRenderer {
                     val spans = node.sourceSpans
                     val sourceStart = spans.firstOrNull()?.inputIndex ?: 0
                     val sourceEnd = spans.lastOrNull()?.let { it.inputIndex + it.length } ?: 0
-                    appendMapped(literal, sourceStart, sourceEnd, linear = false, MarkdownTheme.code)
+                    appendMapped(literal, sourceStart, sourceEnd, linear = false, theme.code)
                 }
                 is ThematicBreak -> {
                     blockSpacing()
                     appendDecoration("――――――――――", SpanStyle(color = MarkdownTheme.faint))
                 }
+                is TableBlock -> renderTable(node)
                 is HtmlBlock -> {
                     blockSpacing()
                     val spans = node.sourceSpans
@@ -246,7 +269,7 @@ object MarkdownRenderer {
                     val sourceEnd = spans.lastOrNull()?.let { it.inputIndex + it.length } ?: 0
                     appendMapped(
                         node.literal.trimEnd('\n'), sourceStart, sourceEnd,
-                        linear = false, MarkdownTheme.code
+                        linear = false, theme.code
                     )
                 }
                 else -> {
@@ -256,6 +279,53 @@ object MarkdownRenderer {
                         renderInlines(node.firstChild)
                     }
                 }
+            }
+        }
+
+        /**
+         * Renders a GFM table as rows of "cell │ cell" lines: header bold with a rule
+         * under it. E-ink friendly (no grid drawing) and each cell keeps its normal
+         * inline source mapping so annotations inside cells still work.
+         */
+        private fun renderTable(table: TableBlock) {
+            blockSpacing()
+            var firstRow = true
+            var section = table.firstChild
+            while (section != null) {
+                var row = section.firstChild
+                while (row != null) {
+                    if (row is TableRow) {
+                        if (!firstRow) appendDecoration("\n")
+                        firstRow = false
+                        renderTableRow(row, isHeader = section is TableHead)
+                        if (section is TableHead) {
+                            appendDecoration("\n")
+                            appendDecoration(
+                                "─────────────────────────",
+                                SpanStyle(color = MarkdownTheme.faint)
+                            )
+                        }
+                    }
+                    row = row.next
+                }
+                section = section.next
+            }
+        }
+
+        private fun renderTableRow(row: TableRow, isHeader: Boolean) {
+            var cell = row.firstChild
+            var firstCell = true
+            while (cell != null) {
+                if (cell is TableCell) {
+                    if (!firstCell) {
+                        appendDecoration("  │  ", SpanStyle(color = MarkdownTheme.faint))
+                    }
+                    firstCell = false
+                    val start = length
+                    renderInlines(cell.firstChild)
+                    if (isHeader) annotated.addStyle(theme.bold, start, length)
+                }
+                cell = cell.next
             }
         }
 
@@ -297,7 +367,7 @@ object MarkdownRenderer {
                             else -> "•  "
                         }
                         if (!firstParagraphDone) {
-                            appendDecoration(marker, MarkdownTheme.listMarker)
+                            appendDecoration(marker, theme.listMarker)
                             firstParagraphDone = true
                         }
                         val start = length
@@ -308,7 +378,7 @@ object MarkdownRenderer {
                                 start, length
                             )
                         }
-                        if (quoteDepth > 0) annotated.addStyle(MarkdownTheme.quote, start, length)
+                        if (quoteDepth > 0) annotated.addStyle(theme.quote, start, length)
                     }
                     is BulletList -> renderList(child, ordered = false, quoteDepth, indent + 1)
                     is OrderedList -> renderList(child, ordered = true, quoteDepth, indent + 1)
@@ -336,18 +406,18 @@ object MarkdownRenderer {
         private fun renderInline(node: Node) {
             when (node) {
                 is Text -> renderTextLiteral(node)
-                is Emphasis -> renderStyledContainer(node, MarkdownTheme.italic)
-                is StrongEmphasis -> renderStyledContainer(node, MarkdownTheme.bold)
-                is Strikethrough -> renderStyledContainer(node, MarkdownTheme.strikethrough)
+                is Emphasis -> renderStyledContainer(node, theme.italic)
+                is StrongEmphasis -> renderStyledContainer(node, theme.bold)
+                is Strikethrough -> renderStyledContainer(node, theme.strikethrough)
                 is Code -> {
                     val (s, e) = sourceRangeOf(node)
-                    appendMapped(node.literal, s, e, linear = false, MarkdownTheme.code)
+                    appendMapped(node.literal, s, e, linear = false, theme.code)
                 }
                 is Link -> {
                     val start = length
                     val (s, e) = sourceRangeOf(node)
                     // Display only the link text, mapped to the whole [text](target) source
-                    annotated.pushStyle(MarkdownTheme.mdLink)
+                    annotated.pushStyle(theme.mdLink)
                     renderInlinesNonLinear(node.firstChild, s, e)
                     annotated.pop()
                     links.add(MarkdownLink(start, length, node.destination, isWikilink = false))
@@ -370,7 +440,7 @@ object MarkdownRenderer {
                 is HardLineBreak -> appendDecoration("\n")
                 is HtmlInline -> {
                     val (s, e) = sourceRangeOf(node)
-                    appendMapped(node.literal, s, e, linear = false, MarkdownTheme.code)
+                    appendMapped(node.literal, s, e, linear = false, theme.code)
                 }
                 else -> renderInlines(node.firstChild)
             }
@@ -390,22 +460,51 @@ object MarkdownRenderer {
         }
 
         /** Renders children of a construct whose source includes markup; children are
-         * appended without their own linear mapping (parent supplies the range). */
+         * appended without their own linear mapping (parent supplies the range).
+         * Links and wikilinks inside styled text still register as tappable. */
         private fun renderInlinesNonLinear(first: Node?, sourceStart: Int, sourceEnd: Int) {
             var node = first
             while (node != null) {
                 when (node) {
-                    is Text -> annotated.append(node.literal)
+                    is Text -> appendTextScanningWikilinks(node.literal)
                     is SoftLineBreak, is HardLineBreak -> annotated.append("\n")
                     is Code -> {
                         val cs = length
                         annotated.append(node.literal)
-                        annotated.addStyle(MarkdownTheme.code, cs, length)
+                        annotated.addStyle(theme.code, cs, length)
+                    }
+                    is Link -> {
+                        val start = length
+                        annotated.pushStyle(theme.mdLink)
+                        renderInlinesNonLinear(node.firstChild, sourceStart, sourceEnd)
+                        annotated.pop()
+                        links.add(MarkdownLink(start, length, node.destination, isWikilink = false))
                     }
                     else -> renderInlinesNonLinear(node.firstChild, sourceStart, sourceEnd)
                 }
                 node = node.next
             }
+        }
+
+        /** Appends literal text, turning any embedded [[wikilinks]] into tappable links. */
+        private fun appendTextScanningWikilinks(literal: String) {
+            var pos = 0
+            for (match in WIKILINK_REGEX.findAll(literal)) {
+                if (match.range.first > pos) {
+                    annotated.append(literal.substring(pos, match.range.first))
+                }
+                val inner = match.groupValues[1]
+                val display = inner.substringAfter('|', inner.substringBefore('|'))
+                    .ifBlank { inner }
+                val target = inner.substringBefore('|').trim()
+                val start = length
+                annotated.pushStyle(theme.wikilink)
+                annotated.append(display)
+                annotated.pop()
+                links.add(MarkdownLink(start, length, target, isWikilink = true))
+                pos = match.range.last + 1
+            }
+            if (pos < literal.length) annotated.append(literal.substring(pos))
         }
 
         /**
@@ -457,20 +556,20 @@ object MarkdownRenderer {
                         val start = length
                         appendMapped(
                             display, decoSourceStart, decoSourceEnd,
-                            linear = false, MarkdownTheme.wikilink
+                            linear = false, theme.wikilink
                         )
                         links.add(MarkdownLink(start, length, target, isWikilink = true))
                     }
                     1 -> { // ==highlight== — show inner text highlighted
                         appendMapped(
                             deco.inner, decoSourceStart, decoSourceEnd,
-                            linear = false, MarkdownTheme.highlight
+                            linear = false, theme.highlight
                         )
                     }
                     else -> { // #tag — keep the # visible, chip style
                         appendMapped(
                             "#${deco.inner}", decoSourceStart, decoSourceEnd,
-                            linear = true, MarkdownTheme.tag
+                            linear = true, theme.tag
                         )
                     }
                 }

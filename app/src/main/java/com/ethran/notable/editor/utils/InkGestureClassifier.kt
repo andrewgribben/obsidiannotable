@@ -40,19 +40,27 @@ object InkGestureClassifier {
     // --- Tunable thresholds (values in page/display pixels where absolute) ---
 
     /** Max distance between stroke start and end, as a fraction of bbox diagonal, to count as closed. */
-    const val CLOSURE_MAX_FRACTION = 0.35f
+    const val CLOSURE_MAX_FRACTION = 0.5f
 
-    /** Min enclosed area as a fraction of bbox area for a loop (filters back-and-forth lines). */
-    const val LOOP_MIN_AREA_FRACTION = 0.35f
+    /** Min enclosed area as a fraction of bbox area for a closed loop (filters back-and-forth lines). */
+    const val LOOP_MIN_AREA_FRACTION = 0.25f
+
+    /**
+     * Net (shoelace) area fraction above which a stroke counts as a loop even when its
+     * ends don't meet or it has scrawl-like reversals — catches big sloppy circles,
+     * open C-shapes, and overdrawn (1.5-turn) loops, whose net area stays large, while
+     * a deletion scribble's back-and-forth passes mostly cancel out.
+     */
+    const val LOOP_STRONG_AREA_FRACTION = 0.65f
 
     /** Min bbox diagonal for any gesture — smaller marks are accidental dots. */
     const val MIN_DIAGONAL = 12f
 
     /** A horizontal line's bbox must be at least this many times wider than tall. */
-    const val LINE_MIN_ASPECT = 2.5f
+    const val LINE_MIN_ASPECT = 2.0f
 
     /** Max direction reversals along x for a clean line (more = scribble). */
-    const val LINE_MAX_REVERSALS = 1
+    const val LINE_MAX_REVERSALS = 2
 
     /** Min x-direction reversals for a scrawl. */
     const val SCRAWL_MIN_REVERSALS = 3
@@ -77,19 +85,26 @@ object InkGestureClassifier {
         val inkLength = pathLength(points)
         val density = if (diagonal > 0f) inkLength / diagonal else 0f
 
-        // Scrawl first: dense zigzag over an area
-        if (reversals >= SCRAWL_MIN_REVERSALS && density >= SCRAWL_MIN_DENSITY) {
+        val closure = hypot(points.first().x - points.last().x, points.first().y - points.last().y)
+        val area = abs(signedArea(points))
+        val bboxArea = width * height
+        val areaFraction = if (bboxArea > 0f) area / bboxArea else 0f
+
+        // Dense zigzag over an area → scrawl/delete. The area guard keeps overdrawn
+        // circles (which also rack up x reversals) out of this branch: a scribble's
+        // net area mostly cancels, a loop's doesn't.
+        if (reversals >= SCRAWL_MIN_REVERSALS && density >= SCRAWL_MIN_DENSITY &&
+            areaFraction < LOOP_STRONG_AREA_FRACTION
+        ) {
             return Classification(InkGesture.SCRAWL, left, top, right, bottom)
         }
 
-        // Closed loop → circle/highlight
-        val closure = hypot(points.first().x - points.last().x, points.first().y - points.last().y)
-        if (closure <= diagonal * CLOSURE_MAX_FRACTION) {
-            val area = abs(signedArea(points))
-            val bboxArea = width * height
-            if (bboxArea > 0f && area / bboxArea >= LOOP_MIN_AREA_FRACTION) {
-                return Classification(InkGesture.CIRCLE, left, top, right, bottom)
-            }
+        // Loop → circle/highlight: either reasonably closed with enough enclosed area,
+        // or clearly loop-shaped by net area alone (big sloppy or unclosed circles).
+        if ((closure <= diagonal * CLOSURE_MAX_FRACTION && areaFraction >= LOOP_MIN_AREA_FRACTION) ||
+            areaFraction >= LOOP_STRONG_AREA_FRACTION
+        ) {
+            return Classification(InkGesture.CIRCLE, left, top, right, bottom)
         }
 
         // Horizontal line: wide, flat, few reversals

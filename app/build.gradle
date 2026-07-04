@@ -213,6 +213,8 @@ dependencies {
     implementation "org.commonmark:commonmark-ext-gfm-strikethrough:$commonmark_version"
     implementation "org.commonmark:commonmark-ext-task-list-items:$commonmark_version"
     implementation "org.commonmark:commonmark-ext-yaml-front-matter:$commonmark_version"
+    implementation "org.commonmark:commonmark-ext-gfm-tables:$commonmark_version"
+    implementation "org.commonmark:commonmark-ext-autolink:$commonmark_version"
 
     // Jetpack Ink API — stroke rendering + geometry
     def ink_version = "1.0.0"

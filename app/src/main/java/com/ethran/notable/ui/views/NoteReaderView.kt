@@ -64,6 +64,7 @@ import compose.icons.feathericons.Layers
 import compose.icons.feathericons.PenTool
 import compose.icons.feathericons.RotateCcw
 import compose.icons.feathericons.Search
+import compose.icons.feathericons.Type
 import compose.icons.feathericons.X
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -89,7 +90,7 @@ class NoteReaderState(
     var rendered by mutableStateOf<RenderedMarkdown?>(null)
     var error by mutableStateOf<String?>(null)
 
-    fun load() {
+    fun load(fontScale: Float = 1f) {
         val result = VaultFileStore.read(file)
         if (result == null) {
             error = "Could not read ${file.name}"
@@ -97,8 +98,15 @@ class NoteReaderState(
         }
         content = result.content
         contentHash = result.hash
-        rendered = MarkdownRenderer.render(result.content)
+        rendered = MarkdownRenderer.render(result.content, fontScale)
         error = null
+    }
+
+    /** Re-renders the already-loaded content at a new font scale. */
+    fun rerender(fontScale: Float) {
+        val current = content ?: return
+        if (rendered?.theme?.scale == fontScale) return
+        rendered = MarkdownRenderer.render(current, fontScale)
     }
 }
 
@@ -125,7 +133,19 @@ fun NoteReaderView(
     var showQuickSwitcher by remember { mutableStateOf(false) }
     var annotationMode by remember { mutableStateOf(false) }
     var conflictContent by remember { mutableStateOf<String?>(null) }
+    var showFontControls by remember { mutableStateOf(false) }
+    var fontScale by remember { mutableStateOf(settings.readerFontScale) }
     val annotationState = remember(relativePath) { ReaderAnnotationState() }
+
+    fun setFontScale(value: Float) {
+        val clamped = (Math.round(value * 10f) / 10f).coerceIn(0.7f, 1.8f)
+        fontScale = clamped
+        scope.launch(Dispatchers.IO) {
+            appRepository.kvProxy.setAppSettings(
+                GlobalAppSettings.current.copy(readerFontScale = clamped)
+            )
+        }
+    }
 
     // Single-writer guard: only one window/surface may edit this note at a time.
     val editOwner = remember { UUID.randomUUID().toString() }
@@ -154,7 +174,11 @@ fun NoteReaderView(
         NoteReaderState(
             file = File(vaultRoot, relativePath.replace('/', File.separatorChar)),
             relativePath = relativePath
-        ).also { it.load() }
+        ).also { it.load(fontScale) }
+    }
+
+    LaunchedEffect(fontScale) {
+        state.rerender(fontScale)
     }
 
     fun saveAnnotations() {
@@ -174,7 +198,7 @@ fun NoteReaderView(
                     withContext(Dispatchers.Main) {
                         annotationState.clear()
                         exitAnnotationMode()
-                        state.load()
+                        state.load(fontScale)
                     }
                     SnackState.globalSnackFlow.tryEmit(
                         SnackConf(text = "Annotations saved", duration = 2000)
@@ -210,7 +234,13 @@ fun NoteReaderView(
             openInBrowser(context, target)
             return
         }
-        val resolved = index?.resolveWikilink(android.net.Uri.decode(target))
+        val decoded = android.net.Uri.decode(target)
+        // Markdown links are usually relative to the current note's folder — try that
+        // first, then Obsidian-style vault-wide resolution (path, then unique name).
+        val currentDir = relativePath.substringBeforeLast('/', "")
+        val resolved = (if (currentDir.isNotEmpty() && !decoded.startsWith("/"))
+            index?.resolveWikilink(normalizeVaultPath("$currentDir/$decoded")) else null)
+            ?: index?.resolveWikilink(decoded.trimStart('/'))
         if (resolved != null) {
             onOpenNote(resolved.relativePath)
         } else {
@@ -287,6 +317,14 @@ fun NoteReaderView(
                 )
             } else {
                 Icon(
+                    imageVector = FeatherIcons.Type,
+                    contentDescription = "Text size",
+                    modifier = Modifier
+                        .padding(horizontal = 8.dp)
+                        .size(26.dp)
+                        .noRippleClickable { showFontControls = !showFontControls }
+                )
+                Icon(
                     imageVector = FeatherIcons.Edit2,
                     contentDescription = "Annotate",
                     modifier = Modifier
@@ -337,6 +375,22 @@ fun NoteReaderView(
                 .height(1.dp)
                 .background(Color.LightGray)
         )
+
+        if (showFontControls && !annotationMode) {
+            FontSizeControls(
+                fontScale = fontScale,
+                onDecrease = { setFontScale(fontScale - 0.1f) },
+                onIncrease = { setFontScale(fontScale + 0.1f) },
+                onReset = { setFontScale(1f) },
+                onClose = { showFontControls = false }
+            )
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(Color.LightGray)
+            )
+        }
 
         val rendered = state.rendered
         when {
@@ -397,7 +451,7 @@ fun NoteReaderView(
                 conflictContent = null
                 annotationState.clear()
                 exitAnnotationMode()
-                state.load()
+                state.load(fontScale)
             },
             onSaveCopy = {
                 conflictContent = null
@@ -412,12 +466,76 @@ fun NoteReaderView(
                     withContext(Dispatchers.Main) {
                         annotationState.clear()
                         exitAnnotationMode()
-                        state.load()
+                        state.load(fontScale)
                     }
                 }
             }
         )
     }
+}
+
+@Composable
+private fun FontSizeControls(
+    fontScale: Float,
+    onDecrease: () -> Unit,
+    onIncrease: () -> Unit,
+    onReset: () -> Unit,
+    onClose: () -> Unit
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+    ) {
+        Text("Text size", fontSize = 14.sp, color = Color.Gray)
+        Spacer(Modifier.width(16.dp))
+        FontSizeButton("A−", onDecrease)
+        Spacer(Modifier.width(12.dp))
+        Text(
+            "${Math.round(fontScale * 100)}%",
+            fontSize = 15.sp,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.width(48.dp),
+            color = Color.Black
+        )
+        FontSizeButton("A+", onIncrease)
+        Spacer(Modifier.width(16.dp))
+        FontSizeButton("Reset", onReset)
+        Spacer(Modifier.weight(1f))
+        Icon(
+            imageVector = FeatherIcons.X,
+            contentDescription = "Close text size controls",
+            modifier = Modifier
+                .size(22.dp)
+                .noRippleClickable { onClose() }
+        )
+    }
+}
+
+@Composable
+private fun FontSizeButton(label: String, onClick: () -> Unit) {
+    Box(
+        Modifier
+            .border(1.dp, Color.Black, RoundedCornerShape(6.dp))
+            .noRippleClickable { onClick() }
+            .padding(horizontal = 12.dp, vertical = 5.dp)
+    ) {
+        Text(label, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+    }
+}
+
+/** Collapses "." and ".." segments in a vault-relative path. */
+private fun normalizeVaultPath(path: String): String {
+    val parts = mutableListOf<String>()
+    for (part in path.split('/')) {
+        when (part) {
+            "", "." -> Unit
+            ".." -> if (parts.isNotEmpty()) parts.removeAt(parts.size - 1)
+            else -> parts.add(part)
+        }
+    }
+    return parts.joinToString("/")
 }
 
 @Composable

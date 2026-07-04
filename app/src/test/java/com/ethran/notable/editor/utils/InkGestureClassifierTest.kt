@@ -39,6 +39,35 @@ class InkGestureClassifierTest {
     }
 
     @Test
+    fun `big sloppy open circle still classifies as circle`() {
+        // Ends well apart (like a fast circling gesture around a long phrase)
+        val points = (0..29).map { i ->
+            val angle = 2.0 * Math.PI * i / 36
+            Point(
+                200f + 180f * cos(angle).toFloat(),
+                100f + 45f * sin(angle).toFloat()
+            )
+        }
+        val result = InkGestureClassifier.classify(points)
+        assertEquals(InkGesture.CIRCLE, result.gesture)
+    }
+
+    @Test
+    fun `overdrawn circle with extra reversals classifies as circle not scrawl`() {
+        // 1.5 turns around the same loop — reversal count looks scrawl-like but the
+        // net enclosed area stays large.
+        val points = (0..54).map { i ->
+            val angle = 2.0 * Math.PI * i / 36
+            Point(
+                100f + 50f * cos(angle).toFloat(),
+                100f + 50f * sin(angle).toFloat()
+            )
+        }
+        val result = InkGestureClassifier.classify(points)
+        assertEquals(InkGesture.CIRCLE, result.gesture)
+    }
+
+    @Test
     fun `straight horizontal stroke classifies as line`() {
         val points = (0..20).map { Point(it * 10f, 100f + it * 0.4f) }
         val result = InkGestureClassifier.classify(points)

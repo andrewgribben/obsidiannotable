@@ -1,6 +1,8 @@
 package com.ethran.notable.io.markdown
 
+import androidx.compose.ui.text.style.TextDecoration
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -82,11 +84,32 @@ class MarkdownRendererTest {
     }
 
     @Test
-    fun `strikethrough and highlight render their inner text`() {
-        val rendered = MarkdownRenderer.render("~~gone~~ and ==kept==\n")
+    fun `strikethrough hides markers and applies line-through style`() {
+        val rendered = MarkdownRenderer.render("~~gone~~ and kept\n")
         val text = rendered.text.text
         assertTrue(text.contains("gone"))
-        assertTrue(text.contains("kept"))
+        assertFalse(text.contains("~~"))
+
+        val start = text.indexOf("gone")
+        val struck = rendered.text.spanStyles.any {
+            it.item.textDecoration == TextDecoration.LineThrough &&
+                it.start <= start && it.end >= start + 4
+        }
+        assertTrue("expected a LineThrough span over 'gone'", struck)
+    }
+
+    @Test
+    fun `highlight hides markers and applies background style`() {
+        val rendered = MarkdownRenderer.render("This is ==important== text\n")
+        val text = rendered.text.text
+        assertTrue(text.contains("important"))
+        assertFalse(text.contains("=="))
+
+        val start = text.indexOf("important")
+        val highlighted = rendered.text.spanStyles.any {
+            it.item.background.alpha > 0f && it.start <= start && it.end >= start + 9
+        }
+        assertTrue("expected a background span over 'important'", highlighted)
     }
 
     @Test
@@ -95,5 +118,57 @@ class MarkdownRendererTest {
         val text = rendered.text.text
         assertTrue(text.contains("first"))
         assertTrue(text.contains("second"))
+    }
+
+    @Test
+    fun `tables render rows with cell separators and bold header`() {
+        val rendered = MarkdownRenderer.render(
+            "| Name | Amount |\n|------|--------|\n| Coffee | 2 |\n| Tea | 5 |\n"
+        )
+        val text = rendered.text.text
+        assertTrue(text.contains("Name"))
+        assertTrue(text.contains("Coffee"))
+        assertTrue(text.contains("Tea"))
+        assertTrue("expected cell separator", text.contains("│"))
+        assertFalse("raw pipe syntax should not remain", text.contains("|"))
+        assertFalse("delimiter row should not remain", text.contains("---"))
+
+        // Header row is on its own line above the body rows
+        assertTrue(text.indexOf("Name") < text.indexOf("Coffee"))
+    }
+
+    @Test
+    fun `bare urls become tappable links`() {
+        val rendered = MarkdownRenderer.render("Go to https://example.com now\n")
+        val links = rendered.links.filter { !it.isWikilink }
+        assertEquals(1, links.size)
+        assertEquals("https://example.com", links[0].target)
+    }
+
+    @Test
+    fun `links inside bold text are still tappable`() {
+        val rendered = MarkdownRenderer.render("**see [docs](https://x.com) here**\n")
+        val links = rendered.links.filter { !it.isWikilink }
+        assertEquals(1, links.size)
+        assertEquals("https://x.com", links[0].target)
+        assertTrue(rendered.text.text.contains("docs"))
+    }
+
+    @Test
+    fun `wikilinks inside styled text are still tappable`() {
+        val rendered = MarkdownRenderer.render("*see [[Other Note]] here*\n")
+        val links = rendered.links.filter { it.isWikilink }
+        assertEquals(1, links.size)
+        assertEquals("Other Note", links[0].target)
+        assertTrue(rendered.text.text.contains("Other Note"))
+    }
+
+    @Test
+    fun `font scale multiplies text sizes`() {
+        val small = MarkdownRenderer.render("# Title\n\nBody\n", fontScale = 1f)
+        val large = MarkdownRenderer.render("# Title\n\nBody\n", fontScale = 1.5f)
+        assertEquals(1.5f, large.theme.scale, 0.001f)
+        assertEquals(small.theme.bodySize.value * 1.5f, large.theme.bodySize.value, 0.01f)
+        assertEquals(small.theme.lineHeight.value * 1.5f, large.theme.lineHeight.value, 0.01f)
     }
 }

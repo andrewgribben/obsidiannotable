@@ -94,6 +94,9 @@ data class AppSettings(
     // quick switcher's initial list.
     val recentNotesByVault: Map<String, List<String>> = emptyMap(),
 
+    // Note reader font scale (1.0 = default 17sp body).
+    val readerFontScale: Float = 1f,
+
     // Debug
     val showWelcome: Boolean = true,
     // [system information -- does not have a setting]

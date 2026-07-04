@@ -43,14 +43,16 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
- * Bottom toolbar shown in the editor for flip-side pages.
+ * Toolbar shown in the editor for flip-side pages.
  *
- * Flip purpose: "To text" runs HWR over the sketch and previews the result with
- * replace-or-append into the linked note (the sketch itself auto-exports to the
- * .excalidraw.md sidecar when the editor closes).
+ * Flip purpose: the flip side is first and foremost a drawing surface — the sketch
+ * auto-exports to the Excalidraw-compatible sidecar when the editor closes, no action
+ * needed. A compact bar along the top edge names the note and offers the *optional*
+ * "To text" action: HWR over the sketch, preview, then replace-or-append into the note.
  *
- * Insert purpose (handwritten entry into an existing note): "Save to note" appends the
- * recognized markdown and discards the scratch page.
+ * Insert purpose (handwritten entry into an existing note): a bottom bar with
+ * "Save to note" (appends the recognized markdown, discards the scratch page)
+ * and "Discard".
  */
 @Composable
 fun FlipSideToolbar(
@@ -70,23 +72,22 @@ fun FlipSideToolbar(
     }
 
     Box(Modifier.fillMaxSize()) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 14.dp)
-                .border(1.dp, Color.Black, RoundedCornerShape(8.dp))
-                .background(Color.White, RoundedCornerShape(8.dp))
-                .padding(horizontal = 12.dp, vertical = 8.dp)
-        ) {
-            Text(
-                text = (if (isInsertMode) "Write into: " else "Flip side of: ") +
-                    flipSideNoteName(noteRelativePath),
-                fontSize = 13.sp,
-                color = Color.DarkGray
-            )
-            Spacer(Modifier.width(14.dp))
-            if (isInsertMode) {
+        if (isInsertMode) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 14.dp)
+                    .border(1.dp, Color.Black, RoundedCornerShape(8.dp))
+                    .background(Color.White, RoundedCornerShape(8.dp))
+                    .padding(horizontal = 12.dp, vertical = 8.dp)
+            ) {
+                Text(
+                    text = "Write into: " + flipSideNoteName(noteRelativePath),
+                    fontSize = 13.sp,
+                    color = Color.DarkGray
+                )
+                Spacer(Modifier.width(14.dp))
                 ToolbarButton(
                     label = if (isRecognizing) "Recognizing…" else "Save to note",
                     filled = true,
@@ -110,10 +111,29 @@ fun FlipSideToolbar(
                         withContext(Dispatchers.Main) { onExit() }
                     }
                 }
-            } else {
+            }
+        } else {
+            // Drawing is the default: strokes save to the sidecar automatically on exit.
+            // "To text" (HWR → replace/append) is an optional extra, kept out of the way
+            // at the top edge.
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = 8.dp, end = 12.dp)
+                    .border(1.dp, Color.Gray, RoundedCornerShape(8.dp))
+                    .background(Color.White, RoundedCornerShape(8.dp))
+                    .padding(horizontal = 10.dp, vertical = 6.dp)
+            ) {
+                Text(
+                    text = "Flip side · " + flipSideNoteName(noteRelativePath),
+                    fontSize = 13.sp,
+                    color = Color.DarkGray
+                )
+                Spacer(Modifier.width(12.dp))
                 ToolbarButton(
                     label = if (isRecognizing) "Recognizing…" else "To text",
-                    filled = true,
+                    filled = false,
                     enabled = !isRecognizing
                 ) {
                     isRecognizing = true

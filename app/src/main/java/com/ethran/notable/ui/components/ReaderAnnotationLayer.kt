@@ -21,7 +21,6 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.TextLayoutResult
-import androidx.compose.ui.unit.sp
 import com.ethran.notable.editor.utils.InkGestureClassifier
 import com.ethran.notable.io.markdown.MarkdownEdit
 import com.ethran.notable.io.markdown.MarkdownEdits
@@ -71,8 +70,12 @@ class ReaderAnnotationState {
     }
 }
 
-/** Where within a text line's box a horizontal stroke flips from strike to underline. */
-private const val STRIKE_UNDERLINE_BOUNDARY = 0.68f
+/**
+ * A horizontal stroke in the top part of a line's box (the spacing above its glyphs)
+ * is treated as an underline of the line *above* — that's where you naturally draw
+ * when underlining "too far" below the text.
+ */
+private const val UNDERLINE_PREV_LINE_BAND = 0.25f
 
 /**
  * Classifies a completed ink stroke against the text layout and produces the staged
@@ -103,14 +106,21 @@ fun buildPendingAnnotation(
         }
         InkGestureClassifier.InkGesture.HORIZONTAL_LINE -> {
             val strokeY = points.map { it.y }.average().toFloat()
-            val line = layout.getLineForVerticalPosition(strokeY)
+            var line = layout.getLineForVerticalPosition(strokeY)
             val lineTop = layout.getLineTop(line)
             val lineBottom = layout.getLineBottom(line)
             val relative =
                 if (lineBottom > lineTop) (strokeY - lineTop) / (lineBottom - lineTop) else 0.5f
-            kind = if (relative < STRIKE_UNDERLINE_BOUNDARY) AnnotationKind.STRIKETHROUGH
-            else AnnotationKind.BOLD
-            probeY = (lineTop + lineBottom) / 2f
+            if (relative < UNDERLINE_PREV_LINE_BAND && line > 0) {
+                // Drawn in the gap below the previous line's text: underline that line.
+                line -= 1
+                kind = AnnotationKind.BOLD
+            } else {
+                // Above the baseline = through the letters = strike; below = underline.
+                kind = if (strokeY <= layout.getLineBaseline(line)) AnnotationKind.STRIKETHROUGH
+                else AnnotationKind.BOLD
+            }
+            probeY = (layout.getLineTop(line) + layout.getLineBottom(line)) / 2f
         }
         InkGestureClassifier.InkGesture.OTHER -> return null
     }
@@ -153,7 +163,7 @@ fun AnnotatableReaderBody(
     Box(Modifier.fillMaxWidth()) {
         Text(
             text = rendered.text,
-            lineHeight = 26.sp,
+            lineHeight = rendered.theme.lineHeight,
             onTextLayout = { layout = it },
             modifier = Modifier
                 .fillMaxWidth()
