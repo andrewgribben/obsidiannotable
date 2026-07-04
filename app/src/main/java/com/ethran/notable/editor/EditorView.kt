@@ -38,6 +38,7 @@ import com.ethran.notable.io.ExportEngine
 import com.ethran.notable.io.SyncState
 import com.ethran.notable.io.VaultTagScanner
 import com.ethran.notable.io.exportToLinkedFile
+import com.ethran.notable.io.flipside.FlipSideManager
 import com.ethran.notable.navigation.NavigationDestination
 import com.ethran.notable.ui.LocalSnackContext
 import com.ethran.notable.ui.SnackConf
@@ -163,9 +164,13 @@ fun EditorView(
             val pageData = withContext(Dispatchers.IO) {
                 appRepository.pageRepository.getById(pageId)
             }
-            val inbox = pageData?.notebookId == null &&
+            // Flip-side drawing pages are not inbox captures — they save to their vault file.
+            val isFlip = withContext(Dispatchers.IO) {
+                FlipSideManager.isFlipPage(appRepository, pageId)
+            }
+            val inbox = !isFlip && (pageData?.notebookId == null &&
                 GlobalAppSettings.current.obsidianInboxPath.isNotBlank() ||
-                pageData?.background == "inbox"
+                pageData?.background == "inbox")
             isInboxPage = inbox
             editorState.isInboxPage = inbox
         }
@@ -176,6 +181,8 @@ fun EditorView(
                 editorState.selectionState.applySelectionDisplace(page)
                 if (bookId != null)
                     exportToLinkedFile(exportEngine, bookId, appRepository.bookRepository)
+                // Flip-side pages export to their vault .excalidraw.md in the background
+                FlipSideManager.scheduleSaveIfFlipPage(appRepository, pageId)
                 page.disposeOldPage()
             }
         }

@@ -22,10 +22,14 @@ import com.ethran.notable.ui.views.Library
 import com.ethran.notable.ui.views.LibraryDestination
 import com.ethran.notable.ui.views.PagesDestination
 import com.ethran.notable.ui.views.PagesView
+import com.ethran.notable.ui.views.NoteReaderDestination
+import com.ethran.notable.ui.views.NoteReaderView
 import com.ethran.notable.ui.views.SettingsDestination
 import com.ethran.notable.ui.views.SettingsView
 import com.ethran.notable.ui.views.SystemInformationDestination
 import com.ethran.notable.ui.views.SystemInformationView
+import com.ethran.notable.ui.views.VaultBrowserDestination
+import com.ethran.notable.ui.views.VaultBrowserView
 import com.ethran.notable.ui.views.WelcomeDestination
 import com.ethran.notable.ui.views.WelcomeView
 
@@ -141,6 +145,40 @@ fun NotableNavHost(
                 route = BugReportDestination.route,
             ) {
                 BugReportScreen(goBack = { appNavigator.goBack() })
+                appNavigator.cleanCurrentPageId()
+            }
+            composable(
+                route = VaultBrowserDestination.routeWithArgs,
+                arguments = listOf(navArgument(VaultBrowserDestination.DIR_ARG) {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                }),
+            ) {
+                VaultBrowserView(
+                    dir = it.arguments?.getString(VaultBrowserDestination.DIR_ARG),
+                    onOpenNote = { path -> appNavigator.goToVaultNote(path) },
+                    onBack = { appNavigator.goBack() },
+                    onOpenDir = { dir -> appNavigator.goToVaultBrowser(dir) },
+                    onVaultSwitched = { vault -> appNavigator.switchVault(appRepository, vault) }
+                )
+                appNavigator.cleanCurrentPageId()
+            }
+            composable(
+                route = NoteReaderDestination.routeWithArgs,
+                arguments = listOf(navArgument(NoteReaderDestination.PATH_ARG) {
+                    type = NavType.StringType
+                }),
+            ) {
+                NoteReaderView(
+                    relativePath = it.arguments?.getString(NoteReaderDestination.PATH_ARG)!!,
+                    appRepository = appRepository,
+                    onOpenNote = { path -> appNavigator.goToVaultNote(path) },
+                    onOpenFlipSide = { path ->
+                        appNavigator.goToFlipSide(appRepository, path)
+                    },
+                    onBack = { appNavigator.goBack() }
+                )
                 appNavigator.cleanCurrentPageId()
             }
         }

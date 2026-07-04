@@ -90,6 +90,10 @@ data class AppSettings(
     val vaults: List<VaultConfig> = emptyList(),
     val activeVaultId: String = "",
 
+    // Recently opened vault notes (relative paths), keyed by vault id. Drives the
+    // quick switcher's initial list.
+    val recentNotesByVault: Map<String, List<String>> = emptyMap(),
+
     // Debug
     val showWelcome: Boolean = true,
     // [system information -- does not have a setting]

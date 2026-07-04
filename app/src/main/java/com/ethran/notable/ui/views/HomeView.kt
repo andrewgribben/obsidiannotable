@@ -71,6 +71,7 @@ import com.ethran.notable.ui.noRippleClickable
 import com.ethran.notable.ui.viewmodels.LibraryUiState
 import com.ethran.notable.ui.viewmodels.LibraryViewModel
 import compose.icons.FeatherIcons
+import compose.icons.feathericons.BookOpen
 import compose.icons.feathericons.FilePlus
 import compose.icons.feathericons.Folder
 import compose.icons.feathericons.FolderPlus
@@ -110,6 +111,7 @@ fun Library(
         uiState = uiState,
         onNavigateToFolder = { id -> navController.navigate(LibraryDestination.createRoute(id)) },
         onNavigateToSettings = { navController.navigate("settings") },
+        onNavigateToVault = { navController.navigate(VaultBrowserDestination.route) },
         onNavigateToEditor = { pageId, bookId ->
             navController.navigate(EditorDestination.createRoute(pageId, bookId))
         },
@@ -133,6 +135,7 @@ fun LibraryContent(
     uiState: LibraryUiState,
     onNavigateToFolder: (String?) -> Unit,
     onNavigateToSettings: () -> Unit,
+    onNavigateToVault: () -> Unit = {},
     onNavigateToEditor: (String, String) -> Unit,
     goToPage: (String) -> Unit,
     onCreateNewQuickPage: () -> Unit,
@@ -155,6 +158,12 @@ fun LibraryContent(
                 text = "Singularity",
                 style = androidx.compose.material.MaterialTheme.typography.h5,
                 fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+            )
+            Icon(
+                imageVector = FeatherIcons.BookOpen, contentDescription = "Vault",
+                Modifier
+                    .padding(8.dp)
+                    .noRippleClickable(onClick = onNavigateToVault)
             )
             BadgedBox(
                 badge = {
