@@ -122,6 +122,10 @@ class KvProxy @Inject constructor(
         kvRepository.set(Kv(key, jsonValue))
     }
 
+    suspend fun delete(key: String) {
+        kvRepository.delete(key)
+    }
+
     suspend fun setAppSettings(value: AppSettings) {
         val normalized = value.normalizedVaults()
         setKv(APP_SETTINGS_KEY, normalized, AppSettings.serializer())

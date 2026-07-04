@@ -28,6 +28,7 @@ import com.ethran.notable.editor.state.EditorState
 import com.ethran.notable.editor.state.History
 import com.ethran.notable.editor.ui.EditorSidebar
 import com.ethran.notable.editor.ui.EditorSurface
+import com.ethran.notable.editor.ui.FlipSideToolbar
 import com.ethran.notable.editor.ui.SIDEBAR_WIDTH
 import com.ethran.notable.editor.ui.HorizontalScrollIndicator
 import com.ethran.notable.editor.ui.InboxToolbar
@@ -38,6 +39,7 @@ import com.ethran.notable.io.ExportEngine
 import com.ethran.notable.io.SyncState
 import com.ethran.notable.io.VaultTagScanner
 import com.ethran.notable.io.exportToLinkedFile
+import com.ethran.notable.io.flipside.FlipSideLink
 import com.ethran.notable.io.flipside.FlipSideManager
 import com.ethran.notable.navigation.NavigationDestination
 import com.ethran.notable.ui.LocalSnackContext
@@ -160,15 +162,18 @@ fun EditorView(
         // Read tags reactively — updates when VaultTagScanner.refreshCache() runs
         val suggestedTags = VaultTagScanner.cachedTags
 
+        var flipSideLink by remember { mutableStateOf<FlipSideLink?>(null) }
+
         LaunchedEffect(pageId) {
             val pageData = withContext(Dispatchers.IO) {
                 appRepository.pageRepository.getById(pageId)
             }
             // Flip-side drawing pages are not inbox captures — they save to their vault file.
-            val isFlip = withContext(Dispatchers.IO) {
-                FlipSideManager.isFlipPage(appRepository, pageId)
+            val link = withContext(Dispatchers.IO) {
+                FlipSideManager.linkForPage(appRepository, pageId)
             }
-            val inbox = !isFlip && (pageData?.notebookId == null &&
+            flipSideLink = link
+            val inbox = link == null && (pageData?.notebookId == null &&
                 GlobalAppSettings.current.obsidianInboxPath.isNotBlank() ||
                 pageData?.background == "inbox")
             isInboxPage = inbox
@@ -263,6 +268,16 @@ fun EditorView(
                                 navController.popBackStack()
                             },
                             onDiscard = { navController.popBackStack() }
+                        )
+                    }
+                    val flipLink = flipSideLink
+                    if (flipLink != null) {
+                        FlipSideToolbar(
+                            appRepository = appRepository,
+                            pageId = pageId,
+                            noteRelativePath = flipLink.relativePath,
+                            isInsertMode = flipLink.purpose == FlipSideManager.PURPOSE_INSERT,
+                            onExit = { navController.popBackStack() }
                         )
                     }
                     HorizontalScrollIndicator(state = editorState)

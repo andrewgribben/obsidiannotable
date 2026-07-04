@@ -57,6 +57,7 @@ import compose.icons.feathericons.ChevronDown
 import compose.icons.feathericons.ChevronRight
 import compose.icons.feathericons.Edit2
 import compose.icons.feathericons.Layers
+import compose.icons.feathericons.PenTool
 import compose.icons.feathericons.RotateCcw
 import compose.icons.feathericons.Search
 import compose.icons.feathericons.X
@@ -106,6 +107,7 @@ fun NoteReaderView(
     appRepository: AppRepository,
     onOpenNote: (String) -> Unit,
     onOpenFlipSide: (String) -> Unit,
+    onHandwriteInto: (String) -> Unit = {},
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
@@ -263,6 +265,14 @@ fun NoteReaderView(
                         .padding(horizontal = 8.dp)
                         .size(26.dp)
                         .noRippleClickable { annotationMode = true }
+                )
+                Icon(
+                    imageVector = FeatherIcons.PenTool,
+                    contentDescription = "Handwrite into note",
+                    modifier = Modifier
+                        .padding(horizontal = 8.dp)
+                        .size(26.dp)
+                        .noRippleClickable { onHandwriteInto(relativePath) }
                 )
                 Icon(
                     imageVector = FeatherIcons.Search,

@@ -177,6 +177,9 @@ fun NotableNavHost(
                     onOpenFlipSide = { path ->
                         appNavigator.goToFlipSide(appRepository, path)
                     },
+                    onHandwriteInto = { path ->
+                        appNavigator.goToHandwritingInsert(appRepository, path)
+                    },
                     onBack = { appNavigator.goBack() }
                 )
                 appNavigator.cleanCurrentPageId()

@@ -182,6 +182,20 @@ class NotableNavigator(
         }
     }
 
+    /** Opens a scratch handwriting page whose recognized text appends to the vault note. */
+    fun goToHandwritingInsert(appRepository: AppRepository, noteRelativePath: String) {
+        coroutineScope.launch {
+            val pageId = withContext(Dispatchers.IO) {
+                FlipSideManager.openInsertPage(appRepository, noteRelativePath)
+            }
+            if (pageId != null) {
+                navController.navigate(EditorDestination.createRoute(pageId, null))
+            } else {
+                log.e("Could not open handwriting insert page for $noteRelativePath")
+            }
+        }
+    }
+
     fun onCreateNewQuickPage(appRepository: AppRepository, folderId: String?) {
         coroutineScope.launch {
             val pageId = withContext(Dispatchers.IO) {
