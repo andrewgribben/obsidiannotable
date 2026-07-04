@@ -353,7 +353,7 @@ private fun VaultBrowserContent(
 }
 
 @Composable
-private fun SortMenuDialog(
+fun SortMenuDialog(
     current: String,
     onSelect: (String) -> Unit,
     onDismiss: () -> Unit

@@ -101,6 +101,9 @@ data class AppSettings(
     val vaultSortMode: String = "name",
     val vaultBrowserGrid: Boolean = false,
 
+    // Home/library page-grid sort order (VaultSort modes; "newest" = modified desc).
+    val homeSortMode: String = "newest",
+
     // Debug
     val showWelcome: Boolean = true,
     // [system information -- does not have a setting]

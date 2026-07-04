@@ -34,6 +34,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -47,10 +48,14 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.sp
 import com.ethran.notable.R
 import com.ethran.notable.data.AppRepository
+import com.ethran.notable.data.datastore.GlobalAppSettings
 import com.ethran.notable.data.db.Folder
 import com.ethran.notable.data.db.Notebook
+import com.ethran.notable.data.db.Page
 import com.ethran.notable.editor.EditorDestination
 import com.ethran.notable.editor.ui.toolbar.Topbar
 import com.ethran.notable.editor.utils.autoEInkAnimationOnScroll
@@ -76,8 +81,13 @@ import compose.icons.feathericons.FilePlus
 import compose.icons.feathericons.Folder
 import compose.icons.feathericons.FolderPlus
 import compose.icons.feathericons.Settings
+import compose.icons.feathericons.Sliders
 import compose.icons.feathericons.Upload
 import io.shipbook.shipbooksdk.ShipBook
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 
 object LibraryDestination : NavigationDestination {
@@ -145,7 +155,10 @@ fun LibraryContent(
     onImportPdf: (Uri, Boolean) -> Unit,
     onImportXopp: (Uri) -> Unit
 ) {
+    val scope = rememberCoroutineScope()
     var showVaultBrowser by remember { mutableStateOf(false) }
+    var showSortMenu by remember { mutableStateOf(false) }
+    val sortMode = GlobalAppSettings.current.homeSortMode
 
     Column(Modifier.fillMaxSize()) {
         // Slim header
@@ -167,6 +180,12 @@ fun LibraryContent(
                     .padding(8.dp)
                     .noRippleClickable { showVaultBrowser = true }
             )
+            Icon(
+                imageVector = FeatherIcons.Sliders, contentDescription = "Sort pages",
+                Modifier
+                    .padding(8.dp)
+                    .noRippleClickable { showSortMenu = true }
+            )
             BadgedBox(
                 badge = {
                     if (!uiState.isLatestVersion) Badge(
@@ -183,8 +202,17 @@ fun LibraryContent(
             }
         }
 
-        // Page grid
-        val pages = uiState.singlePages?.reversed() ?: emptyList()
+        // Page grid. A capture's "name" is its synced vault file name (a timestamp of
+        // its creation), so name order == creation order; newest/oldest use modified time.
+        val pages = remember(uiState.singlePages, sortMode) {
+            when (sortMode) {
+                VaultSort.NAME_ASC -> uiState.singlePages.sortedBy { it.createdAt.time }
+                VaultSort.NAME_DESC -> uiState.singlePages.sortedByDescending { it.createdAt.time }
+                VaultSort.OLDEST -> uiState.singlePages.sortedBy { it.updatedAt.time }
+                else -> uiState.singlePages.sortedByDescending { it.updatedAt.time }
+            }
+        }
+        val nameFormat = remember { SimpleDateFormat("yyyy-MM-dd-HH-mm-ss", Locale.US) }
         LazyVerticalGrid(
             columns = GridCells.Adaptive(140.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -222,43 +250,69 @@ fun LibraryContent(
             }
 
             // Existing pages
-            items(pages) { page ->
+            items(pages, key = { it.id }) { page ->
                 var isPageSelected by remember { mutableStateOf(false) }
                 val isSyncing = page.id in SyncState.syncingPageIds
-                Box {
-                    PagePreview(
-                        modifier = Modifier
-                            .combinedClickable(
-                                onClick = { goToPage(page.id) },
-                                onLongClick = { isPageSelected = true }
-                            )
-                            .aspectRatio(3f / 4f)
-                            .border(1.dp, Color.Gray, RectangleShape),
-                        pageId = page.id
-                    )
-                    if (isSyncing) {
-                        Box(
+                Column {
+                    Box {
+                        PagePreview(
                             modifier = Modifier
+                                .combinedClickable(
+                                    onClick = { goToPage(page.id) },
+                                    onLongClick = { isPageSelected = true }
+                                )
                                 .aspectRatio(3f / 4f)
-                                .background(Color.White.copy(alpha = 0.7f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                "Syncing...",
-                                style = androidx.compose.material.MaterialTheme.typography.caption,
-                                color = Color.DarkGray
-                            )
+                                .border(1.dp, Color.Gray, RectangleShape),
+                            pageId = page.id
+                        )
+                        if (isSyncing) {
+                            Box(
+                                modifier = Modifier
+                                    .aspectRatio(3f / 4f)
+                                    .background(Color.White.copy(alpha = 0.7f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    "Syncing...",
+                                    style = androidx.compose.material.MaterialTheme.typography.caption,
+                                    color = Color.DarkGray
+                                )
+                            }
                         }
+                        if (isPageSelected) com.ethran.notable.editor.ui.PageMenu(
+                            appRepository = appRepository,
+                            pageId = page.id,
+                            canDelete = true,
+                            onClose = { isPageSelected = false }
+                        )
                     }
-                    if (isPageSelected) com.ethran.notable.editor.ui.PageMenu(
-                        appRepository = appRepository,
-                        pageId = page.id,
-                        canDelete = true,
-                        onClose = { isPageSelected = false }
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = pageDisplayName(page, nameFormat),
+                        fontSize = 12.sp,
+                        color = Color.DarkGray,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
             }
         }
+    }
+
+    if (showSortMenu) {
+        SortMenuDialog(
+            current = sortMode,
+            onSelect = { mode ->
+                showSortMenu = false
+                scope.launch(Dispatchers.IO) {
+                    appRepository.kvProxy.setAppSettings(
+                        GlobalAppSettings.current.copy(homeSortMode = mode)
+                    )
+                }
+            },
+            onDismiss = { showSortMenu = false }
+        )
     }
 
     if (showVaultBrowser) {
@@ -272,6 +326,10 @@ fun LibraryContent(
         )
     }
 }
+
+/** A capture page's display name: the vault file name it syncs to (sans extension). */
+private fun pageDisplayName(page: Page, format: SimpleDateFormat): String =
+    format.format(page.createdAt)
 
 @Composable
 fun FolderList(
