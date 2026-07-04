@@ -161,6 +161,8 @@ dependencies {
     implementation group: 'io.reactivex.rxjava2', name: 'rxandroid', version: '2.1.1'
 
     testImplementation 'junit:junit:4.13.2'
+    // Real org.json for JVM unit tests (the android.jar stub throws "not mocked")
+    testImplementation 'org.json:json:20240303'
     androidTestImplementation 'androidx.test.ext:junit:1.3.0'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.7.0'
     androidTestImplementation "androidx.compose.ui:ui-test-junit4:$compose_version"
