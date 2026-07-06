@@ -113,6 +113,7 @@ object VaultFileStore {
                 tempFile.delete()
             }
             log.i("Wrote ${content.length} chars to ${file.absolutePath}")
+            VaultFileStoreListeners.notifyWritten(file)
             return WriteResult.Success
         } catch (e: Exception) {
             log.e("Failed to write ${file.absolutePath}: ${e.message}")
@@ -132,6 +133,29 @@ object VaultFileStore {
         return when (write(conflictFile, content)) {
             is WriteResult.Success -> conflictFile
             else -> null
+        }
+    }
+
+    fun addWriteListener(listener: (File) -> Unit) {
+        VaultFileStoreListeners.addWriteListener(listener)
+    }
+}
+
+/** Notifies listeners after a successful vault file write (for background sync push). */
+internal object VaultFileStoreListeners {
+    private val listeners = java.util.concurrent.CopyOnWriteArrayList<(File) -> Unit>()
+
+    fun addWriteListener(listener: (File) -> Unit) {
+        listeners.add(listener)
+    }
+
+    fun notifyWritten(file: File) {
+        listeners.forEach { listener ->
+            try {
+                listener(file)
+            } catch (_: Exception) {
+                // ignore listener failures
+            }
         }
     }
 }

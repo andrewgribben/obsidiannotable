@@ -62,7 +62,6 @@ import com.ethran.notable.editor.EditorDestination
 import com.ethran.notable.editor.ui.toolbar.Topbar
 import com.ethran.notable.editor.utils.autoEInkAnimationOnScroll
 import com.ethran.notable.io.ExportEngine
-import com.ethran.notable.io.ObsidianLauncher
 import com.ethran.notable.io.vault.VaultIndexRegistry
 import com.ethran.notable.navigation.NavigationDestination
 import com.ethran.notable.ui.SnackConf
@@ -147,7 +146,8 @@ fun Library(
         onDeleteEmptyBook = viewModel::deleteEmptyBook,
         onCreateNewNotebook = viewModel::onCreateNewNotebook,
         onImportPdf = viewModel::onPdfFile,
-        onImportXopp = viewModel::onXoppFile
+        onImportXopp = viewModel::onXoppFile,
+        onSyncVaults = viewModel::syncObsidianVaults
     )
 }
 
@@ -175,7 +175,8 @@ fun LibraryContent(
     onDeleteEmptyBook: (String) -> Unit,
     onCreateNewNotebook: () -> Unit,
     onImportPdf: (Uri, Boolean) -> Unit,
-    onImportXopp: (Uri) -> Unit
+    onImportXopp: (Uri) -> Unit,
+    onSyncVaults: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val settings = GlobalAppSettings.current
@@ -243,16 +244,11 @@ fun LibraryContent(
                     .noRippleClickable { showHomeGridOptions = true }
             )
             Icon(
-                imageVector = FeatherIcons.RefreshCcw, contentDescription = "Sync vault in Obsidian",
+                imageVector = FeatherIcons.RefreshCcw,
+                contentDescription = "Sync vaults",
                 Modifier
                     .padding(8.dp)
-                    .noRippleClickable {
-                        if (!ObsidianLauncher.launch(context)) {
-                            SnackState.globalSnackFlow.tryEmit(
-                                SnackConf(text = "Obsidian is not installed", duration = 3000)
-                            )
-                        }
-                    }
+                    .noRippleClickable { onSyncVaults() }
             )
             Icon(
                 imageVector = FeatherIcons.Settings, contentDescription = "Settings",

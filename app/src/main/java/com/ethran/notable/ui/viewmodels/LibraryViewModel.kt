@@ -16,6 +16,7 @@ import com.ethran.notable.io.ExportEngine
 import com.ethran.notable.io.ImportEngine
 import com.ethran.notable.io.ImportOptions
 import com.ethran.notable.io.flipside.FlipSideManager
+import com.ethran.notable.io.obsidiansync.ObsidianSyncManager
 import com.ethran.notable.io.vault.listInboxNotesWithInkForVaults
 import com.ethran.notable.ui.SnackConf
 import com.ethran.notable.ui.SnackState
@@ -49,6 +50,7 @@ class LibraryViewModel @Inject constructor(
     val appRepository: AppRepository,
     val importEngine: ImportEngine,
     val exportEngine: ExportEngine,
+    private val obsidianSyncManager: ObsidianSyncManager,
     @param:ApplicationContext private val context: Context // Kept strictly for ImportEngine
 ) : ViewModel() {
 
@@ -95,6 +97,46 @@ class LibraryViewModel @Inject constructor(
 
     fun refreshHomeCaptures() {
         _homeCapturesRefresh.value++
+    }
+
+    val obsidianSyncState = obsidianSyncManager.uiState
+
+    fun syncObsidianVaults() {
+        viewModelScope.launch {
+            val settings = GlobalAppSettings.current.normalizedVaults()
+            obsidianSyncManager.syncAll(settings) { result ->
+                launch(Dispatchers.Main) {
+                    result.warning?.let {
+                        SnackState.globalSnackFlow.tryEmit(SnackConf(text = it, duration = 5000))
+                    }
+                    if (result.results.isEmpty() && result.warning == null) {
+                        SnackState.globalSnackFlow.tryEmit(
+                            SnackConf(text = "No vaults configured for sync", duration = 3000)
+                        )
+                        return@launch
+                    }
+                    val failed = result.results.filter { it.error != null }
+                    if (failed.isNotEmpty()) {
+                        SnackState.globalSnackFlow.tryEmit(
+                            SnackConf(
+                                text = "Sync failed for ${failed.first().vaultName}: ${failed.first().error}",
+                                duration = 5000
+                            )
+                        )
+                    } else {
+                        val pulled = result.results.sumOf { it.pulled }
+                        val pushed = result.results.sumOf { it.pushed }
+                        SnackState.globalSnackFlow.tryEmit(
+                            SnackConf(
+                                text = "Synced ${result.results.size} vault(s): pulled $pulled, pushed $pushed",
+                                duration = 4000
+                            )
+                        )
+                    }
+                    refreshHomeCaptures()
+                }
+            }
+        }
     }
 
     private suspend fun buildHomeCaptures(): List<HomeCaptureItem> {

@@ -305,4 +305,9 @@ object VaultIndexRegistry {
         indexes[vault.id] = index
         return index
     }
+
+    @Synchronized
+    fun invalidateAll() {
+        indexes.clear()
+    }
 }

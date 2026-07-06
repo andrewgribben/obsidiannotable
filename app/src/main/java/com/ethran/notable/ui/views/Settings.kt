@@ -79,6 +79,13 @@ fun SettingsView(
         goToSystemInfo = goToSystemInfo,
         onUpdateSettings = { viewModel.updateSettings(it) },
         onClearAllPages = { onComplete -> viewModel.clearAllPages(onComplete) },
+        onObsidianSignIn = { email, password, mfa, onResult ->
+            viewModel.signInToObsidian(email, password, mfa, onResult)
+        },
+        onObsidianSignOut = { onComplete -> viewModel.signOutFromObsidian(onComplete) },
+        onObsidianSaveE2e = { vaultId, password ->
+            viewModel.saveObsidianE2ePassword(vaultId, password)
+        },
         listOfGestures = viewModel.getGestureRows(),
         availableGestures = viewModel.availableGestures
     )
@@ -93,6 +100,9 @@ fun SettingsContent(
     goToSystemInfo: () -> Unit,
     onUpdateSettings: (AppSettings) -> Unit,
     onClearAllPages: ((onComplete: () -> Unit) -> Unit)? = null,
+    onObsidianSignIn: ((email: String, password: String, mfa: String, onResult: (Result<Unit>) -> Unit) -> Unit)? = null,
+    onObsidianSignOut: ((onComplete: () -> Unit) -> Unit)? = null,
+    onObsidianSaveE2e: ((vaultConfigId: String, password: String) -> Unit)? = null,
     selectedTabInitial: Int = 0,
     listOfGestures: List<GestureRowModel> = emptyList(),
     availableGestures: List<Pair<AppSettings.GestureAction?, Any>> = emptyList()
@@ -125,7 +135,14 @@ fun SettingsContent(
                     .verticalScroll(rememberScrollState())
             ) {
                 when (selectedTab) {
-                    0 -> GeneralSettings(settings, onUpdateSettings, onClearAllPages)
+                    0 -> GeneralSettings(
+                        settings,
+                        onUpdateSettings,
+                        onClearAllPages,
+                        onObsidianSignIn,
+                        onObsidianSignOut,
+                        onObsidianSaveE2e
+                    )
                     1 -> GesturesSettings(
                         settings, onUpdateSettings, listOfGestures, availableGestures
                     )

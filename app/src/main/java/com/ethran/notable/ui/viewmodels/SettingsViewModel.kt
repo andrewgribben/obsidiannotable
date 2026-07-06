@@ -8,6 +8,7 @@ import com.ethran.notable.data.datastore.AppSettings
 import com.ethran.notable.data.datastore.GlobalAppSettings
 import com.ethran.notable.data.db.AppDatabase
 import com.ethran.notable.data.db.KvProxy
+import com.ethran.notable.io.obsidiansync.ObsidianSyncManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -27,6 +28,7 @@ data class GestureRowModel(
 class SettingsViewModel @Inject constructor(
     private val kvProxy: KvProxy,
     private val db: AppDatabase,
+    private val obsidianSyncManager: ObsidianSyncManager,
 ) : ViewModel() {
     companion object {}
 
@@ -111,5 +113,28 @@ class SettingsViewModel @Inject constructor(
         AppSettings.GestureAction.Select to R.string.gesture_action_select,
     )
 
+    fun signInToObsidian(
+        email: String,
+        password: String,
+        mfa: String,
+        onResult: (Result<Unit>) -> Unit
+    ) {
+        obsidianSyncManager.signIn(email, password, mfa) { result ->
+            result.onSuccess { probe ->
+                updateSettings(obsidianSyncManager.settingsAfterSignIn(settings, probe))
+                onResult(Result.success(Unit))
+            }.onFailure { onResult(Result.failure(it)) }
+        }
+    }
 
+    fun signOutFromObsidian(onComplete: () -> Unit) {
+        obsidianSyncManager.signOut {
+            updateSettings(obsidianSyncManager.settingsAfterSignOut(settings))
+            onComplete()
+        }
+    }
+
+    fun saveObsidianE2ePassword(vaultConfigId: String, password: String) {
+        obsidianSyncManager.saveE2ePassword(vaultConfigId, password)
+    }
 }

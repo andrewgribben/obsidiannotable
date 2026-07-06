@@ -32,6 +32,12 @@ data class VaultConfig(
     val name: String = "",
     val inboxPath: String = "",
     val attachmentPath: String = "",
+    /** Obsidian Sync remote vault UID (from listVaults). */
+    val obsidianVaultId: String = "",
+    /** Remote vault display name (for settings UI). */
+    val obsidianVaultName: String = "",
+    /** When true, this local vault participates in native Obsidian Sync. */
+    val syncEnabled: Boolean = false,
 ) {
     /** Display name falling back to the vault root folder name. */
     val displayName: String
@@ -49,6 +55,15 @@ data class VaultConfig(
         }
     }
 }
+
+
+/** Remote Obsidian Sync vault entry cached after account sign-in. */
+@Serializable
+data class ObsidianRemoteVaultRef(
+    val id: String,
+    val name: String,
+    val encryptionVersion: Int = 0,
+)
 
 
 @Serializable
@@ -118,6 +133,12 @@ data class AppSettings(
 
     // Which vault row is expanded in Settings → Vaults (empty = all collapsed).
     val settingsExpandedVaultId: String = "",
+
+    // Obsidian Sync account (credentials live in EncryptedSharedPreferences).
+    val obsidianSyncEmail: String = "",
+    val obsidianSyncSignedIn: Boolean = false,
+    /** Cached remote vault list after sign-in; used to bind local vaults. */
+    val obsidianRemoteVaults: List<ObsidianRemoteVaultRef> = emptyList(),
 
     // Debug
     val showWelcome: Boolean = true,
