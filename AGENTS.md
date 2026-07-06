@@ -16,7 +16,8 @@
 - Flip side stores ink in the same vault `.md` file (unified Excalidraw format, vault-wide); strokes auto-save on editor close with no prompt. HWR "To text" (preview + replace/append) is optional in a compact top bar; handwritten text entry into a note is the separate pen-tool button in the reader (bottom bar with Save to note/Discard). New home-screen notes default to this format with timestamp naming, not legacy page/notebook creation.
 - Remove upstream Notable settings cruft (sponsor link, check-for-update/version checker against Ethran/notable); this fork is Singularity.
 - Scribble-to-delete annotation gesture is removed (misclassified circles deleted words); scribbles map to strikethrough. Annotation gestures: circle → highlight, line through letters → strikethrough, line below → bold. Last annotation save is undoable via ↺ in the reader header (hash-guarded).
-- Home screen aggregates inbox captures from all configured vaults; new-note creation prompts for vault; sort/filter dialog includes vault filter (default all). Home card menu offers Pin, Delete ink, and Open text view (replaced long-press pin); pinned captures stay first in pin order regardless of sort mode.
+- Home screen aggregates inbox captures from all configured vaults; new-note creation prompts for vault; sort/filter dialog includes vault filter (default all). Home card long-press menu: Pin, Rename, Set cover image, Remove cover, Open text view, Delete ink; pinned captures stay first in pin order regardless of sort mode. Cover images are app-local only (not vault frontmatter).
+- Avoid requiring the Obsidian app open for cloud sync; prefer native in-app Obsidian Sync with vault login (Kotlin port of the obsync protocol, not obsidian-headless).
 - Commit completed work after each user request unless asked not to; user wants git checkpoints between requests.
 
 ## Learned Workspace Facts
@@ -29,4 +30,6 @@
 - Flip-side view must reload strokes from the vault note's unified Excalidraw drawing block on open (including strokes added or edited in Obsidian; parser must handle compressed-json).
 - Legacy `.flip.excalidraw.md` sidecars are merged via `scripts/unify_flipsides.py` on Mac (`pip3 install -r scripts/requirements.txt`); no in-app legacy conversion/migration.
 - KvProxy JSON decode uses `ignoreUnknownKeys = true` so stored settings survive AppSettings field removals.
-- See "Always" above: install after app changes.
+- Native page backgrounds (`blank`, `lined`, `dotted`, etc.) are drawn in `editor/drawing/backgrounds.kt` — no bundled background image folder in the repo; user-imported images live on device under `{dbDir}/backgrounds/{images|covers|pdfs}/`. New flip-side pages honor `GlobalAppSettings.defaultNativeTemplate`.
+- Home capture cover images copy to `backgrounds/covers/`; paths keyed in `AppSettings.homeCaptureCoverImages`.
+- Cloud sync today only launches the Obsidian app (`ObsidianLauncher`); native in-app sync work targets a Kotlin obsync port in `io/obsidiansync/` on branch `feature/obsidian-sync-native` (no official Android Sync SDK).
