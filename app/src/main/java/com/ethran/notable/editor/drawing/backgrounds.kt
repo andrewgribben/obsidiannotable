@@ -37,7 +37,7 @@ import kotlin.math.sqrt
 private val backgroundsLog = ShipBook.getLogger("BackgroundsLog")
 
 const val padding = 0
-const val lineHeight = 80
+const val lineHeight = 60
 const val dotSize = 6f
 const val hexVerticalCount = 26
 

@@ -1,8 +1,11 @@
 package com.ethran.notable.io.flipside
 
+import com.ethran.notable.data.datastore.GlobalAppSettings
 import com.ethran.notable.io.excalidraw.ExcalidrawSerializer
 import com.ethran.notable.io.excalidraw.ExcalidrawTestTemplate
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.util.Date
@@ -11,6 +14,28 @@ class FlipSideManagerCaptureTest {
 
     init {
         ExcalidrawTestTemplate.ensureInitialized()
+    }
+
+    @Test
+    fun `resolveDefaultNativeBackground honors global template`() {
+        val original = GlobalAppSettings.current
+        try {
+            GlobalAppSettings.update(original.copy(defaultNativeTemplate = "lined"))
+            assertEquals("lined", FlipSideManager.resolveDefaultNativeBackground())
+            GlobalAppSettings.update(original.copy(defaultNativeTemplate = ""))
+            assertEquals("blank", FlipSideManager.resolveDefaultNativeBackground())
+        } finally {
+            GlobalAppSettings.update(original)
+        }
+    }
+
+    @Test
+    fun `sanitizeCaptureBaseName rejects invalid names`() {
+        assertEquals("My Note", FlipSideManager.sanitizeCaptureBaseName("My Note"))
+        assertEquals("My Note", FlipSideManager.sanitizeCaptureBaseName("My Note.md"))
+        assertNull(FlipSideManager.sanitizeCaptureBaseName(""))
+        assertNull(FlipSideManager.sanitizeCaptureBaseName("bad/name"))
+        assertNull(FlipSideManager.sanitizeCaptureBaseName("bad:name"))
     }
 
     @Test

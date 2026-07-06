@@ -110,6 +110,9 @@ data class AppSettings(
     // Ordered pin keys for home captures (see HomeCaptureKeys).
     val homePinnedCaptureKeys: List<String> = emptyList(),
 
+    // App-local cover images for home capture cards: captureKey -> absolute file path.
+    val homeCaptureCoverImages: Map<String, String> = emptyMap(),
+
     // Last browsed folder per vault in the in-app vault browser (relative path, "" = root).
     val vaultBrowserDirByVault: Map<String, String> = emptyMap(),
 

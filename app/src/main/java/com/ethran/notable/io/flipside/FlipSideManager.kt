@@ -79,6 +79,11 @@ object FlipSideManager {
     private fun noteKey(vaultId: String, relativePath: String) = "FLIP_PAGE:$vaultId:$relativePath"
     private fun pageKey(pageId: String) = "FLIP_NOTE:$pageId"
 
+    private fun defaultNativeBackground(): String {
+        val bg = GlobalAppSettings.current.defaultNativeTemplate
+        return bg.ifBlank { "blank" }
+    }
+
     /** Open editing sessions: pageId -> (NoteEditGuard key, guard owner token). */
     private val editSessions = ConcurrentHashMap<String, Pair<String, String>>()
     private val ioScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -150,7 +155,7 @@ object FlipSideManager {
         val page = Page(
             notebookId = null,
             parentFolderId = folderId,
-            background = "blank",
+            background = defaultNativeBackground(),
             backgroundType = BackgroundType.Native.key
         )
         if (!acquireGuard(vault.id, noteRelativePath, page.id)) return null
@@ -251,6 +256,62 @@ object FlipSideManager {
     ): String? = appRepository.kvProxy.get(
         noteKey(vaultId, relativePath), FlipSideLink.serializer()
     )?.pageId
+
+    /** Sanitizes a capture filename base (no `.md`). Returns null when invalid. */
+    fun sanitizeCaptureBaseName(input: String): String? {
+        val trimmed = input.trim().removeSuffix(".md")
+        if (trimmed.isBlank()) return null
+        if (trimmed.contains('/') || trimmed.contains('\\')) return null
+        val illegal = charArrayOf('<', '>', ':', '"', '|', '?', '*')
+        if (trimmed.any { it in illegal }) return null
+        return trimmed
+    }
+
+    /**
+     * Renames a vault capture file in place and migrates the flip-side KV link.
+     * Returns the new vault-relative path on success.
+     */
+    suspend fun renameCapture(
+        appRepository: AppRepository,
+        vaultId: String,
+        oldRelativePath: String,
+        newBaseName: String
+    ): Result<String> {
+        val safeName = sanitizeCaptureBaseName(newBaseName)
+            ?: return Result.failure(IllegalArgumentException("Invalid name"))
+        val vault = vaultById(vaultId)
+            ?: return Result.failure(IllegalStateException("Vault not found"))
+        val root = vaultRootDir(vault)
+            ?: return Result.failure(IllegalStateException("Vault root not found"))
+        val oldFile = File(root, oldRelativePath.replace('/', File.separatorChar))
+        if (!oldFile.exists()) {
+            return Result.failure(IllegalStateException("Note not found"))
+        }
+        val parent = oldFile.parentFile
+            ?: return Result.failure(IllegalStateException("Invalid path"))
+        val newFile = File(parent, "$safeName.md")
+        if (newFile.exists()) {
+            return Result.failure(IllegalStateException("Name already exists"))
+        }
+        val newRelativePath = noteRelativePath(newFile, vault)
+            ?: return Result.failure(IllegalStateException("Invalid path"))
+        if (!oldFile.renameTo(newFile)) {
+            return Result.failure(IllegalStateException("Rename failed"))
+        }
+
+        val link = appRepository.kvProxy.get(
+            noteKey(vaultId, oldRelativePath), FlipSideLink.serializer()
+        )
+        if (link != null) {
+            appRepository.kvProxy.delete(noteKey(vaultId, oldRelativePath))
+            saveLink(appRepository, link.copy(relativePath = newRelativePath))
+        }
+        log.i("Renamed capture $oldRelativePath -> $newRelativePath")
+        return Result.success(newRelativePath)
+    }
+
+    /** Resolves the global default native page background for new flip-side pages. */
+    internal fun resolveDefaultNativeBackground(): String = defaultNativeBackground()
 
     /** True when [pageId] is a flip-side drawing page (of either purpose). */
     suspend fun isFlipPage(appRepository: AppRepository, pageId: String): Boolean =
@@ -394,7 +455,7 @@ object FlipSideManager {
         val page = Page(
             notebookId = null,
             parentFolderId = folderId,
-            background = "blank",
+            background = defaultNativeBackground(),
             backgroundType = BackgroundType.Native.key
         )
         if (!acquireGuard(vault.id, noteRelativePath, page.id)) return null

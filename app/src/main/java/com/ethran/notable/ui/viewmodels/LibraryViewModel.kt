@@ -7,6 +7,7 @@ import androidx.lifecycle.asFlow
 import androidx.lifecycle.viewModelScope
 import com.ethran.notable.data.AppRepository
 import com.ethran.notable.data.PageDataManager
+import com.ethran.notable.data.copyBackgroundToDatabase
 import com.ethran.notable.data.datastore.GlobalAppSettings
 import com.ethran.notable.data.db.Folder
 import com.ethran.notable.data.db.Notebook
@@ -105,20 +106,28 @@ class LibraryViewModel @Inject constructor(
             else all.filter { it.id in settings.homeVaultFilterIds }
         }
         val vaultItems = listInboxNotesWithInkForVaults(vaultsToScan).map { (vault, note) ->
+            val captureKey = HomeCaptureKeys.vault(vault.id, note.relativePath)
             HomeCaptureItem(
                 vaultId = vault.id,
                 vaultName = vault.displayName,
                 note = note,
                 previewPageId = FlipSideManager.pageIdForNote(
                     appRepository, vault.id, note.relativePath
-                )
+                ),
+                coverImagePath = settings.homeCaptureCoverImages[captureKey]
             )
         }
         val validKeys = vaultItems.map { it.captureKey }.toSet()
         val prunedPins = settings.homePinnedCaptureKeys.filter { it in validKeys }
-        if (prunedPins != settings.homePinnedCaptureKeys) {
+        val prunedCovers = settings.homeCaptureCoverImages.filterKeys { it in validKeys }
+        if (prunedPins != settings.homePinnedCaptureKeys ||
+            prunedCovers != settings.homeCaptureCoverImages
+        ) {
             appRepository.kvProxy.setAppSettings(
-                settings.copy(homePinnedCaptureKeys = prunedPins)
+                settings.copy(
+                    homePinnedCaptureKeys = prunedPins,
+                    homeCaptureCoverImages = prunedCovers
+                )
             )
         }
         return orderHomeCaptures(
@@ -158,9 +167,15 @@ class LibraryViewModel @Inject constructor(
                 val settings = GlobalAppSettings.current
                 val captureKey = HomeCaptureKeys.vault(vaultId, relativePath)
                 val pins = settings.homePinnedCaptureKeys.filter { it != captureKey }
-                if (pins != settings.homePinnedCaptureKeys) {
+                val covers = settings.homeCaptureCoverImages - captureKey
+                if (pins != settings.homePinnedCaptureKeys ||
+                    covers != settings.homeCaptureCoverImages
+                ) {
                     appRepository.kvProxy.setAppSettings(
-                        settings.copy(homePinnedCaptureKeys = pins)
+                        settings.copy(
+                            homePinnedCaptureKeys = pins,
+                            homeCaptureCoverImages = covers
+                        )
                     )
                 }
                 SnackState.globalSnackFlow.tryEmit(
@@ -172,6 +187,74 @@ class LibraryViewModel @Inject constructor(
                     SnackConf(text = "Could not delete drawing", duration = 4000)
                 )
             }
+        }
+    }
+
+    fun renameCapture(vaultId: String, relativePath: String, newBaseName: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val oldKey = HomeCaptureKeys.vault(vaultId, relativePath)
+            val result = FlipSideManager.renameCapture(
+                appRepository, vaultId, relativePath, newBaseName
+            )
+            result.onSuccess { newRelativePath ->
+                val settings = GlobalAppSettings.current
+                val newKey = HomeCaptureKeys.vault(vaultId, newRelativePath)
+                appRepository.kvProxy.setAppSettings(
+                    HomeCaptureKeys.migrateCaptureKey(settings, oldKey, newKey)
+                )
+                SnackState.globalSnackFlow.tryEmit(
+                    SnackConf(text = "Renamed", duration = 2000)
+                )
+                refreshHomeCaptures()
+            }.onFailure { error ->
+                SnackState.globalSnackFlow.tryEmit(
+                    SnackConf(
+                        text = error.message ?: "Rename failed",
+                        duration = 4000
+                    )
+                )
+            }
+        }
+    }
+
+    fun setCaptureCover(vaultId: String, relativePath: String, uri: Uri) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val file = runCatching {
+                copyBackgroundToDatabase(
+                    context, uri, BackgroundType.CoverImage.folderName
+                )
+            }.getOrElse {
+                SnackState.globalSnackFlow.tryEmit(
+                    SnackConf(text = "Could not save image", duration = 4000)
+                )
+                return@launch
+            }
+            val settings = GlobalAppSettings.current
+            val key = HomeCaptureKeys.vault(vaultId, relativePath)
+            appRepository.kvProxy.setAppSettings(
+                settings.copy(
+                    homeCaptureCoverImages = settings.homeCaptureCoverImages + (key to file.absolutePath)
+                )
+            )
+            SnackState.globalSnackFlow.tryEmit(
+                SnackConf(text = "Cover image set", duration = 2000)
+            )
+            refreshHomeCaptures()
+        }
+    }
+
+    fun removeCaptureCover(vaultId: String, relativePath: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val settings = GlobalAppSettings.current
+            val key = HomeCaptureKeys.vault(vaultId, relativePath)
+            if (key !in settings.homeCaptureCoverImages) return@launch
+            appRepository.kvProxy.setAppSettings(
+                settings.copy(homeCaptureCoverImages = settings.homeCaptureCoverImages - key)
+            )
+            SnackState.globalSnackFlow.tryEmit(
+                SnackConf(text = "Cover removed", duration = 2000)
+            )
+            refreshHomeCaptures()
         }
     }
 

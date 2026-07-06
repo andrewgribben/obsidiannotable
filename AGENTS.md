@@ -2,6 +2,7 @@
 
 ## Always
 
+- **Before any app code change:** commit and push all existing uncommitted work first (clean working tree). Do not start new edits on top of dirty changes unless the user explicitly says otherwise.
 - **After any app code change:** run `./gradlew installDebug` (not just `assembleDebug`). The user expects the app to be installed on the device every time.
 
 ## Learned User Preferences

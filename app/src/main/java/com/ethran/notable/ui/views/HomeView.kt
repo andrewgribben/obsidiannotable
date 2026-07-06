@@ -2,7 +2,9 @@ package com.ethran.notable.ui.views
 
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -67,9 +69,11 @@ import com.ethran.notable.ui.SnackConf
 import com.ethran.notable.ui.SnackState
 import com.ethran.notable.ui.components.BreadCrumb
 import com.ethran.notable.ui.components.NotebookCard
+import com.ethran.notable.ui.components.CaptureCoverPreview
 import com.ethran.notable.ui.components.PagePreview
 import com.ethran.notable.ui.components.QuickSwitcher
 import com.ethran.notable.ui.components.ShowPagesRow
+import com.ethran.notable.ui.dialogs.CaptureRenameDialog
 import com.ethran.notable.ui.dialogs.EmptyBookWarningHandler
 import com.ethran.notable.ui.dialogs.FolderConfigDialog
 import com.ethran.notable.ui.dialogs.NotebookConfigDialog
@@ -135,6 +139,9 @@ fun Library(
         onOpenFlipSide = onOpenFlipSide,
         onTogglePin = viewModel::togglePin,
         onDeleteCaptureInk = viewModel::deleteCaptureInk,
+        onRenameCapture = viewModel::renameCapture,
+        onSetCaptureCover = viewModel::setCaptureCover,
+        onRemoveCaptureCover = viewModel::removeCaptureCover,
         onSetHomeGridOptions = viewModel::setHomeGridOptions,
         onCreateNewFolder = viewModel::createNewFolder,
         onDeleteEmptyBook = viewModel::deleteEmptyBook,
@@ -160,6 +167,9 @@ fun LibraryContent(
     onOpenFlipSide: (String, String) -> Unit,
     onTogglePin: (String) -> Unit,
     onDeleteCaptureInk: (String, String) -> Unit,
+    onRenameCapture: (String, String, String) -> Unit,
+    onSetCaptureCover: (String, String, Uri) -> Unit,
+    onRemoveCaptureCover: (String, String) -> Unit,
     onSetHomeGridOptions: (String, Set<String>) -> Unit,
     onCreateNewFolder: () -> Unit,
     onDeleteEmptyBook: (String) -> Unit,
@@ -178,6 +188,17 @@ fun LibraryContent(
     var showQuickSwitcher by remember { mutableStateOf(false) }
     var showHomeGridOptions by remember { mutableStateOf(false) }
     var showCreateVaultPicker by remember { mutableStateOf(false) }
+    var renameTarget by remember { mutableStateOf<HomeCaptureItem?>(null) }
+    var coverPickTarget by remember { mutableStateOf<HomeCaptureItem?>(null) }
+    val coverPicker = rememberLauncherForActivityResult(
+        contract = PickVisualMedia()
+    ) { uri ->
+        val target = coverPickTarget
+        coverPickTarget = null
+        if (uri != null && target != null) {
+            onSetCaptureCover(target.vaultId, target.note.relativePath, uri)
+        }
+    }
     val sortMode = settings.homeSortMode
     val vaultFilterIds = settings.homeVaultFilterIds
 
@@ -282,14 +303,34 @@ fun LibraryContent(
                 VaultCaptureCard(
                     item = item,
                     isPinned = item.captureKey in pinnedKeys,
+                    hasCover = item.coverImagePath != null,
                     showVaultName = multipleVaults,
                     onOpenFlipSide = onOpenFlipSide,
                     onOpenText = onOpenVaultNote,
                     onTogglePin = onTogglePin,
-                    onDeleteInk = onDeleteCaptureInk
+                    onDeleteInk = onDeleteCaptureInk,
+                    onRename = { renameTarget = item },
+                    onSetCover = {
+                        coverPickTarget = item
+                        coverPicker.launch(PickVisualMediaRequest(PickVisualMedia.ImageOnly))
+                    },
+                    onRemoveCover = {
+                        onRemoveCaptureCover(item.vaultId, item.note.relativePath)
+                    }
                 )
             }
         }
+    }
+
+    renameTarget?.let { item ->
+        CaptureRenameDialog(
+            currentName = item.note.name,
+            onConfirm = { newName ->
+                renameTarget = null
+                onRenameCapture(item.vaultId, item.note.relativePath, newName)
+            },
+            onDismiss = { renameTarget = null }
+        )
     }
 
     if (showHomeGridOptions) {
@@ -347,17 +388,22 @@ fun LibraryContent(
 private fun VaultCaptureCard(
     item: HomeCaptureItem,
     isPinned: Boolean,
+    hasCover: Boolean,
     showVaultName: Boolean,
     onOpenFlipSide: (String, String) -> Unit,
     onOpenText: (String) -> Unit,
     onTogglePin: (String) -> Unit,
-    onDeleteInk: (String, String) -> Unit
+    onDeleteInk: (String, String) -> Unit,
+    onRename: () -> Unit,
+    onSetCover: () -> Unit,
+    onRemoveCover: () -> Unit
 ) {
     var showMenu by remember { mutableStateOf(false) }
 
     Column {
         Box {
             val previewId = item.previewPageId
+            val coverPath = item.coverImagePath
             val clickModifier = Modifier
                 .combinedClickable(
                     onClick = { onOpenFlipSide(item.vaultId, item.note.relativePath) },
@@ -365,23 +411,32 @@ private fun VaultCaptureCard(
                 )
                 .aspectRatio(3f / 4f)
                 .border(1.dp, Color.Gray, RectangleShape)
-            if (previewId != null) {
-                PagePreview(
-                    modifier = clickModifier,
-                    pageId = previewId
-                )
-            } else {
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = clickModifier
-                        .background(Color.LightGray.copy(alpha = 0.35f))
-                ) {
-                    Icon(
-                        imageVector = FeatherIcons.Edit3,
-                        contentDescription = "Drawing",
-                        tint = Color.DarkGray,
-                        modifier = Modifier.size(40.dp)
+            when {
+                coverPath != null -> {
+                    CaptureCoverPreview(
+                        modifier = clickModifier,
+                        imagePath = coverPath
                     )
+                }
+                previewId != null -> {
+                    PagePreview(
+                        modifier = clickModifier,
+                        pageId = previewId
+                    )
+                }
+                else -> {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = clickModifier
+                            .background(Color.LightGray.copy(alpha = 0.35f))
+                    ) {
+                        Icon(
+                            imageVector = FeatherIcons.Edit3,
+                            contentDescription = "Drawing",
+                            tint = Color.DarkGray,
+                            modifier = Modifier.size(40.dp)
+                        )
+                    }
                 }
             }
             if (isPinned) {
@@ -396,8 +451,21 @@ private fun VaultCaptureCard(
             if (showMenu) {
                 CaptureCardMenu(
                     isPinned = isPinned,
+                    hasCover = hasCover,
                     onPin = {
                         onTogglePin(item.captureKey)
+                        showMenu = false
+                    },
+                    onRename = {
+                        onRename()
+                        showMenu = false
+                    },
+                    onSetCover = {
+                        onSetCover()
+                        showMenu = false
+                    },
+                    onRemoveCover = {
+                        onRemoveCover()
                         showMenu = false
                     },
                     onDelete = {
@@ -437,7 +505,11 @@ private fun VaultCaptureCard(
 @Composable
 private fun CaptureCardMenu(
     isPinned: Boolean,
+    hasCover: Boolean,
     onPin: () -> Unit,
+    onRename: () -> Unit,
+    onSetCover: () -> Unit,
+    onRemoveCover: () -> Unit,
     onDelete: () -> Unit,
     onOpenText: () -> Unit,
     onDismiss: () -> Unit
@@ -453,28 +525,26 @@ private fun CaptureCardMenu(
                 .background(Color.White)
                 .width(IntrinsicSize.Max)
         ) {
-            Box(
-                Modifier
-                    .padding(10.dp)
-                    .noRippleClickable(onClick = onPin)
-            ) {
-                Text(if (isPinned) "Unpin" else "Pin")
+            MenuItem(if (isPinned) "Unpin" else "Pin", onPin)
+            MenuItem("Rename", onRename)
+            MenuItem("Set cover image", onSetCover)
+            if (hasCover) {
+                MenuItem("Remove cover", onRemoveCover)
             }
-            Box(
-                Modifier
-                    .padding(10.dp)
-                    .noRippleClickable(onClick = onOpenText)
-            ) {
-                Text("Open text")
-            }
-            Box(
-                Modifier
-                    .padding(10.dp)
-                    .noRippleClickable(onClick = onDelete)
-            ) {
-                Text("Delete")
-            }
+            MenuItem("Open text", onOpenText)
+            MenuItem("Delete", onDelete)
         }
+    }
+}
+
+@Composable
+private fun MenuItem(label: String, onClick: () -> Unit) {
+    Box(
+        Modifier
+            .padding(10.dp)
+            .noRippleClickable(onClick = onClick)
+    ) {
+        Text(label)
     }
 }
 

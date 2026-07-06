@@ -1,8 +1,25 @@
 package com.ethran.notable.ui.viewmodels
 
+import com.ethran.notable.data.datastore.AppSettings
+
 /** Stable keys for home-grid captures (pinning, filter bookkeeping). */
 object HomeCaptureKeys {
     fun vault(vaultId: String, relativePath: String) = "v:$vaultId:$relativePath"
+
+    /** Moves pin and cover entries when a capture file is renamed. */
+    fun migrateCaptureKey(
+        settings: AppSettings,
+        oldKey: String,
+        newKey: String
+    ): AppSettings {
+        val pins = settings.homePinnedCaptureKeys.map { if (it == oldKey) newKey else it }
+        val covers = settings.homeCaptureCoverImages.toMutableMap()
+        covers.remove(oldKey)?.let { covers[newKey] = it }
+        return settings.copy(
+            homePinnedCaptureKeys = pins,
+            homeCaptureCoverImages = covers
+        )
+    }
 }
 
 /**
