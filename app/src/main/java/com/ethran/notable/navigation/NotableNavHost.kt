@@ -62,11 +62,14 @@ fun NotableNavHost(
                     navController = appNavigator.navController,
                     folderId = it.arguments?.getString(LibraryDestination.FOLDER_ID_ARG),
                     goToPage = { pageId -> appNavigator.goToPage(appRepository, pageId) },
-                    onCreateNewQuickPage = { folderId ->
-                        appNavigator.onCreateNewQuickPage(
-                            appRepository,
-                            folderId
-                        )
+                    onCreateNewCapture = { vaultId ->
+                        appNavigator.onCreateNewCapture(appRepository, vaultId)
+                    },
+                    onOpenFlipSide = { vaultId, path ->
+                        appNavigator.goToFlipSide(appRepository, vaultId, path)
+                    },
+                    onOpenLegacyCapture = { pageId ->
+                        appNavigator.onOpenLegacyCapture(appRepository, pageId)
                     }
                 )
                 appNavigator.cleanCurrentPageId()

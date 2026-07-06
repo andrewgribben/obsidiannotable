@@ -2,18 +2,22 @@ package com.ethran.notable.io.flipside
 
 import android.content.Context
 import com.ethran.notable.data.AppRepository
+import com.ethran.notable.data.PageDataManager
 import com.ethran.notable.data.datastore.GlobalAppSettings
 import com.ethran.notable.data.datastore.VaultConfig
 import com.ethran.notable.data.db.Folder
 import com.ethran.notable.data.db.Page
+import com.ethran.notable.data.db.Stroke
 import com.ethran.notable.data.model.BackgroundType
 import com.ethran.notable.io.InboxSyncEngine
 import com.ethran.notable.io.VaultFileStore
 import com.ethran.notable.io.VaultWriteQueue
 import com.ethran.notable.io.excalidraw.ExcalidrawSerializer
+import com.ethran.notable.io.resolveExternalStoragePath
 import com.ethran.notable.io.vault.FLIP_SIDE_SUFFIX
 import com.ethran.notable.io.vault.NoteEditGuard
 import com.ethran.notable.io.vault.flipSideFileFor
+import com.ethran.notable.io.vault.resolveFlipSideFile
 import com.ethran.notable.io.vault.vaultRootDir
 import com.ethran.notable.ui.SnackConf
 import com.ethran.notable.ui.SnackState
@@ -21,6 +25,9 @@ import io.shipbook.shipbooksdk.ShipBook
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.serializer
 import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
@@ -35,6 +42,12 @@ data class FlipSideLink(
     val pageId: String,
     /** Hash of the flip-side file when we last imported/exported it. */
     val fileHash: String = VaultFileStore.HASH_MISSING,
+    /**
+     * Fingerprint of page strokes when handwriting was last synced to the text note
+     * (or when the flip side was opened / re-imported). Used to decide whether to run
+     * HWR before flipping to the text note.
+     */
+    val hwrStrokeBaseline: String = "",
     /** [FlipSideManager.PURPOSE_FLIP] (persistent sketch, exported to .excalidraw.md)
      *  or [FlipSideManager.PURPOSE_INSERT] (scratch page for HWR text entry into the note). */
     val purpose: String = FlipSideManager.PURPOSE_FLIP
@@ -54,8 +67,21 @@ object FlipSideManager {
 
     private const val FLIP_FOLDER_KEY = "FLIP_FOLDER_ID"
     private const val FRONTMATTER_KEY = "flip-side"
+    private val CAPTURE_TIMESTAMP_FORMAT =
+        SimpleDateFormat("yyyy-MM-dd-HH-mm-ss", Locale.US)
+    private val CAPTURE_CREATED_DATE_FORMAT =
+        SimpleDateFormat("yyyy-MM-dd", Locale.US)
+
+    private val PDF_FRONTMATTER_REGEX =
+        Regex("""^pdf:\s*.+$""", RegexOption.MULTILINE)
 
     enum class HwrApplyMode { REPLACE, APPEND }
+
+    data class LegacyMigrationResult(
+        val pagesMigrated: Int,
+        val mdNotesUpdated: Int,
+        val failed: Int
+    )
 
     private fun noteKey(vaultId: String, relativePath: String) = "FLIP_PAGE:$vaultId:$relativePath"
     private fun pageKey(pageId: String) = "FLIP_NOTE:$pageId"
@@ -84,16 +110,31 @@ object FlipSideManager {
         editSessions.remove(pageId)?.let { (key, owner) -> NoteEditGuard.release(key, owner) }
     }
 
+    fun vaultById(vaultId: String): VaultConfig? =
+        GlobalAppSettings.current.normalizedVaults().vaults.find { it.id == vaultId }
+
     /**
      * Finds or creates the drawing page for the flip side of [noteRelativePath] in the
-     * active vault. Imports strokes from the flip-side file when it's new or changed
-     * externally. Returns the page id to open in the editor, or null on failure.
+     * active vault.
      */
     suspend fun openFlipSide(appRepository: AppRepository, noteRelativePath: String): String? {
         val vault = GlobalAppSettings.current.activeVault ?: return null
+        return openFlipSide(appRepository, vault.id, noteRelativePath)
+    }
+
+    /**
+     * Finds or creates the drawing page for the flip side of [noteRelativePath] in
+     * [vaultId]. Does not change the active vault.
+     */
+    suspend fun openFlipSide(
+        appRepository: AppRepository,
+        vaultId: String,
+        noteRelativePath: String
+    ): String? {
+        val vault = vaultById(vaultId) ?: return null
         val root = vaultRootDir(vault) ?: return null
         val noteFile = File(root, noteRelativePath.replace('/', File.separatorChar))
-        val flipFile = flipSideFileFor(noteFile)
+        val flipFile = resolveFlipSideFile(noteFile, root)
 
         val existingLink = appRepository.kvProxy.get(
             noteKey(vault.id, noteRelativePath), FlipSideLink.serializer()
@@ -107,6 +148,7 @@ object FlipSideManager {
                 reimportFromFile(appRepository, existingLink.pageId, flipFile)
                 saveLink(appRepository, existingLink.copy(fileHash = fileHash))
             }
+            ensureHwrStrokeBaseline(appRepository, existingLink.pageId)
             return existingLink.pageId
         }
 
@@ -138,7 +180,319 @@ object FlipSideManager {
             fileHash = fileHash
         )
         saveLink(appRepository, link)
+        updateHwrStrokeBaseline(appRepository, page.id)
         return page.id
+    }
+
+    /**
+     * Creates a new timestamped vault note in the active vault's inbox and opens its flip-side editor.
+     */
+    suspend fun createNewCapture(appRepository: AppRepository): String? {
+        val vault = GlobalAppSettings.current.activeVault
+            ?: return missingVaultSnack()
+        return createNewCapture(appRepository, vault.id)
+    }
+
+    /**
+     * Creates a new timestamped vault note in [vaultId]'s inbox and opens its flip-side editor.
+     */
+    suspend fun createNewCapture(appRepository: AppRepository, vaultId: String): String? {
+        val vault = vaultById(vaultId) ?: return missingVaultSnack()
+        if (vault.inboxPath.isBlank()) {
+            return missingVaultSnack()
+        }
+        val root = vaultRootDir(vault) ?: return null
+        val inboxDir = resolveExternalStoragePath(vault.inboxPath)
+        inboxDir.mkdirs()
+
+        val createdAt = Date()
+        val timestamp = CAPTURE_TIMESTAMP_FORMAT.format(createdAt)
+        val noteFile = File(inboxDir, "$timestamp.md")
+        if (noteFile.exists()) {
+            SnackState.globalSnackFlow.tryEmit(
+                SnackConf(text = "Capture file already exists: $timestamp", duration = 4000)
+            )
+            return null
+        }
+
+        val flipTarget = "$timestamp.flip.excalidraw"
+        val markdown = buildCaptureNoteStub(createdAt, flipTarget)
+        when (val result = VaultFileStore.write(noteFile, markdown)) {
+            is VaultFileStore.WriteResult.Success -> { /* ok */ }
+            else -> {
+                log.e("Failed to create capture note ${noteFile.name}: $result")
+                SnackState.globalSnackFlow.tryEmit(
+                    SnackConf(text = "Could not create note in vault", duration = 4000)
+                )
+                return null
+            }
+        }
+
+        val relativePath = noteFile.relativeTo(root).path.replace('\\', '/')
+        return openFlipSide(appRepository, vaultId, relativePath)
+    }
+
+    private fun missingVaultSnack(): String? {
+        SnackState.globalSnackFlow.tryEmit(
+            SnackConf(text = "Configure a vault and inbox in Settings", duration = 4000)
+        )
+        return null
+    }
+
+    /**
+     * Migrates a legacy quick page (DB-only capture) to the flip-side vault model.
+     * Reuses the existing page as the flip-side editor surface when possible.
+     */
+    suspend fun migrateQuickPageToCapture(
+        appRepository: AppRepository,
+        pageId: String
+    ): String? {
+        if (linkForPage(appRepository, pageId) != null) {
+            return pageId
+        }
+
+        val vault = GlobalAppSettings.current.activeVault
+        if (vault == null || vault.inboxPath.isBlank()) {
+            SnackState.globalSnackFlow.tryEmit(
+                SnackConf(text = "Configure a vault and inbox in Settings", duration = 4000)
+            )
+            return null
+        }
+        val root = vaultRootDir(vault) ?: return null
+        val inboxDir = resolveExternalStoragePath(vault.inboxPath)
+        inboxDir.mkdirs()
+
+        val pageWithStrokes = appRepository.pageRepository.getWithStrokeById(pageId)
+        val page = pageWithStrokes.page
+        val strokes = pageWithStrokes.strokes
+        val createdAt = page.createdAt
+        val timestamp = CAPTURE_TIMESTAMP_FORMAT.format(createdAt)
+        val noteFile = File(inboxDir, "$timestamp.md")
+        val flipFile = flipSideFileFor(noteFile)
+        val flipTarget = flipFile.name.removeSuffix(".md")
+
+        if (noteFile.exists()) {
+            val read = VaultFileStore.read(noteFile) ?: return null
+            val updated = ensureCaptureFrontmatter(read.content, flipTarget)
+            when (val result = VaultFileStore.write(noteFile, updated, expectedHash = read.hash)) {
+                is VaultFileStore.WriteResult.Success -> { /* ok */ }
+                else -> {
+                    log.w("Could not update frontmatter for ${noteFile.name}: $result")
+                    return null
+                }
+            }
+        } else {
+            val markdown = buildCaptureNoteStub(createdAt, flipTarget)
+            when (val result = VaultFileStore.write(noteFile, markdown)) {
+                is VaultFileStore.WriteResult.Success -> { /* ok */ }
+                else -> {
+                    log.e("Failed to create capture note ${noteFile.name}: $result")
+                    return null
+                }
+            }
+        }
+
+        if (strokes.isNotEmpty()) {
+            try {
+                val excalidraw = ExcalidrawSerializer.serialize(strokes)
+                val expected = VaultFileStore.currentHash(flipFile)
+                when (val result = VaultFileStore.write(flipFile, excalidraw, expectedHash = expected)) {
+                    is VaultFileStore.WriteResult.Success -> { /* ok */ }
+                    else -> log.w("Could not write flip side for migration: $result")
+                }
+            } catch (e: OutOfMemoryError) {
+                log.e(
+                    "OOM exporting flip side for $pageId (${strokes.size} strokes) — link only; export on next save",
+                    e
+                )
+            } catch (e: Exception) {
+                log.e("Failed to export flip side for migration $pageId: ${e.message}", e)
+            }
+        }
+
+        val relativePath = noteFile.relativeTo(root).path.replace('\\', '/')
+        val folderId = ensureFlipFolder(appRepository)
+        if (page.parentFolderId != folderId) {
+            appRepository.pageRepository.update(page.copy(parentFolderId = folderId))
+        }
+
+        val fileHash = VaultFileStore.currentHash(flipFile)
+        if (!acquireGuard(vault.id, relativePath, pageId)) return null
+
+        val link = FlipSideLink(
+            vaultId = vault.id,
+            relativePath = relativePath,
+            pageId = pageId,
+            fileHash = fileHash
+        )
+        saveLink(appRepository, link)
+        PageDataManager.evictLoadedPageData(pageId)
+        log.i("Migrated quick page $pageId to flip-side capture $relativePath")
+        return pageId
+    }
+
+    /**
+     * One-time pass: migrates all legacy DB quick pages to flip-side captures and updates
+     * any inbox markdown notes that still reference a PDF to use flip-side Excalidraw instead.
+     */
+    suspend fun runLegacyQuickPageMigration(
+        appRepository: AppRepository
+    ): LegacyMigrationResult {
+        var pagesMigrated = 0
+        var failed = 0
+
+        val unmigrated = appRepository.pageRepository.getAllSinglePages().filter { page ->
+            page.notebookId == null && linkForPage(appRepository, page.id) == null
+        }
+        for (page in unmigrated) {
+            try {
+                if (migrateQuickPageToCapture(appRepository, page.id) != null) {
+                    pagesMigrated++
+                } else {
+                    failed++
+                }
+            } catch (e: OutOfMemoryError) {
+                log.e("OOM migrating quick page ${page.id}", e)
+                failed++
+            } catch (e: Exception) {
+                log.e("Failed migrating quick page ${page.id}: ${e.message}", e)
+                failed++
+            }
+        }
+
+        var mdNotesUpdated = 0
+        for (vault in GlobalAppSettings.current.normalizedVaults().vaults) {
+            if (vault.inboxPath.isBlank()) continue
+            try {
+                mdNotesUpdated += migrateInboxPdfNotesToFlipSide(appRepository, vault)
+            } catch (e: OutOfMemoryError) {
+                log.e("OOM migrating inbox PDF notes for vault ${vault.id}", e)
+            } catch (e: Exception) {
+                log.e("Failed migrating inbox PDF notes for vault ${vault.id}: ${e.message}", e)
+            }
+        }
+
+        log.i(
+            "Legacy quick-page migration: $pagesMigrated pages, $mdNotesUpdated md notes, $failed failed"
+        )
+        return LegacyMigrationResult(pagesMigrated, mdNotesUpdated, failed)
+    }
+
+    /**
+     * Updates inbox notes that still have `pdf:` frontmatter: strips the PDF link, adds
+     * `flip-side`, and creates the Excalidraw sidecar when missing.
+     */
+    internal suspend fun migrateInboxPdfNotesToFlipSide(
+        appRepository: AppRepository,
+        vault: VaultConfig
+    ): Int {
+        val inboxDir = resolveExternalStoragePath(vault.inboxPath)
+        if (!inboxDir.isDirectory) return 0
+        val root = vaultRootDir(vault) ?: return 0
+        var updated = 0
+
+        for (noteFile in inboxDir.listFiles().orEmpty()) {
+            if (!noteFile.isFile) continue
+            val name = noteFile.name
+            if (!name.endsWith(".md", ignoreCase = true) ||
+                name.endsWith(FLIP_SIDE_SUFFIX, ignoreCase = true)
+            ) {
+                continue
+            }
+
+            val read = VaultFileStore.read(noteFile) ?: continue
+            if (!PDF_FRONTMATTER_REGEX.containsMatchIn(read.content)) continue
+
+            val flipFile = resolveFlipSideFile(noteFile, root)
+            val flipTarget = flipFile.name.removeSuffix(".md")
+
+            if (!flipFile.exists()) {
+                val strokes = findPageByNoteTimestamp(appRepository, noteFile)
+                    ?.let { page ->
+                        appRepository.pageRepository.getWithStrokeById(page.id).strokes
+                    }
+                    .orEmpty()
+                try {
+                    when (val flipResult = VaultFileStore.write(
+                        flipFile,
+                        ExcalidrawSerializer.serialize(strokes)
+                    )) {
+                        is VaultFileStore.WriteResult.Success -> { /* ok */ }
+                        else -> {
+                            log.w("Could not create flip side for ${noteFile.name}: $flipResult")
+                            continue
+                        }
+                    }
+                } catch (e: OutOfMemoryError) {
+                    log.e("OOM creating flip side for ${noteFile.name} — skipping", e)
+                    continue
+                } catch (e: Exception) {
+                    log.e("Failed creating flip side for ${noteFile.name}: ${e.message}", e)
+                    continue
+                }
+            }
+
+            val newContent = ensureCaptureFrontmatter(read.content, flipTarget)
+            when (VaultFileStore.write(noteFile, newContent, expectedHash = read.hash)) {
+                is VaultFileStore.WriteResult.Success -> updated++
+                else -> log.w("Could not update frontmatter for ${noteFile.name}")
+            }
+        }
+        return updated
+    }
+
+    /** Matches a legacy quick page to an inbox note by timestamp filename. */
+    internal suspend fun findPageByNoteTimestamp(
+        appRepository: AppRepository,
+        noteFile: File
+    ): Page? {
+        val base = noteFile.name.removeSuffix(".md")
+        return appRepository.pageRepository.getAllSinglePages()
+            .find { CAPTURE_TIMESTAMP_FORMAT.format(it.createdAt) == base }
+    }
+
+    /** Builds minimal frontmatter for a new inbox capture (no PDF). */
+    fun buildCaptureNoteStub(createdAt: Date, flipTarget: String): String {
+        val createdDate = CAPTURE_CREATED_DATE_FORMAT.format(createdAt)
+        return buildString {
+            appendLine("---")
+            appendLine("created: \"[[$createdDate]]\"")
+            appendLine("$FRONTMATTER_KEY: \"[[$flipTarget]]\"")
+            appendLine("---")
+            appendLine()
+        }
+    }
+
+    /** Ensures flip-side link exists and removes obsolete pdf frontmatter. */
+    fun ensureCaptureFrontmatter(content: String, flipTarget: String): String {
+        val withoutPdf = PDF_FRONTMATTER_REGEX.replace(content, "").replace(Regex("\n{3,}"), "\n\n")
+        val flipProperty = "$FRONTMATTER_KEY: \"[[$flipTarget]]\""
+        if (Regex("^$FRONTMATTER_KEY:", RegexOption.MULTILINE).containsMatchIn(withoutPdf)) {
+            return withoutPdf
+        }
+        return addFrontmatterProperty(withoutPdf, flipProperty)
+    }
+
+    /** Relative path of a vault note within [vault], or null when unconfigured. */
+    fun noteRelativePath(noteFile: File, vault: VaultConfig): String? {
+        val root = vaultRootDir(vault) ?: return null
+        return noteFile.relativeTo(root).path.replace('\\', '/')
+    }
+
+    /** KV lookup: flip-side page id for a vault note path, if linked. */
+    suspend fun pageIdForNote(
+        appRepository: AppRepository,
+        vaultId: String,
+        relativePath: String
+    ): String? = appRepository.kvProxy.get(
+        noteKey(vaultId, relativePath), FlipSideLink.serializer()
+    )?.pageId
+
+    /** True when [pageId] is a legacy quick page not yet linked to a vault flip side. */
+    suspend fun isUnmigratedQuickPage(appRepository: AppRepository, pageId: String): Boolean {
+        if (linkForPage(appRepository, pageId) != null) return false
+        val page = appRepository.pageRepository.getById(pageId) ?: return false
+        return page.notebookId == null
     }
 
     /** True when [pageId] is a flip-side drawing page (of either purpose). */
@@ -148,6 +502,66 @@ object FlipSideManager {
     /** The link for [pageId], or null when it isn't a flip-side page. */
     suspend fun linkForPage(appRepository: AppRepository, pageId: String): FlipSideLink? =
         appRepository.kvProxy.get(pageKey(pageId), FlipSideLink.serializer())
+
+    /** Re-imports the flip-side file when it changed on disk (e.g. edited in Obsidian). */
+    suspend fun syncFlipSideFromVaultIfChanged(appRepository: AppRepository, pageId: String) {
+        val link = linkForPage(appRepository, pageId) ?: return
+        if (link.purpose != PURPOSE_FLIP) return
+        val vault = GlobalAppSettings.current.vaults.find { it.id == link.vaultId }
+            ?: GlobalAppSettings.current.activeVault ?: return
+        val root = vaultRootDir(vault) ?: return
+        val noteFile = File(root, link.relativePath.replace('/', File.separatorChar))
+        val flipFile = resolveFlipSideFile(noteFile, root)
+        val fileHash = VaultFileStore.currentHash(flipFile)
+        if (fileHash == link.fileHash || fileHash == VaultFileStore.HASH_MISSING) return
+        reimportFromFile(appRepository, pageId, flipFile)
+        saveLink(appRepository, link.copy(fileHash = fileHash))
+        updateHwrStrokeBaseline(appRepository, pageId)
+    }
+
+    /** Stable fingerprint of a flip-side page's strokes for HWR change detection. */
+    internal fun strokesFingerprint(strokes: List<Stroke>): String {
+        if (strokes.isEmpty()) return "empty"
+        return strokes
+            .sortedBy { it.id }
+            .joinToString("|") { stroke ->
+                "${stroke.id}:${stroke.points.size}:${stroke.top}:${stroke.bottom}:${stroke.left}:${stroke.right}"
+            }
+    }
+
+    private suspend fun strokesFingerprint(
+        appRepository: AppRepository,
+        pageId: String
+    ): String = strokesFingerprint(
+        appRepository.pageRepository.getWithStrokeById(pageId).strokes
+    )
+
+    /** True when ink on the flip side changed since the last HWR sync or open/re-import. */
+    suspend fun hasFlipSideDrawingChanged(
+        appRepository: AppRepository,
+        pageId: String
+    ): Boolean {
+        val link = linkForPage(appRepository, pageId) ?: return false
+        return strokesFingerprint(appRepository, pageId) != link.hwrStrokeBaseline
+    }
+
+    /** Records the current strokes as the HWR baseline (after apply, open, or re-import). */
+    suspend fun updateHwrStrokeBaseline(appRepository: AppRepository, pageId: String) {
+        val link = linkForPage(appRepository, pageId) ?: return
+        val fingerprint = strokesFingerprint(appRepository, pageId)
+        if (link.hwrStrokeBaseline == fingerprint) return
+        saveLink(appRepository, link.copy(hwrStrokeBaseline = fingerprint))
+    }
+
+    /**
+     * One-time migration: existing flip links without a baseline get one on first open
+     * so users are not prompted to recognise unchanged drawings.
+     */
+    suspend fun ensureHwrStrokeBaseline(appRepository: AppRepository, pageId: String) {
+        val link = linkForPage(appRepository, pageId) ?: return
+        if (link.hwrStrokeBaseline.isNotEmpty()) return
+        updateHwrStrokeBaseline(appRepository, pageId)
+    }
 
     /**
      * Runs handwriting recognition over a flip-side page's strokes, using the same
@@ -197,7 +611,10 @@ object FlipSideManager {
         }
 
         return when (val result = VaultFileStore.write(noteFile, newContent, expectedHash)) {
-            is VaultFileStore.WriteResult.Success -> "Saved to ${noteFile.name}"
+            is VaultFileStore.WriteResult.Success -> {
+                updateHwrStrokeBaseline(appRepository, pageId)
+                "Saved to ${noteFile.name}"
+            }
             is VaultFileStore.WriteResult.Conflict -> {
                 val copy = VaultFileStore.writeConflictCopy(noteFile, newContent)
                 "Note changed elsewhere — saved as ${copy?.name ?: "conflict copy"}"
@@ -311,7 +728,7 @@ object FlipSideManager {
     ) {
         val root = vaultRootDir(vault) ?: return
         val noteFile = File(root, link.relativePath.replace('/', File.separatorChar))
-        val flipFile = flipSideFileFor(noteFile)
+        val flipFile = resolveFlipSideFile(noteFile, root)
 
         val strokes = appRepository.pageRepository.getWithStrokeById(link.pageId).strokes
         if (strokes.isEmpty() && !flipFile.exists()) return
@@ -348,8 +765,16 @@ object FlipSideManager {
         pageId: String,
         flipFile: File
     ) {
-        val content = VaultFileStore.read(flipFile)?.content ?: return
-        val imported = ExcalidrawSerializer.parse(content, pageId) ?: return
+        val content = VaultFileStore.read(flipFile)?.content
+        if (content == null) {
+            log.w("Flip-side file missing or unreadable: ${flipFile.name}")
+            return
+        }
+        val imported = ExcalidrawSerializer.parse(content, pageId)
+        if (imported == null) {
+            log.w("Could not parse flip-side file ${flipFile.name} — keeping existing strokes")
+            return
+        }
         val existing = appRepository.pageRepository.getWithStrokeById(pageId).strokes
         if (existing.isNotEmpty()) {
             appRepository.strokeRepository.deleteAll(existing.map { it.id })
@@ -357,7 +782,9 @@ object FlipSideManager {
         if (imported.isNotEmpty()) {
             appRepository.strokeRepository.create(imported)
         }
+        PageDataManager.evictLoadedPageData(pageId)
         log.i("Re-imported ${imported.size} strokes from ${flipFile.name}")
+        updateHwrStrokeBaseline(appRepository, pageId)
     }
 
     private suspend fun saveLink(appRepository: AppRepository, link: FlipSideLink) {

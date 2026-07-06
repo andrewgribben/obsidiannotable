@@ -29,6 +29,36 @@ fun vaultRootDir(vault: VaultConfig): File? {
     return resolveExternalStoragePath(vault.inboxPath).parentFile
 }
 
+/** Inbox folder path relative to the vault root (forward slashes), or null when unconfigured. */
+fun inboxDirRelativeToVault(vault: VaultConfig): String? {
+    val root = vaultRootDir(vault) ?: return null
+    if (vault.inboxPath.isBlank()) return null
+    val inboxDir = resolveExternalStoragePath(vault.inboxPath)
+    return inboxDir.relativeTo(root).path.replace('\\', '/')
+}
+
+/** Notes under the vault inbox that have a flip-side Excalidraw file. */
+fun listInboxNotesWithInk(vault: VaultConfig): List<VaultNote> {
+    val index = VaultIndexRegistry.forVault(vault) ?: return emptyList()
+    val inboxRel = inboxDirRelativeToVault(vault) ?: return emptyList()
+    val prefix = if (inboxRel.isEmpty()) "" else "$inboxRel/"
+    return index.refresh()
+        .filter { note ->
+            note.hasInk && (inboxRel.isEmpty() || note.relativePath.startsWith(prefix))
+        }
+}
+
+/** Inbox captures with ink across [vaults]. */
+fun listInboxNotesWithInkForVaults(
+    vaults: List<VaultConfig>
+): List<Pair<VaultConfig, VaultNote>> = buildList {
+    for (vault in vaults) {
+        for (note in listInboxNotesWithInk(vault)) {
+            add(vault to note)
+        }
+    }
+}
+
 /**
  * Index of the markdown notes of a single vault. Scans the filesystem directly (the app
  * holds all-files access) and provides Obsidian-style wikilink resolution by file name.
@@ -177,6 +207,38 @@ class VaultIndex(val vaultRoot: File) {
 fun flipSideFileFor(noteFile: File): File {
     val base = noteFile.name.removeSuffix(".md")
     return File(noteFile.parentFile, "$base$FLIP_SIDE_SUFFIX")
+}
+
+private val FLIP_SIDE_FRONTMATTER_REGEX =
+    Regex("""^flip-side:\s*["']?\[\[([^\]]+)]]""", RegexOption.MULTILINE)
+
+/**
+ * Resolves the Excalidraw file for a note's flip side. Uses the `flip-side` frontmatter
+ * wikilink when present (Obsidian may point at a different path than the default sidecar),
+ * otherwise [flipSideFileFor].
+ */
+fun resolveFlipSideFile(noteFile: File, vaultRoot: File): File {
+    val default = flipSideFileFor(noteFile)
+    if (!noteFile.isFile) return default
+    val content = runCatching { noteFile.readText() }.getOrNull() ?: return default
+    val target = FLIP_SIDE_FRONTMATTER_REGEX.find(content)?.groupValues?.get(1)?.trim()
+        ?: return default
+
+    val noteDir = noteFile.parentFile?.let { parent ->
+        parent.relativeTo(vaultRoot).path.replace('\\', '/').trimStart('/')
+    }.orEmpty()
+
+    val withMd = if (target.endsWith(".md", ignoreCase = true)) target else "$target.md"
+    val candidates = buildList {
+        if (noteDir.isNotEmpty()) {
+            add(File(vaultRoot, "$noteDir/$withMd"))
+            add(File(vaultRoot, "$noteDir/$target"))
+        }
+        add(File(vaultRoot, withMd.replace('/', File.separatorChar)))
+        add(File(vaultRoot, target.replace('/', File.separatorChar)))
+        add(default)
+    }
+    return candidates.firstOrNull { it.isFile } ?: default
 }
 
 /** The text note that pairs with a flip-side [flipFile]. */

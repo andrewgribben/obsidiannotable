@@ -267,6 +267,14 @@ class PageView(
         cleanJob()
     }
 
+    /** Reloads strokes from the database (e.g. after external flip-side import). */
+    fun reloadStrokesFromDb() {
+        coroutineScope.launch {
+            PageDataManager.evictLoadedPageData(currentPageId)
+            loadPage()
+        }
+    }
+
 
     // To be removed.
     private fun redrawAll(scope: CoroutineScope) {

@@ -3,6 +3,7 @@ package com.ethran.notable.io.excalidraw
 import com.ethran.notable.data.db.Stroke
 import com.ethran.notable.data.db.StrokePoint
 import com.ethran.notable.editor.utils.Pen
+import blazing.chain.LZSEncoding
 import io.shipbook.shipbooksdk.ShipBook
 import org.json.JSONArray
 import org.json.JSONObject
@@ -92,19 +93,48 @@ object ExcalidrawSerializer {
     fun extractDrawingJson(content: String): String? {
         val trimmed = content.trim()
         if (trimmed.startsWith("{")) return trimmed
-        // Obsidian plugin format: JSON inside a fenced code block after "# Drawing"
-        val drawingIdx = content.indexOf("# Drawing")
-        val searchFrom = if (drawingIdx >= 0) drawingIdx else 0
-        val fenceStart = content.indexOf("```json", searchFrom)
-        val start = if (fenceStart >= 0) fenceStart + "```json".length else {
-            val plainFence = content.indexOf("```", searchFrom)
-            if (plainFence < 0) return null
-            plainFence + 3
+
+        // Obsidian saves the authoritative drawing as compressed-json (often in the %% block).
+        // Prefer it over the plain ```json preview, which may be stale after external edits.
+        decompressCompressedJsonBlock(content)?.let { return it }
+
+        extractFencedBlock(content, "json")?.let { return it }
+
+        return null
+    }
+
+    private fun decompressCompressedJsonBlock(content: String): String? {
+        val compressed = extractFencedBlock(content, "compressed-json") ?: return null
+        val cleaned = buildString(compressed.length) {
+            for (ch in compressed) {
+                if (ch != '\n' && ch != '\r') append(ch)
+            }
         }
-        val end = content.indexOf("```", start)
+        return runCatching { LZSEncoding.decompressFromBase64(cleaned) }
+            .getOrNull()
+            ?.takeIf { it.isNotBlank() }
+    }
+
+    private fun extractFencedBlock(content: String, language: String): String? {
+        val fence = "```$language"
+        val drawingMarkers = listOf("## Drawing", "# Drawing")
+        val searchFrom = drawingMarkers
+            .map { content.indexOf(it) }
+            .filter { it >= 0 }
+            .minOrNull() ?: 0
+
+        var fenceStart = content.indexOf(fence, searchFrom)
+        if (fenceStart < 0) {
+            fenceStart = content.indexOf(fence)
+            if (fenceStart < 0) return null
+        }
+        return readFencedContent(content, fenceStart + fence.length)
+    }
+
+    private fun readFencedContent(content: String, bodyStart: Int): String? {
+        val end = content.indexOf("```", bodyStart)
         if (end < 0) return null
-        val json = content.substring(start, end).trim()
-        return json.ifBlank { null }
+        return content.substring(bodyStart, end).trim().ifBlank { null }
     }
 
     // --- Stroke → freedraw element ---

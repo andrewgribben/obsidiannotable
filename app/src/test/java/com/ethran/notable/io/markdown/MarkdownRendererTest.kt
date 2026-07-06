@@ -171,4 +171,21 @@ class MarkdownRendererTest {
         assertEquals(small.theme.bodySize.value * 1.5f, large.theme.bodySize.value, 0.01f)
         assertEquals(small.theme.lineHeight.value * 1.5f, large.theme.lineHeight.value, 0.01f)
     }
+
+    @Test
+    fun `markdown images become inline placeholders`() {
+        val rendered = MarkdownRenderer.render("Before ![alt](attachments/photo.png) after.\n")
+        assertEquals(1, rendered.images.size)
+        assertEquals("attachments/photo.png", rendered.images[0].destination)
+        assertTrue(rendered.text.text.contains("Before "))
+        assertTrue(rendered.text.text.contains(" after."))
+    }
+
+    @Test
+    fun `wiki image embeds become inline placeholders`() {
+        val rendered = MarkdownRenderer.render("Look ![[diagram.png|400]] here.\n")
+        assertEquals(1, rendered.images.size)
+        assertEquals("diagram.png", rendered.images[0].destination)
+        assertEquals(400, rendered.images[0].widthHintPx)
+    }
 }

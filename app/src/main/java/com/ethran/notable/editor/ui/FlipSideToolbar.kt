@@ -27,11 +27,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import com.ethran.notable.R
 import com.ethran.notable.data.AppRepository
 import com.ethran.notable.io.flipside.FlipSideManager
 import com.ethran.notable.io.flipside.flipSideNoteName
@@ -60,6 +62,8 @@ fun FlipSideToolbar(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var isRecognizing by remember { mutableStateOf(false) }
+    val recognizingLabel = stringResource(R.string.flip_side_recognizing)
+    val saveToNoteLabel = stringResource(R.string.flip_side_save_to_note)
 
     Box(Modifier.fillMaxSize()) {
         Row(
@@ -78,7 +82,7 @@ fun FlipSideToolbar(
             )
             Spacer(Modifier.width(14.dp))
             ToolbarButton(
-                label = if (isRecognizing) "Recognizing…" else "Save to note",
+                label = if (isRecognizing) recognizingLabel else saveToNoteLabel,
                 filled = true,
                 enabled = !isRecognizing
             ) {
@@ -120,6 +124,10 @@ fun FlipTextPreviewDialog(
     onDismiss: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
+    val title = stringResource(R.string.flip_side_recognized_text_title)
+    val replaceLabel = stringResource(R.string.flip_side_replace_note_body)
+    val appendLabel = stringResource(R.string.flip_side_append_to_note)
+    val cancelLabel = stringResource(android.R.string.cancel)
 
     fun apply(mode: FlipSideManager.HwrApplyMode) {
         scope.launch(Dispatchers.IO) {
@@ -137,7 +145,7 @@ fun FlipTextPreviewDialog(
                 .padding(16.dp)
         ) {
             Text(
-                "Recognized text",
+                title,
                 style = MaterialTheme.typography.h6,
                 fontWeight = FontWeight.Bold
             )
@@ -155,15 +163,15 @@ fun FlipTextPreviewDialog(
             )
             Spacer(Modifier.height(14.dp))
             Row {
-                ToolbarButton(label = "Replace note body", filled = false) {
+                ToolbarButton(label = replaceLabel, filled = false) {
                     apply(FlipSideManager.HwrApplyMode.REPLACE)
                 }
                 Spacer(Modifier.width(10.dp))
-                ToolbarButton(label = "Append to note", filled = true) {
+                ToolbarButton(label = appendLabel, filled = true) {
                     apply(FlipSideManager.HwrApplyMode.APPEND)
                 }
                 Spacer(Modifier.width(10.dp))
-                ToolbarButton(label = "Cancel", filled = false) { onDismiss() }
+                ToolbarButton(label = cancelLabel, filled = false) { onDismiss() }
             }
         }
     }

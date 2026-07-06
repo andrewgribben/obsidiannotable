@@ -69,6 +69,7 @@ import com.ethran.notable.ui.convertDpToPixel
 import com.ethran.notable.ui.dialogs.BackgroundSelector
 import com.ethran.notable.ui.noRippleClickable
 import com.ethran.notable.ui.views.BugReportDestination
+import com.ethran.notable.ui.views.NoteReaderDestination
 import compose.icons.FeatherIcons
 import compose.icons.feathericons.ArrowLeft
 import compose.icons.feathericons.EyeOff
@@ -429,16 +430,29 @@ fun EditorSidebar(
             }
         )
 
-        // Flip side: recognize the sketch as text (preview, then replace/append)
+        // Flip side: open text note; run HWR preview only when ink changed since last sync
         if (isFlipDrawingPage) {
+            val notePath = flipSideLink.relativePath
             SidebarIconButton(
                 vectorIcon = FeatherIcons.Type,
-                contentDescription = "flip side to text",
+                contentDescription = stringResource(R.string.flip_side_to_text),
                 isSelected = isRecognizingFlip,
                 onClick = {
-                    if (isRecognizingFlip) return@SidebarIconButton
+                    if (isRecognizingFlip || notePath.isBlank()) return@SidebarIconButton
                     isRecognizingFlip = true
                     scope.launch(Dispatchers.IO) {
+                        val drawingChanged = FlipSideManager.hasFlipSideDrawingChanged(
+                            appRepository, state.currentPageId
+                        )
+                        if (!drawingChanged) {
+                            withContext(Dispatchers.Main) {
+                                isRecognizingFlip = false
+                                openFlipSideTextNote(
+                                    appRepository, navController, state.currentPageId, notePath
+                                )
+                            }
+                            return@launch
+                        }
                         val text = FlipSideManager.recognizeFlipSide(
                             appRepository, context, state.currentPageId
                         )
@@ -447,7 +461,7 @@ fun EditorSidebar(
                             if (text == null) {
                                 SnackState.globalSnackFlow.tryEmit(
                                     SnackConf(
-                                        text = "Nothing recognized on this flip side",
+                                        text = context.getString(R.string.flip_side_nothing_recognized),
                                         duration = 3000
                                     )
                                 )
@@ -492,19 +506,32 @@ fun EditorSidebar(
     }
 
     val previewText = flipPreviewText
-    if (previewText != null) {
+    val notePathForFlip = if (isFlipDrawingPage) flipSideLink.relativePath else null
+    if (previewText != null && notePathForFlip != null) {
         FlipTextPreviewDialog(
             appRepository = appRepository,
             pageId = state.currentPageId,
             text = previewText,
             onApplied = {
                 flipPreviewText = null
-                // Flip back to the (now updated) note
-                navController.popBackStack()
+                openFlipSideTextNote(
+                    appRepository, navController, state.currentPageId, notePathForFlip
+                )
             },
             onDismiss = { flipPreviewText = null }
         )
     }
+}
+
+private fun openFlipSideTextNote(
+    appRepository: AppRepository,
+    navController: NavController,
+    pageId: String,
+    relativePath: String
+) {
+    FlipSideManager.scheduleSaveIfFlipPage(appRepository, pageId)
+    navController.popBackStack()
+    navController.navigate(NoteReaderDestination.createRoute(relativePath))
 }
 
 // --- Pen Picker Flyout ---

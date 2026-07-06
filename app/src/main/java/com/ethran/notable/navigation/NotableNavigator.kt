@@ -170,6 +170,23 @@ class NotableNavigator(
         }
     }
 
+    fun goToFlipSide(
+        appRepository: AppRepository,
+        vaultId: String,
+        noteRelativePath: String
+    ) {
+        coroutineScope.launch {
+            val pageId = withContext(Dispatchers.IO) {
+                FlipSideManager.openFlipSide(appRepository, vaultId, noteRelativePath)
+            }
+            if (pageId != null) {
+                navController.navigate(EditorDestination.createRoute(pageId, null))
+            } else {
+                log.e("Could not open flip side for $noteRelativePath in vault $vaultId")
+            }
+        }
+    }
+
     /** Opens a scratch handwriting page whose recognized text appends to the vault note. */
     fun goToHandwritingInsert(appRepository: AppRepository, noteRelativePath: String) {
         coroutineScope.launch {
@@ -181,6 +198,25 @@ class NotableNavigator(
             } else {
                 log.e("Could not open handwriting insert page for $noteRelativePath")
             }
+        }
+    }
+
+    fun onCreateNewCapture(appRepository: AppRepository, vaultId: String) {
+        coroutineScope.launch {
+            val pageId = withContext(Dispatchers.IO) {
+                FlipSideManager.createNewCapture(appRepository, vaultId)
+            } ?: return@launch
+            navController.navigate(EditorDestination.createRoute(pageId, null))
+        }
+    }
+
+    /** Migrates a legacy quick page to flip-side capture and opens it. */
+    fun onOpenLegacyCapture(appRepository: AppRepository, pageId: String) {
+        coroutineScope.launch {
+            val openId = withContext(Dispatchers.IO) {
+                FlipSideManager.migrateQuickPageToCapture(appRepository, pageId)
+            } ?: return@launch
+            navController.navigate(EditorDestination.createRoute(openId, null))
         }
     }
 

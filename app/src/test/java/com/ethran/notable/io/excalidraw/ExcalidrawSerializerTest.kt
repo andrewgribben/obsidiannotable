@@ -138,6 +138,45 @@ class ExcalidrawSerializerTest {
     }
 
     @Test
+    fun `extractDrawingJson decompresses obsidian compressed-json block`() {
+        val json = """{"type":"excalidraw","version":2,"elements":[]}"""
+        val compressed = blazing.chain.LZSEncoding.compressToBase64(json)
+        val md = """
+            ---
+            excalidraw-plugin: parsed
+            ---
+            ## Drawing
+            ```compressed-json
+            $compressed
+            ```
+            %%
+        """.trimIndent()
+        assertEquals(json, ExcalidrawSerializer.extractDrawingJson(md))
+    }
+
+    @Test
+    fun `extractDrawingJson prefers compressed-json over stale json block`() {
+        val freshJson = """{"type":"excalidraw","version":2,"elements":[{"type":"freedraw","x":0,"y":0,"points":[[0,0],[5,5]],"isDeleted":false}]}"""
+        val compressed = blazing.chain.LZSEncoding.compressToBase64(freshJson)
+        val md = """
+            ---
+            excalidraw-plugin: parsed
+            ---
+            # Drawing
+            ```json
+            {"type":"excalidraw","version":2,"elements":[]}
+            ```
+            %%
+            ## Drawing
+            ```compressed-json
+            $compressed
+            ```
+            %%
+        """.trimIndent()
+        assertEquals(freshJson, ExcalidrawSerializer.extractDrawingJson(md))
+    }
+
+    @Test
     fun `parse returns null when no drawing found`() {
         assertNull(ExcalidrawSerializer.parse("just some markdown", "page-1"))
     }

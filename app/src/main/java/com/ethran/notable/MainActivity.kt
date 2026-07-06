@@ -36,8 +36,10 @@ import com.ethran.notable.data.db.StrokeMigrationHelper
 import com.ethran.notable.editor.canvas.CanvasEventBus
 import com.ethran.notable.io.ExportEngine
 import com.ethran.notable.io.VaultTagScanner
+import com.ethran.notable.io.flipside.FlipSideManager
 import com.ethran.notable.navigation.DeepLinks
 import com.ethran.notable.ui.LocalSnackContext
+import com.ethran.notable.ui.SnackConf
 import com.ethran.notable.ui.SnackState
 import com.ethran.notable.ui.components.NotableApp
 import com.ethran.notable.ui.theme.InkaTheme
@@ -152,6 +154,39 @@ class MainActivity : ComponentActivity() {
                     }
                 }
                 isInitialized = true
+            }
+
+            // Legacy capture migration runs after the UI can show — never block launch.
+            LaunchedEffect(fullInitDone) {
+                if (!fullInitDone || !hasFilePermission(this@MainActivity)) return@LaunchedEffect
+                withContext(Dispatchers.IO) {
+                    val settings = GlobalAppSettings.current
+                    if (settings.legacyQuickPagesMigrated) return@withContext
+                    try {
+                        val repo = appRepositoryLazy.get()
+                        val result = FlipSideManager.runLegacyQuickPageMigration(repo)
+                        if (result.pagesMigrated > 0 || result.mdNotesUpdated > 0) {
+                            val detail = buildString {
+                                append("Migrated ${result.pagesMigrated} capture")
+                                if (result.pagesMigrated != 1) append('s')
+                                if (result.mdNotesUpdated > 0) {
+                                    append(", updated ${result.mdNotesUpdated} note")
+                                    if (result.mdNotesUpdated != 1) append('s')
+                                }
+                                append(" to flip side")
+                            }
+                            SnackState.globalSnackFlow.tryEmit(
+                                SnackConf(text = detail, duration = 5000)
+                            )
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Legacy quick-page migration failed: ${e.message}", e)
+                    } finally {
+                        kvProxy.get().setAppSettings(
+                            GlobalAppSettings.current.copy(legacyQuickPagesMigrated = true)
+                        )
+                    }
+                }
             }
 
             LaunchedEffect(firstLaunchCompleteState.value) {

@@ -40,7 +40,9 @@ import androidx.compose.ui.platform.LocalContext
 import com.ethran.notable.R
 import com.ethran.notable.data.datastore.AppSettings
 import com.ethran.notable.data.datastore.VaultConfig
+import com.ethran.notable.io.FolderPickerState
 import com.ethran.notable.io.VaultTagScanner
+import com.ethran.notable.io.initialFolderPickerUri
 import com.ethran.notable.io.isAttachmentPathSet
 import com.ethran.notable.io.pathFromTreeUri
 
@@ -194,7 +196,9 @@ private fun InboxCaptureSettings(
     val context = LocalContext.current
     val normalized = settings.normalizedVaults()
     val vaults = normalized.vaults
-    var expandedVaultId by remember { mutableStateOf<String?>(null) }
+    var expandedVaultId by remember(settings.settingsExpandedVaultId) {
+        mutableStateOf(settings.settingsExpandedVaultId.takeIf { it.isNotBlank() })
+    }
 
     // Single SAF launcher shared by all vault rows; pendingPick tracks the target.
     var pendingPick by remember { mutableStateOf<Pair<String, VaultPickTarget>?>(null) }
@@ -206,6 +210,7 @@ private fun InboxCaptureSettings(
             pendingPick = null
             if (uri == null || pick == null) return@rememberLauncherForActivityResult
             context.contentResolver.takePersistableUriPermission(uri, persistFlags)
+            FolderPickerState.saveLastTreeUri(context, uri)
             val path = pathFromTreeUri(context, uri) ?: return@rememberLauncherForActivityResult
             val updated = vaults.map { vault ->
                 if (vault.id != pick.first) vault
@@ -254,7 +259,11 @@ private fun InboxCaptureSettings(
                     VaultTagScanner.refreshCache(vault.inboxPath)
                 },
                 onToggleExpand = {
-                    expandedVaultId = if (expandedVaultId == vault.id) null else vault.id
+                    val next = if (expandedVaultId == vault.id) null else vault.id
+                    expandedVaultId = next
+                    onSettingsChange(
+                        normalized.copy(settingsExpandedVaultId = next.orEmpty())
+                    )
                 },
                 onChange = { changed ->
                     val cleaned = changed.copy(
@@ -267,11 +276,11 @@ private fun InboxCaptureSettings(
                 },
                 onPickInbox = {
                     pendingPick = vault.id to VaultPickTarget.Inbox
-                    folderPicker.launch(null)
+                    folderPicker.launch(initialFolderPickerUri(context, vault.inboxPath))
                 },
                 onPickAttachment = {
                     pendingPick = vault.id to VaultPickTarget.Attachment
-                    folderPicker.launch(null)
+                    folderPicker.launch(initialFolderPickerUri(context, vault.attachmentPath))
                 },
                 onRemove = if (index == 0) null else {
                     {
@@ -293,8 +302,13 @@ private fun InboxCaptureSettings(
                 .border(1.dp, Color.Gray, RoundedCornerShape(6.dp))
                 .clickable {
                     val newVault = VaultConfig(name = "New vault")
-                    onSettingsChange(normalized.copy(vaults = vaults + newVault))
                     expandedVaultId = newVault.id
+                    onSettingsChange(
+                        normalized.copy(
+                            vaults = vaults + newVault,
+                            settingsExpandedVaultId = newVault.id
+                        )
+                    )
                 }
                 .padding(horizontal = 16.dp, vertical = 10.dp)
         ) {

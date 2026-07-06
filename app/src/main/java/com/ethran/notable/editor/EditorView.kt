@@ -173,6 +173,13 @@ fun EditorView(
                 FlipSideManager.linkForPage(appRepository, pageId)
             }
             flipSideLink = link
+            if (link?.purpose == FlipSideManager.PURPOSE_FLIP) {
+                withContext(Dispatchers.IO) {
+                    FlipSideManager.syncFlipSideFromVaultIfChanged(appRepository, pageId)
+                    FlipSideManager.ensureHwrStrokeBaseline(appRepository, pageId)
+                }
+                page.reloadStrokesFromDb()
+            }
             val inbox = link == null && (pageData?.notebookId == null &&
                 GlobalAppSettings.current.obsidianInboxPath.isNotBlank() ||
                 pageData?.background == "inbox")

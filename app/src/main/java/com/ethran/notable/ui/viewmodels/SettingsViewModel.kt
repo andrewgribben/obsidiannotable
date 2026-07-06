@@ -1,9 +1,5 @@
 package com.ethran.notable.ui.viewmodels
 
-import android.content.Context
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ethran.notable.APP_SETTINGS_KEY
@@ -12,7 +8,6 @@ import com.ethran.notable.data.datastore.AppSettings
 import com.ethran.notable.data.datastore.GlobalAppSettings
 import com.ethran.notable.data.db.AppDatabase
 import com.ethran.notable.data.db.KvProxy
-import com.ethran.notable.utils.isLatestVersion
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -38,22 +33,6 @@ class SettingsViewModel @Inject constructor(
     // We use the GlobalAppSettings object directly.
     val settings: AppSettings
         get() = GlobalAppSettings.current
-
-    var isLatestVersion: Boolean by mutableStateOf(true)
-        private set
-
-    /**
-     * Checks if the app is the latest version.
-     * Uses Dispatchers.IO for the network/disk call.
-     */
-    fun checkUpdate(context: Context, force: Boolean = false) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val result = isLatestVersion(context, force)
-            withContext(Dispatchers.Main) {
-                isLatestVersion = result
-            }
-        }
-    }
 
     /**
      * The ViewModel handles the side effects:

@@ -6,6 +6,11 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
 
+    <!-- Required on Android 11+ so we can launch Obsidian for vault sync. -->
+    <queries>
+        <package android:name="md.obsidian" />
+    </queries>
+
     <application
         android:name=".NotableApp"
         android:allowBackup="true"

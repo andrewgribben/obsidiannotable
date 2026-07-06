@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -25,8 +24,6 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.Badge
-import androidx.compose.material.BadgedBox
 import androidx.compose.material.Icon
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
@@ -34,7 +31,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -60,32 +56,36 @@ import com.ethran.notable.editor.EditorDestination
 import com.ethran.notable.editor.ui.toolbar.Topbar
 import com.ethran.notable.editor.utils.autoEInkAnimationOnScroll
 import com.ethran.notable.io.ExportEngine
-import com.ethran.notable.io.SyncState
+import com.ethran.notable.io.ObsidianLauncher
+import com.ethran.notable.io.vault.VaultIndexRegistry
 import com.ethran.notable.navigation.NavigationDestination
 import com.ethran.notable.ui.SnackConf
 import com.ethran.notable.ui.SnackState
 import com.ethran.notable.ui.components.BreadCrumb
 import com.ethran.notable.ui.components.NotebookCard
 import com.ethran.notable.ui.components.PagePreview
+import com.ethran.notable.ui.components.QuickSwitcher
 import com.ethran.notable.ui.components.ShowPagesRow
 import com.ethran.notable.ui.dialogs.EmptyBookWarningHandler
 import com.ethran.notable.ui.dialogs.FolderConfigDialog
 import com.ethran.notable.ui.dialogs.NotebookConfigDialog
 import com.ethran.notable.ui.dialogs.PdfImportChoiceDialog
 import com.ethran.notable.ui.noRippleClickable
+import com.ethran.notable.ui.viewmodels.HomeCaptureItem
 import com.ethran.notable.ui.viewmodels.LibraryUiState
 import com.ethran.notable.ui.viewmodels.LibraryViewModel
 import compose.icons.FeatherIcons
 import compose.icons.feathericons.BookOpen
+import compose.icons.feathericons.Edit3
 import compose.icons.feathericons.FilePlus
 import compose.icons.feathericons.Folder
 import compose.icons.feathericons.FolderPlus
+import compose.icons.feathericons.RefreshCcw
+import compose.icons.feathericons.Search
 import compose.icons.feathericons.Settings
 import compose.icons.feathericons.Sliders
 import compose.icons.feathericons.Upload
 import io.shipbook.shipbooksdk.ShipBook
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -106,13 +106,19 @@ fun Library(
     navController: NavController,
     folderId: String? = null,
     goToPage: (String) -> Unit = {},
-    onCreateNewQuickPage: (String?) -> Unit = {},
+    onCreateNewCapture: (String) -> Unit = {},
+    onOpenFlipSide: (String, String) -> Unit = { _, _ -> },
+    onOpenLegacyCapture: (String) -> Unit = {},
     viewModel: LibraryViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(folderId) {
         viewModel.loadFolder(folderId)
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.refreshHomeCaptures()
     }
 
     LibraryContent(
@@ -126,13 +132,16 @@ fun Library(
             navController.navigate(EditorDestination.createRoute(pageId, bookId))
         },
         goToPage = goToPage,
-        onCreateNewQuickPage = { onCreateNewQuickPage(uiState.folderId) },
+        onCreateNewCapture = onCreateNewCapture,
+        onOpenFlipSide = onOpenFlipSide,
+        onOpenLegacyCapture = onOpenLegacyCapture,
+        onTogglePin = viewModel::togglePin,
+        onSetHomeGridOptions = viewModel::setHomeGridOptions,
         onCreateNewFolder = viewModel::createNewFolder,
         onDeleteEmptyBook = viewModel::deleteEmptyBook,
         onCreateNewNotebook = viewModel::onCreateNewNotebook,
         onImportPdf = viewModel::onPdfFile,
         onImportXopp = viewModel::onXoppFile
-
     )
 }
 
@@ -148,17 +157,38 @@ fun LibraryContent(
     onOpenVaultNote: (String) -> Unit = {},
     onNavigateToEditor: (String, String) -> Unit,
     goToPage: (String) -> Unit,
-    onCreateNewQuickPage: () -> Unit,
+    onCreateNewCapture: (String) -> Unit,
+    onOpenFlipSide: (String, String) -> Unit,
+    onOpenLegacyCapture: (String) -> Unit,
+    onTogglePin: (String) -> Unit,
+    onSetHomeGridOptions: (String, Set<String>) -> Unit,
     onCreateNewFolder: () -> Unit,
     onDeleteEmptyBook: (String) -> Unit,
     onCreateNewNotebook: () -> Unit,
     onImportPdf: (Uri, Boolean) -> Unit,
     onImportXopp: (Uri) -> Unit
 ) {
-    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val settings = GlobalAppSettings.current
+    val activeVault = settings.activeVault
+    val vaults = settings.normalizedVaults().vaults
+    val multipleVaults = vaults.size > 1
+    val pinnedKeys = settings.homePinnedCaptureKeys.toSet()
+    val index = activeVault?.let { VaultIndexRegistry.forVault(it) }
     var showVaultBrowser by remember { mutableStateOf(false) }
-    var showSortMenu by remember { mutableStateOf(false) }
-    val sortMode = GlobalAppSettings.current.homeSortMode
+    var showQuickSwitcher by remember { mutableStateOf(false) }
+    var showHomeGridOptions by remember { mutableStateOf(false) }
+    var showCreateVaultPicker by remember { mutableStateOf(false) }
+    val sortMode = settings.homeSortMode
+    val vaultFilterIds = settings.homeVaultFilterIds
+
+    fun onNewCaptureClick() {
+        if (vaults.size == 1) {
+            onCreateNewCapture(vaults.first().id)
+        } else if (vaults.isNotEmpty()) {
+            showCreateVaultPicker = true
+        }
+    }
 
     Column(Modifier.fillMaxSize()) {
         // Slim header
@@ -175,43 +205,45 @@ fun LibraryContent(
                 fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
             )
             Icon(
+                imageVector = FeatherIcons.Search, contentDescription = "Quick open",
+                Modifier
+                    .padding(8.dp)
+                    .noRippleClickable { showQuickSwitcher = true }
+            )
+            Icon(
                 imageVector = FeatherIcons.BookOpen, contentDescription = "Vault",
                 Modifier
                     .padding(8.dp)
                     .noRippleClickable { showVaultBrowser = true }
             )
             Icon(
-                imageVector = FeatherIcons.Sliders, contentDescription = "Sort pages",
+                imageVector = FeatherIcons.Sliders, contentDescription = "Home grid options",
                 Modifier
                     .padding(8.dp)
-                    .noRippleClickable { showSortMenu = true }
+                    .noRippleClickable { showHomeGridOptions = true }
             )
-            BadgedBox(
-                badge = {
-                    if (!uiState.isLatestVersion) Badge(
-                        backgroundColor = Color.Black,
-                        modifier = Modifier.offset((-12).dp, 10.dp)
-                    )
-                }) {
-                Icon(
-                    imageVector = FeatherIcons.Settings, contentDescription = "Settings",
-                    Modifier
-                        .padding(8.dp)
-                        .noRippleClickable(onClick = onNavigateToSettings)
-                )
-            }
+            Icon(
+                imageVector = FeatherIcons.RefreshCcw, contentDescription = "Sync vault in Obsidian",
+                Modifier
+                    .padding(8.dp)
+                    .noRippleClickable {
+                        if (!ObsidianLauncher.launch(context)) {
+                            SnackState.globalSnackFlow.tryEmit(
+                                SnackConf(text = "Obsidian is not installed", duration = 3000)
+                            )
+                        }
+                    }
+            )
+            Icon(
+                imageVector = FeatherIcons.Settings, contentDescription = "Settings",
+                Modifier
+                    .padding(8.dp)
+                    .noRippleClickable(onClick = onNavigateToSettings)
+            )
         }
 
-        // Page grid. A capture's "name" is its synced vault file name (a timestamp of
-        // its creation), so name order == creation order; newest/oldest use modified time.
-        val pages = remember(uiState.singlePages, sortMode) {
-            when (sortMode) {
-                VaultSort.NAME_ASC -> uiState.singlePages.sortedBy { it.createdAt.time }
-                VaultSort.NAME_DESC -> uiState.singlePages.sortedByDescending { it.createdAt.time }
-                VaultSort.OLDEST -> uiState.singlePages.sortedBy { it.updatedAt.time }
-                else -> uiState.singlePages.sortedByDescending { it.updatedAt.time }
-            }
-        }
+        // Capture grid: vault notes with flip-side ink + unmigrated legacy quick pages.
+        val captures = uiState.homeCaptures
         val nameFormat = remember { SimpleDateFormat("yyyy-MM-dd-HH-mm-ss", Locale.US) }
         LazyVerticalGrid(
             columns = GridCells.Adaptive(140.dp),
@@ -221,14 +253,13 @@ fun LibraryContent(
                 .padding(horizontal = 16.dp)
                 .autoEInkAnimationOnScroll()
         ) {
-            // New capture card
             item {
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
                         .aspectRatio(3f / 4f)
                         .border(2.dp, Color.Black, RectangleShape)
-                        .noRippleClickable(onClick = onCreateNewQuickPage)
+                        .noRippleClickable(onClick = { onNewCaptureClick() })
                 ) {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
@@ -249,69 +280,54 @@ fun LibraryContent(
                 }
             }
 
-            // Existing pages
-            items(pages, key = { it.id }) { page ->
-                var isPageSelected by remember { mutableStateOf(false) }
-                val isSyncing = page.id in SyncState.syncingPageIds
-                Column {
-                    Box {
-                        PagePreview(
-                            modifier = Modifier
-                                .combinedClickable(
-                                    onClick = { goToPage(page.id) },
-                                    onLongClick = { isPageSelected = true }
-                                )
-                                .aspectRatio(3f / 4f)
-                                .border(1.dp, Color.Gray, RectangleShape),
-                            pageId = page.id
-                        )
-                        if (isSyncing) {
-                            Box(
-                                modifier = Modifier
-                                    .aspectRatio(3f / 4f)
-                                    .background(Color.White.copy(alpha = 0.7f)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    "Syncing...",
-                                    style = androidx.compose.material.MaterialTheme.typography.caption,
-                                    color = Color.DarkGray
-                                )
-                            }
-                        }
-                        if (isPageSelected) com.ethran.notable.editor.ui.PageMenu(
-                            appRepository = appRepository,
-                            pageId = page.id,
-                            canDelete = true,
-                            onClose = { isPageSelected = false }
-                        )
-                    }
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        text = pageDisplayName(page, nameFormat),
-                        fontSize = 12.sp,
-                        color = Color.DarkGray,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.fillMaxWidth()
+            items(captures, key = { item ->
+                when (item) {
+                    is HomeCaptureItem.VaultCapture -> "vault:${item.vaultId}:${item.note.relativePath}"
+                    is HomeCaptureItem.LegacyQuickPage -> "legacy:${item.page.id}"
+                }
+            }) { item ->
+                when (item) {
+                    is HomeCaptureItem.VaultCapture -> VaultCaptureCard(
+                        item = item,
+                        isPinned = item.captureKey in pinnedKeys,
+                        showVaultName = multipleVaults,
+                        onOpenFlipSide = onOpenFlipSide,
+                        onTogglePin = onTogglePin
+                    )
+                    is HomeCaptureItem.LegacyQuickPage -> LegacyCaptureCard(
+                        item = item,
+                        nameFormat = nameFormat,
+                        isPinned = item.captureKey in pinnedKeys,
+                        onOpen = onOpenLegacyCapture,
+                        onTogglePin = onTogglePin
                     )
                 }
             }
         }
     }
 
-    if (showSortMenu) {
-        SortMenuDialog(
-            current = sortMode,
-            onSelect = { mode ->
-                showSortMenu = false
-                scope.launch(Dispatchers.IO) {
-                    appRepository.kvProxy.setAppSettings(
-                        GlobalAppSettings.current.copy(homeSortMode = mode)
-                    )
-                }
+    if (showHomeGridOptions) {
+        HomeGridOptionsDialog(
+            vaults = vaults,
+            currentSort = sortMode,
+            vaultFilterIds = vaultFilterIds,
+            onApply = { mode, filterIds ->
+                onSetHomeGridOptions(mode, filterIds)
             },
-            onDismiss = { showSortMenu = false }
+            onDismiss = { showHomeGridOptions = false }
+        )
+    }
+
+    if (showCreateVaultPicker) {
+        VaultPickerDialog(
+            vaults = vaults,
+            activeVaultId = settings.activeVaultId,
+            title = "Create in vault",
+            onSelect = { vault ->
+                showCreateVaultPicker = false
+                onCreateNewCapture(vault.id)
+            },
+            onDismiss = { showCreateVaultPicker = false }
         )
     }
 
@@ -325,11 +341,137 @@ fun LibraryContent(
             onDismiss = { showVaultBrowser = false }
         )
     }
+
+    val vaultForSwitcher = activeVault
+    if (showQuickSwitcher && index != null && vaultForSwitcher != null) {
+        QuickSwitcher(
+            index = index,
+            recentPaths = settings.recentNotesByVault[vaultForSwitcher.id].orEmpty(),
+            onSelect = { note ->
+                showQuickSwitcher = false
+                onOpenVaultNote(note.relativePath)
+            },
+            onDismiss = { showQuickSwitcher = false }
+        )
+    }
 }
 
-/** A capture page's display name: the vault file name it syncs to (sans extension). */
+/** A legacy capture page's display name from its creation timestamp. */
 private fun pageDisplayName(page: Page, format: SimpleDateFormat): String =
     format.format(page.createdAt)
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun VaultCaptureCard(
+    item: HomeCaptureItem.VaultCapture,
+    isPinned: Boolean,
+    showVaultName: Boolean,
+    onOpenFlipSide: (String, String) -> Unit,
+    onTogglePin: (String) -> Unit
+) {
+    Column {
+        Box {
+            val previewId = item.previewPageId
+            val clickModifier = Modifier
+                .combinedClickable(
+                    onClick = { onOpenFlipSide(item.vaultId, item.note.relativePath) },
+                    onLongClick = { onTogglePin(item.captureKey) }
+                )
+                .aspectRatio(3f / 4f)
+                .border(1.dp, Color.Gray, RectangleShape)
+            if (previewId != null) {
+                PagePreview(
+                    modifier = clickModifier,
+                    pageId = previewId
+                )
+            } else {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = clickModifier
+                        .background(Color.LightGray.copy(alpha = 0.35f))
+                ) {
+                    Icon(
+                        imageVector = FeatherIcons.Edit3,
+                        contentDescription = "Drawing",
+                        tint = Color.DarkGray,
+                        modifier = Modifier.size(40.dp)
+                    )
+                }
+            }
+            if (isPinned) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(6.dp)
+                        .size(10.dp)
+                        .background(Color.Black, RectangleShape)
+                )
+            }
+        }
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = item.note.name,
+            fontSize = 12.sp,
+            color = Color.DarkGray,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.fillMaxWidth()
+        )
+        if (showVaultName) {
+            Text(
+                text = item.vaultName,
+                fontSize = 11.sp,
+                color = Color.Gray,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun LegacyCaptureCard(
+    item: HomeCaptureItem.LegacyQuickPage,
+    nameFormat: SimpleDateFormat,
+    isPinned: Boolean,
+    onOpen: (String) -> Unit,
+    onTogglePin: (String) -> Unit
+) {
+    Column {
+        Box {
+            PagePreview(
+                modifier = Modifier
+                    .combinedClickable(
+                        onClick = { onOpen(item.page.id) },
+                        onLongClick = { onTogglePin(item.captureKey) }
+                    )
+                    .aspectRatio(3f / 4f)
+                    .border(1.dp, Color.Gray, RectangleShape),
+                pageId = item.page.id
+            )
+            if (isPinned) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(6.dp)
+                        .size(10.dp)
+                        .background(Color.Black, RectangleShape)
+                )
+            }
+        }
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = pageDisplayName(item.page, nameFormat),
+            fontSize = 12.sp,
+            color = Color.DarkGray,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
+}
 
 @Composable
 fun FolderList(
@@ -561,7 +703,6 @@ fun LibraryContentPreview() {
     // 1. Create a dummy UI state with mock data
     val mockUiState = LibraryUiState(
         folderId = null,
-        isLatestVersion = true,
         isImporting = false,
         breadcrumbFolders = listOf(
             // Optional: Add mock breadcrumbs if you want to preview nested folder state
@@ -577,7 +718,7 @@ fun LibraryContentPreview() {
             Notebook(id = "book_1", title = "Meeting Minutes", pageIds = listOf("page1", "page2")),
             Notebook(id = "book_2", title = "Journal", pageIds = listOf("page3"))
         ),
-        singlePages = emptyList() // Populate with mock Page() objects if you want to see Quick Pages
+        homeCaptures = emptyList()
     )
 
     // 2. Render the stateless component with empty lambdas
@@ -596,17 +737,16 @@ fun LibraryContentPreview() {
 }
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
-@Preview(showBackground = true, name = "Library - Update Available & Importing")
+@Preview(showBackground = true, name = "Library - Importing")
 @Composable
 fun LibraryContentUpdatePreview() {
     val mockUiState = LibraryUiState(
         folderId = "folder_1",
-        isLatestVersion = false, // Will show the red badge on the settings icon
-        isImporting = true,      // Will hide the delete warning for empty books
+        isImporting = true,
         breadcrumbFolders = emptyList(),
         folders = emptyList(),
         books = emptyList(),
-        singlePages = emptyList()
+        homeCaptures = emptyList()
     )
 
 //    LibraryContent(

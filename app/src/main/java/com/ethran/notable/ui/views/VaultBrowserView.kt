@@ -27,6 +27,8 @@ import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -169,13 +171,6 @@ private fun VaultBrowserContent(
     val activeVault = settings.activeVault
     val index = activeVault?.let { VaultIndexRegistry.forVault(it) }
 
-    var currentDir by remember { mutableStateOf(initialDir) }
-    var showVaultPicker by remember { mutableStateOf(false) }
-    var showQuickSwitcher by remember { mutableStateOf(false) }
-    var showSortMenu by remember { mutableStateOf(false) }
-    var handwrittenOnly by remember { mutableStateOf(false) }
-    var refreshTick by remember { mutableStateOf(0) }
-
     val sortMode = settings.vaultSortMode
     val gridView = settings.vaultBrowserGrid
 
@@ -185,8 +180,38 @@ private fun VaultBrowserContent(
         }
     }
 
+    var currentDir by remember(activeVault?.id, initialDir) {
+        mutableStateOf(
+            when {
+                initialDir.isNotBlank() -> initialDir
+                activeVault != null -> settings.vaultBrowserDirByVault[activeVault.id].orEmpty()
+                else -> ""
+            }
+        )
+    }
+
+    fun persistBrowserDir(dir: String) {
+        val vaultId = activeVault?.id ?: return
+        updateSettings { s ->
+            s.copy(vaultBrowserDirByVault = s.vaultBrowserDirByVault + (vaultId to dir))
+        }
+    }
+
+    LaunchedEffect(currentDir, activeVault?.id) {
+        persistBrowserDir(currentDir)
+    }
+
+    DisposableEffect(activeVault?.id) {
+        onDispose { persistBrowserDir(currentDir) }
+    }
+    var showVaultPicker by remember { mutableStateOf(false) }
+    var showQuickSwitcher by remember { mutableStateOf(false) }
+    var showSortMenu by remember { mutableStateOf(false) }
+    var handwrittenOnly by remember { mutableStateOf(false) }
+    var refreshTick by remember { mutableStateOf(0) }
+
     fun switchVault(vault: VaultConfig) {
-        currentDir = ""
+        currentDir = settings.vaultBrowserDirByVault[vault.id].orEmpty()
         updateSettings { it.copy(activeVaultId = vault.id) }
         scope.launch(Dispatchers.IO) { VaultTagScanner.refreshCache(vault.inboxPath) }
     }
@@ -584,6 +609,7 @@ private fun HandwrittenGrid(
 fun VaultPickerDialog(
     vaults: List<VaultConfig>,
     activeVaultId: String,
+    title: String = "Switch vault",
     onSelect: (VaultConfig) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -594,7 +620,7 @@ fun VaultPickerDialog(
                 .background(Color.White, RoundedCornerShape(8.dp))
                 .padding(16.dp)
         ) {
-            Text("Switch vault", style = MaterialTheme.typography.h6, fontWeight = FontWeight.Bold)
+            Text(title, style = MaterialTheme.typography.h6, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(8.dp))
             vaults.forEach { vault ->
                 Row(

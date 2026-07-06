@@ -101,8 +101,23 @@ data class AppSettings(
     val vaultSortMode: String = "name",
     val vaultBrowserGrid: Boolean = false,
 
-    // Home/library page-grid sort order (VaultSort modes; "newest" = modified desc).
+    // Home/library page-grid sort order (see HomeSort; "newest" = modified desc).
     val homeSortMode: String = "newest",
+
+    // Home grid vault filter: empty = all vaults; non-empty = only listed vault ids.
+    val homeVaultFilterIds: Set<String> = emptySet(),
+
+    // Ordered pin keys for home captures (see HomeCaptureKeys).
+    val homePinnedCaptureKeys: List<String> = emptyList(),
+
+    /** One-time migration of legacy quick pages → flip-side captures (see FlipSideManager). */
+    val legacyQuickPagesMigrated: Boolean = false,
+
+    // Last browsed folder per vault in the in-app vault browser (relative path, "" = root).
+    val vaultBrowserDirByVault: Map<String, String> = emptyMap(),
+
+    // Which vault row is expanded in Settings → Vaults (empty = all collapsed).
+    val settingsExpandedVaultId: String = "",
 
     // Debug
     val showWelcome: Boolean = true,

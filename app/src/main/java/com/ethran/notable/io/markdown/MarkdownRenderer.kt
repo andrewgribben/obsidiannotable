@@ -2,6 +2,7 @@ package com.ethran.notable.io.markdown
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.ui.text.ParagraphStyle
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -55,11 +56,22 @@ data class MarkdownLink(
     val isWikilink: Boolean
 )
 
+/** An inline image placeholder in the rendered text. */
+data class MarkdownImage(
+    val inlineId: String,
+    val destination: String,
+    val displayStart: Int,
+    val displayEnd: Int,
+    /** Obsidian wiki-embed width hint in pixels, when provided. */
+    val widthHintPx: Int? = null
+)
+
 /** Result of rendering a markdown document for the reader. */
 data class RenderedMarkdown(
     val text: AnnotatedString,
     val sourceMap: MarkdownSourceMap,
     val links: List<MarkdownLink>,
+    val images: List<MarkdownImage> = emptyList(),
     val frontmatter: Map<String, List<String>>,
     /** Source offset where the body (after frontmatter) starts. */
     val bodySourceStart: Int,
@@ -117,8 +129,17 @@ class MarkdownTheme(val scale: Float = 1f) {
 }
 
 private val WIKILINK_REGEX = Regex("""\[\[([^\[\]]+)]]""")
+private val WIKI_IMAGE_REGEX = Regex("""!\[\[([^\]]+)]]""")
 private val TAG_REGEX = Regex("""(?<=^|[\s(])#([\p{L}\p{N}_/-]+)""")
 private val HIGHLIGHT_REGEX = Regex("""==([^=\n]+)==""")
+
+private fun parseWikiImageInner(inner: String): Pair<String, Int?> {
+    val pipe = inner.indexOf('|')
+    if (pipe < 0) return inner.trim() to null
+    val target = inner.substring(0, pipe).trim()
+    val suffix = inner.substring(pipe + 1).trim()
+    return target to suffix.toIntOrNull()
+}
 
 /**
  * Parses markdown (with source spans) and renders it into an [AnnotatedString] plus a
@@ -163,6 +184,7 @@ object MarkdownRenderer {
             text = builder.annotated.toAnnotatedString(),
             sourceMap = MarkdownSourceMap(builder.segments),
             links = builder.links,
+            images = builder.images,
             frontmatter = frontmatterVisitor.data,
             bodySourceStart = bodyStart,
             theme = theme
@@ -173,8 +195,10 @@ object MarkdownRenderer {
         val annotated = AnnotatedString.Builder()
         val segments = mutableListOf<MarkdownSourceMap.Segment>()
         val links = mutableListOf<MarkdownLink>()
+        val images = mutableListOf<MarkdownImage>()
 
         private var blockCount = 0
+        private var imageCounter = 0
 
         val length get() = annotated.length
 
@@ -199,6 +223,33 @@ object MarkdownRenderer {
                     MarkdownSourceMap.Segment(start, length, sourceStart, sourceEnd, linear)
                 )
             }
+        }
+
+        private fun appendImage(
+            destination: String,
+            sourceStart: Int,
+            sourceEnd: Int,
+            alt: String = "",
+            widthHintPx: Int? = null
+        ) {
+            val id = "mdimg_${imageCounter++}"
+            val start = length
+            annotated.appendInlineContent(id, alt.ifBlank { destination })
+            val end = length
+            if (sourceEnd > sourceStart) {
+                segments.add(
+                    MarkdownSourceMap.Segment(start, end, sourceStart, sourceEnd, linear = false)
+                )
+            }
+            images.add(
+                MarkdownImage(
+                    inlineId = id,
+                    destination = destination,
+                    displayStart = start,
+                    displayEnd = end,
+                    widthHintPx = widthHintPx
+                )
+            )
         }
 
         fun renderBlocks(document: Document) {
@@ -431,10 +482,7 @@ object MarkdownRenderer {
                             c = c.next
                         }
                     }
-                    appendMapped(
-                        "🖼 ${alt.ifBlank { node.destination }}",
-                        s, e, linear = false, SpanStyle(color = MarkdownTheme.subtle)
-                    )
+                    appendImage(node.destination, s, e, alt)
                 }
                 is SoftLineBreak -> appendDecoration("\n")
                 is HardLineBreak -> appendDecoration("\n")
@@ -522,8 +570,12 @@ object MarkdownRenderer {
             data class Deco(val range: IntRange, val kind: Int, val inner: String)
 
             val decos = mutableListOf<Deco>()
+            WIKI_IMAGE_REGEX.findAll(literal).forEach {
+                decos.add(Deco(it.range, 3, it.groupValues[1]))
+            }
             WIKILINK_REGEX.findAll(literal).forEach {
-                decos.add(Deco(it.range, 0, it.groupValues[1]))
+                if (decos.none { existing -> existing.range.intersects(it.range) })
+                    decos.add(Deco(it.range, 0, it.groupValues[1]))
             }
             HIGHLIGHT_REGEX.findAll(literal).forEach { m ->
                 if (decos.none { it.range.intersects(m.range) })
@@ -549,6 +601,10 @@ object MarkdownRenderer {
                 val decoSourceStart = sourceStart + deco.range.first
                 val decoSourceEnd = sourceStart + deco.range.last + 1
                 when (deco.kind) {
+                    3 -> { // ![[wiki image embed]]
+                        val (target, widthHint) = parseWikiImageInner(deco.inner)
+                        appendImage(target, decoSourceStart, decoSourceEnd, widthHintPx = widthHint)
+                    }
                     0 -> { // wikilink — display alias or target, tappable
                         val display = deco.inner.substringAfter('|', deco.inner.substringBefore('|'))
                             .ifBlank { deco.inner }

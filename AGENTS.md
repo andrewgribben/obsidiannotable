@@ -8,13 +8,12 @@
 
 - App display name is Singularity.
 - Vault attachment folder is always a path inside the vault, relative to the inbox folder (e.g. Attachments → inbox/Attachments).
-- When attachment path is blank or "/", use vault root for exports and Save & Exit PDF; do not use device root or a default location outside the vault.
+- When attachment path is blank or "/", use vault root for legacy exports; do not use device root or a default location outside the vault.
 - Treat attachment path "/" as blank when saving settings (normalize to empty string).
-- All exports and Save & Exit PDF go to the vault attachment directory; clipboard links are relative to vault root.
-- Add the PDF link in the note only when export actually succeeds (check return value); show snackbar on export failure.
-- PDF wikilinks in generated MD notes use filename only (no path prefix) since Obsidian resolves unique filenames; format is `PDF: [[filename.pdf]]`, not an embed or full-path link.
+- New home captures store ink in a linked `.flip.excalidraw.md` sidecar (no PDF export). Legacy inbox Save & Exit may still export PDF until those pages are migrated.
 - Default page background for new notes is set via "Set as default for new notes" in the choose-background dialog (native templates only); do not auto-set default when the user changes a note's background.
-- Flip side is primarily an Excalidraw-compatible drawing surface: strokes auto-save to the sidecar on editor close with no prompt; HWR "To text" (preview + replace/append) is an optional action in a compact top bar. Handwritten text entry into a note is the separate pen-tool button in the reader (bottom bar with Save to note/Discard).
+- Flip side is primarily an Excalidraw-compatible drawing surface: strokes auto-save to the sidecar on editor close with no prompt; HWR "To text" (preview + replace/append) is an optional action in a compact top bar. Handwritten text entry into a note is the separate pen-tool button in the reader (bottom bar with Save to note/Discard). New notes from the home screen should default to this flip-side Excalidraw format with timestamp naming, not legacy page/notebook creation.
+- Remove upstream Notable settings cruft (sponsor link, check-for-update/version checker against Ethran/notable); this fork is Singularity.
 - Scribble-to-delete annotation gesture is removed (misclassified circles deleted words); scribbles map to strikethrough. Annotation gestures: circle → highlight, line through letters → strikethrough, line below → bold. Last annotation save is undoable via ↺ in the reader header (hash-guarded).
 
 ## Learned Workspace Facts
@@ -24,4 +23,5 @@
 - For "Documents/..." paths use `getExternalStoragePublicDirectory(DIRECTORY_DOCUMENTS)` on Android 10+ so writes succeed.
 - Boox device: enable USB Debug Mode and allow USB debugging when prompted for `installDebug`.
 - Text recognition (MyScript/InboxSyncEngine): line proximity grouping must run before bullet/list prefix detection; only the first line of a multi-line bullet has a dash — continuation lines do not.
+- Flip-side view must reload strokes from the Excalidraw sidecar on open (including strokes added later in Excalidraw).
 - See "Always" above: install after app changes.

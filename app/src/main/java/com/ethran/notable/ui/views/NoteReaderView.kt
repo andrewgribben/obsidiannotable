@@ -1,6 +1,8 @@
 package com.ethran.notable.ui.views
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -141,14 +143,23 @@ fun NoteReaderView(
     // right after it). Valid until the file changes again from anywhere else.
     var undoSnapshot by remember(relativePath) { mutableStateOf<Pair<String, String>?>(null) }
 
-    fun setFontScale(value: Float) {
-        val clamped = (Math.round(value * 10f) / 10f).coerceIn(0.7f, 1.8f)
+    fun adjustFontScale(delta: Float) {
+        val clamped = (Math.round((fontScale + delta) * 10f) / 10f).coerceIn(0.7f, 1.8f)
         fontScale = clamped
+    }
+
+    fun saveDefaultFontScale() {
         scope.launch(Dispatchers.IO) {
             appRepository.kvProxy.setAppSettings(
-                GlobalAppSettings.current.copy(readerFontScale = clamped)
+                GlobalAppSettings.current.copy(readerFontScale = fontScale)
             )
         }
+        SnackState.globalSnackFlow.tryEmit(
+            SnackConf(
+                text = "Default text size set to ${Math.round(fontScale * 100)}%",
+                duration = 2500
+            )
+        )
     }
 
     // Single-writer guard: only one window/surface may edit this note at a time.
@@ -427,9 +438,10 @@ fun NoteReaderView(
         if (showFontControls && !annotationMode) {
             FontSizeControls(
                 fontScale = fontScale,
-                onDecrease = { setFontScale(fontScale - 0.1f) },
-                onIncrease = { setFontScale(fontScale + 0.1f) },
-                onReset = { setFontScale(1f) },
+                onDecrease = { adjustFontScale(-0.1f) },
+                onIncrease = { adjustFontScale(0.1f) },
+                onSaveDefault = { saveDefaultFontScale() },
+                onReset = { fontScale = settings.readerFontScale },
                 onClose = { showFontControls = false }
             )
             Box(
@@ -476,7 +488,9 @@ fun NoteReaderView(
                                     duration = 2500
                                 )
                             )
-                        }
+                        },
+                        vaultRoot = vaultRoot,
+                        noteRelativePath = relativePath
                     )
                     Spacer(Modifier.height(48.dp))
                 }
@@ -526,11 +540,13 @@ fun NoteReaderView(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun FontSizeControls(
     fontScale: Float,
     onDecrease: () -> Unit,
     onIncrease: () -> Unit,
+    onSaveDefault: () -> Unit,
     onReset: () -> Unit,
     onClose: () -> Unit
 ) {
@@ -542,7 +558,7 @@ private fun FontSizeControls(
     ) {
         Text("Text size", fontSize = 14.sp, color = Color.Gray)
         Spacer(Modifier.width(16.dp))
-        FontSizeButton("A−", onDecrease)
+        FontSizeButton("A−", onClick = onDecrease, onLongClick = onSaveDefault)
         Spacer(Modifier.width(12.dp))
         Text(
             "${Math.round(fontScale * 100)}%",
@@ -551,9 +567,9 @@ private fun FontSizeControls(
             modifier = Modifier.width(48.dp),
             color = Color.Black
         )
-        FontSizeButton("A+", onIncrease)
+        FontSizeButton("A+", onClick = onIncrease, onLongClick = onSaveDefault)
         Spacer(Modifier.width(16.dp))
-        FontSizeButton("Reset", onReset)
+        FontSizeButton("Reset", onClick = onReset)
         Spacer(Modifier.weight(1f))
         Icon(
             imageVector = FeatherIcons.X,
@@ -565,12 +581,26 @@ private fun FontSizeControls(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun FontSizeButton(label: String, onClick: () -> Unit) {
+private fun FontSizeButton(
+    label: String,
+    onClick: () -> Unit,
+    onLongClick: (() -> Unit)? = null
+) {
     Box(
         Modifier
             .border(1.dp, Color.Black, RoundedCornerShape(6.dp))
-            .noRippleClickable { onClick() }
+            .then(
+                if (onLongClick != null) {
+                    Modifier.combinedClickable(
+                        onClick = onClick,
+                        onLongClick = onLongClick
+                    )
+                } else {
+                    Modifier.noRippleClickable { onClick() }
+                }
+            )
             .padding(horizontal = 12.dp, vertical = 5.dp)
     ) {
         Text(label, fontSize = 15.sp, fontWeight = FontWeight.Medium)

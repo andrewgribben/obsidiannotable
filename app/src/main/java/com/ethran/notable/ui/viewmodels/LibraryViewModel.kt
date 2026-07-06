@@ -15,9 +15,10 @@ import com.ethran.notable.data.model.BackgroundType
 import com.ethran.notable.io.ExportEngine
 import com.ethran.notable.io.ImportEngine
 import com.ethran.notable.io.ImportOptions
+import com.ethran.notable.io.flipside.FlipSideManager
+import com.ethran.notable.io.vault.listInboxNotesWithInkForVaults
 import com.ethran.notable.ui.SnackConf
 import com.ethran.notable.ui.SnackState
-import com.ethran.notable.utils.isLatestVersion
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -26,6 +27,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -33,19 +35,11 @@ import javax.inject.Inject
 
 data class LibraryUiState(
     val folderId: String? = null,
-    val isLatestVersion: Boolean = true,
     val isImporting: Boolean = false,
     val breadcrumbFolders: List<Folder> = emptyList(),
     val folders: List<Folder> = emptyList(),
     val books: List<Notebook> = emptyList(),
-    val singlePages: List<Page> = emptyList()
-)
-
-// Private data class for clean Flow combining
-private data class LibraryDatabaseState(
-    val folders: List<Folder> = emptyList(),
-    val books: List<Notebook> = emptyList(),
-    val singlePages: List<Page> = emptyList()
+    val homeCaptures: List<HomeCaptureItem> = emptyList()
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -63,10 +57,9 @@ class LibraryViewModel @Inject constructor(
 
     private val _folderId = MutableStateFlow<String?>(null)
     private val _isImporting = MutableStateFlow(false)
-    private val _isLatestVersion = MutableStateFlow(true)
     private val _breadcrumbFolders = MutableStateFlow<List<Folder>>(emptyList())
+    private val _homeCapturesRefresh = MutableStateFlow(0)
 
-    // 1. Convert LiveData to Flow and switch automatically when folderId changes
     private val _foldersFlow =
         _folderId.flatMapLatest { id -> folderRepository.getAllInFolder(id).asFlow() }
     private val _booksFlow =
@@ -74,25 +67,30 @@ class LibraryViewModel @Inject constructor(
     private val _singlePagesFlow =
         _folderId.flatMapLatest { id -> pageRepository.getSinglePagesInFolder(id).asFlow() }
 
-    // 2. Group the 3 database flows semantically
-    private val _dbDataFlow = combine(
-        _foldersFlow, _booksFlow, _singlePagesFlow
-    ) { folders, books, pages ->
-        LibraryDatabaseState(folders, books, pages)
+    private val _homeCapturesFlow = combine(_singlePagesFlow, _homeCapturesRefresh) { pages, _ ->
+        pages
+    }.flatMapLatest { legacyPages ->
+        flow {
+            emit(buildHomeCaptures(legacyPages))
+        }
     }
 
-    // 3. Expose the final UI State
+    private val _dbDataFlow = combine(
+        _foldersFlow, _booksFlow, _homeCapturesFlow
+    ) { folders, books, captures ->
+        Triple(folders, books, captures)
+    }
+
     val uiState: StateFlow<LibraryUiState> = combine(
-        _folderId, _isLatestVersion, _isImporting, _breadcrumbFolders, _dbDataFlow
-    ) { folderId, isLatestVersion, isImporting, breadcrumbs, dbData ->
+        _folderId, _isImporting, _breadcrumbFolders, _dbDataFlow
+    ) { folderId, isImporting, breadcrumbs, dbData ->
         LibraryUiState(
             folderId = folderId,
-            isLatestVersion = isLatestVersion,
             isImporting = isImporting,
             breadcrumbFolders = breadcrumbs,
-            folders = dbData.folders,
-            books = dbData.books,
-            singlePages = dbData.singlePages
+            folders = dbData.first,
+            books = dbData.second,
+            homeCaptures = dbData.third
         )
     }.stateIn(
         scope = viewModelScope,
@@ -100,19 +98,84 @@ class LibraryViewModel @Inject constructor(
         initialValue = LibraryUiState()
     )
 
+    fun refreshHomeCaptures() {
+        _homeCapturesRefresh.value++
+    }
 
-    init {
-        // Run network/heavy checks in the background
+    private suspend fun buildHomeCaptures(legacyPages: List<Page>): List<HomeCaptureItem> {
+        if (_folderId.value != null) return emptyList()
+
+        val settings = GlobalAppSettings.current.normalizedVaults()
+        val vaultItems = listInboxNotesWithInkForVaults(settings.vaults).map { (vault, note) ->
+            HomeCaptureItem.VaultCapture(
+                vaultId = vault.id,
+                vaultName = vault.displayName,
+                note = note,
+                previewPageId = FlipSideManager.pageIdForNote(
+                    appRepository, vault.id, note.relativePath
+                )
+            )
+        }
+        val legacyItems = legacyPages.map { HomeCaptureItem.LegacyQuickPage(it) }
+        val allItems = vaultItems + legacyItems
+        val validKeys = allItems.map { it.captureKey }.toSet()
+        val prunedPins = settings.homePinnedCaptureKeys.filter { it in validKeys }
+        if (prunedPins != settings.homePinnedCaptureKeys) {
+            appRepository.kvProxy.setAppSettings(
+                settings.copy(homePinnedCaptureKeys = prunedPins)
+            )
+        }
+        val showLegacy = true
+        return orderHomeCaptures(
+            items = allItems,
+            sortMode = settings.homeSortMode,
+            pinnedKeys = prunedPins,
+            vaultFilterIds = settings.homeVaultFilterIds,
+            showLegacy = showLegacy
+        )
+    }
+
+    fun togglePin(captureKey: String) {
         viewModelScope.launch(Dispatchers.IO) {
-            _isLatestVersion.value = isLatestVersion(context, true)
+            val settings = GlobalAppSettings.current
+            val pins = settings.homePinnedCaptureKeys.toMutableList()
+            if (captureKey in pins) {
+                pins.remove(captureKey)
+                SnackState.globalSnackFlow.tryEmit(
+                    SnackConf(text = "Unpinned", duration = 2000)
+                )
+            } else {
+                pins.add(captureKey)
+                SnackState.globalSnackFlow.tryEmit(
+                    SnackConf(text = "Pinned", duration = 2000)
+                )
+            }
+            appRepository.kvProxy.setAppSettings(
+                settings.copy(homePinnedCaptureKeys = pins)
+            )
+            refreshHomeCaptures()
         }
     }
+
+    fun setHomeGridOptions(sortMode: String, vaultFilterIds: Set<String>) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val settings = GlobalAppSettings.current
+            appRepository.kvProxy.setAppSettings(
+                settings.copy(
+                    homeSortMode = sortMode,
+                    homeVaultFilterIds = vaultFilterIds
+                )
+            )
+            refreshHomeCaptures()
+        }
+    }
+
 
     fun loadFolder(folderId: String?) {
         PageDataManager.cancelLoadingPages()
         _folderId.value = folderId
+        refreshHomeCaptures()
 
-        // Resolve breadcrumbs in background thread
         viewModelScope.launch(Dispatchers.IO) {
             _breadcrumbFolders.value = resolveBreadcrumbs(folderId)
         }

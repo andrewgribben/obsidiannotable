@@ -23,10 +23,6 @@
     <string name="monochrome_mode">Monochrome mode</string>
     <string name="paginate_pdf">Paginate PDF</string>
     <string name="preview_pdf_pagination">Preview PDF Pagination</string>
-    <string name="app_new_version">It seems a new version of Notable is available on GitHub!</string>
-    <string name="app_see_release">See release in browser</string>
-    <string name="app_latest_version">You are on the latest version.</string>
-    <string name="app_check_updates">Check for newer version</string>
     <string name="gestures_double_tap_action">Double Tap Action</string>
     <string name="gestures_two_finger_tap_action">Two Finger Tap Action</string>
     <string name="gestures_swipe_left_action">Swipe Left Action</string>
@@ -37,7 +33,6 @@
     <string name="work_in_progress">(work in progress)</string>
     <string name="toolbar_position_top">Top</string>
     <string name="toolbar_position_bottom">Bottom</string>
-    <string name="sponsor_button_text">Sponsor</string>
     <string name="gesture_action_undo">Undo</string>
     <string name="gesture_action_redo">Redo</string>
     <string name="gesture_action_previous_page">Previous Page</string>
@@ -110,5 +105,13 @@
     <string name="current_page">Current Page</string>
     <string name="toolbar_scribble_to_erase_two_lined_short">Scribble\nto Erase</string>
     <string name="toolbar_position">Toolbar Position</string>
+
+    <string name="flip_side_to_text">Flip to text note</string>
+    <string name="flip_side_recognized_text_title">Recognized text</string>
+    <string name="flip_side_replace_note_body">Replace note body</string>
+    <string name="flip_side_append_to_note">Append to note</string>
+    <string name="flip_side_nothing_recognized">Nothing recognized on this flip side</string>
+    <string name="flip_side_recognizing">Recognizing…</string>
+    <string name="flip_side_save_to_note">Save to note</string>
 
 </resources>
