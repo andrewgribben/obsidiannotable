@@ -26,7 +26,7 @@ class SyncWebSocketClient private constructor(
     private val binaryQueue: LinkedBlockingQueue<ByteArray>,
     private val closed: AtomicBoolean,
     private val stopHeartbeat: AtomicBoolean
-) {
+) : ObsidianSyncConnection {
 
   companion object {
     const val CHUNK_SIZE = 2 * 1024 * 1024
@@ -177,17 +177,19 @@ class SyncWebSocketClient private constructor(
   }
 
   /** Reads the next push or ready notification from the server. */
-  fun receivePush(): SyncPushMessage {
+  override fun receivePush(): SyncPushMessage {
     val text = pollPush() ?: throw SyncWebSocketException("sync: connection closed")
     val json = SyncJson.instance
     val envelope = json.decodeFromString<SyncServerResponse>(text)
     if (envelope.op == "ready") {
-      return SyncPushMessage(op = "ready", uid = envelope.version)
+      val version = envelope.version.takeIf { it != 0L }
+        ?: SyncJson.instance.decodeFromString<SyncPushMessage>(text).uid
+      return SyncPushMessage(op = "ready", uid = version)
     }
     return json.decodeFromString(text)
   }
 
-  fun pullFile(uid: Long): ByteArray {
+  override fun pullFile(uid: Long): ByteArray {
     ObsidianSyncSafety.requireMutatingSyncAllowed("pull")
     val json = SyncJson.instance
     webSocket.send(json.encodeToString(SyncPullRequest(uid = uid)))
@@ -214,14 +216,14 @@ class SyncWebSocketClient private constructor(
     return ObsidianCrypto.decrypt(key, encrypted)
   }
 
-  fun pushFile(
+  override fun pushFile(
       path: String,
       data: ByteArray,
       hash: String,
       size: Long,
       ctime: Long,
       mtime: Long,
-      folder: Boolean = false
+      folder: Boolean
   ) {
     ObsidianSyncSafety.requireMutatingSyncAllowed("push")
     val json = SyncJson.instance
@@ -269,7 +271,7 @@ class SyncWebSocketClient private constructor(
     }
   }
 
-  fun pushDelete(path: String) {
+  override fun pushDelete(path: String) {
     ObsidianSyncSafety.requireMutatingSyncAllowed("delete")
     val json = SyncJson.instance
     val encryptedPath = ObsidianCrypto.encodePath(key, path, encVer)
@@ -309,7 +311,7 @@ class SyncWebSocketClient private constructor(
     }
   }
 
-  fun close() {
+  override fun close() {
     stopHeartbeat.set(true)
     webSocket.close(1000, "normal closure")
     signalClosed(pushQueue, responseQueue, binaryQueue, closed)
