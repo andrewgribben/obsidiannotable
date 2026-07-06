@@ -120,4 +120,27 @@ class ObsidianCryptoTest {
             ObsidianCrypto.computeKeyHash(key, "mysalt", 3)
         )
     }
+
+    @Test
+    fun decodePathLenient_usesVaultVersion() {
+        val key = testKey()
+        val path = "notes/test.md"
+        val enc = ObsidianCrypto.encodePath(key, path, encryptionVersion = 3)
+        assertEquals(path, ObsidianCrypto.decodePathLenient(key, enc, encryptionVersion = 3))
+    }
+
+    @Test
+    fun decodePathLenient_fallsBackToAlternateFormat() {
+        val key = testKey()
+        val path = "notes/legacy.md"
+        val encV0 = ObsidianCrypto.encodePath(key, path, encryptionVersion = 0)
+        assertEquals(path, ObsidianCrypto.decodePathLenient(key, encV0, encryptionVersion = 3))
+    }
+
+    @Test
+    fun decodePathLenient_acceptsPlainPath() {
+        val key = testKey()
+        val path = "StoryLine/foo.md"
+        assertEquals(path, ObsidianCrypto.decodePathLenient(key, path, encryptionVersion = 3))
+    }
 }

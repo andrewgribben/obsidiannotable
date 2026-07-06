@@ -16,6 +16,7 @@ import java.io.File
  * OBSIDIAN_SYNC_TEST_VAULT="My Vault" \
  * OBSIDIAN_SYNC_TEST_E2E_PASSWORD=... \
  * OBSIDIAN_SYNC_TEST_VAULT_ROOT=/path/to/vault/root \
+ * OBSIDIAN_SYNC_TEST_SKIP_PULL=true \
  * ./gradlew testDebugUnitTest --tests '*.ObsidianSyncLiveSyncTest'
  * ```
  */
@@ -51,9 +52,13 @@ class ObsidianSyncLiveSyncTest {
             )
             val orchestrator = ObsidianSyncOrchestrator()
             val push = orchestrator.push(vaultRoot, credentials)
-            val pull = orchestrator.pull(vaultRoot, credentials)
             require(push.filesPushed >= 0)
-            require(pull.version >= 0)
+
+            val skipPull = System.getenv(ENV_SKIP_PULL)?.equals("true", ignoreCase = true) == true
+            if (!skipPull) {
+                val pull = orchestrator.pull(vaultRoot, credentials)
+                require(pull.version >= 0)
+            }
         } finally {
             ObsidianSyncSafety.mode = previousMode
         }
@@ -66,5 +71,6 @@ class ObsidianSyncLiveSyncTest {
         const val ENV_VAULT = ObsidianSyncLiveProbeTest.ENV_VAULT
         const val ENV_E2E = ObsidianSyncLiveProbeTest.ENV_E2E
         const val ENV_VAULT_ROOT = "OBSIDIAN_SYNC_TEST_VAULT_ROOT"
+        const val ENV_SKIP_PULL = "OBSIDIAN_SYNC_TEST_SKIP_PULL"
     }
 }

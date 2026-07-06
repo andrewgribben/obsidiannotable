@@ -72,7 +72,7 @@ class ObsidianSyncOrchestrator(
             )
         )
         try {
-            drainUntilReady(client)
+            val version = drainUntilReady(client)
 
             var pushed = 0
             for (path in pushPaths) {
@@ -107,6 +107,7 @@ class ObsidianSyncOrchestrator(
                 deleted++
             }
 
+            state.version = version
             ObsidianSyncStateStore.save(vaultRoot, state)
             return PushResult(filesPushed = pushed, filesDeleted = deleted)
         } finally {
@@ -153,7 +154,8 @@ class ObsidianSyncOrchestrator(
             var deleted = 0
             val encVer = session.vault.encryptionVersion
             for (msg in pushes) {
-                val plainPath = ObsidianCrypto.decodePath(session.key, msg.path, encVer)
+                if (msg.path.isBlank()) continue
+                val plainPath = ObsidianCrypto.decodePathLenient(session.key, msg.path, encVer)
                 if (msg.deleted) {
                     val local = File(vaultRoot, plainPath)
                     if (local.exists() && !local.delete()) {
@@ -184,7 +186,7 @@ class ObsidianSyncOrchestrator(
 
                 val plainHash = if (msg.hash.isNotBlank()) {
                     runCatching {
-                        ObsidianCrypto.decodePath(session.key, msg.hash, encVer)
+                        ObsidianCrypto.decodePathLenient(session.key, msg.hash, encVer)
                     }.getOrDefault("")
                 } else {
                     ""
@@ -212,8 +214,10 @@ class ObsidianSyncOrchestrator(
         require(credentials.password.isNotBlank()) { "password required" }
         require(credentials.vaultIdOrName.isNotBlank()) { "vault required" }
 
-        val signin = api.signin(credentials.email, credentials.password, credentials.mfa)
-        val listed = api.listVaults(signin.token)
+        val signin = ObsidianApiRetry.withRetry {
+            api.signin(credentials.email, credentials.password, credentials.mfa)
+        }
+        val listed = ObsidianApiRetry.withRetry { api.listVaults(signin.token) }
         val vault = api.resolveVault(listed, credentials.vaultIdOrName)
             ?: throw IllegalArgumentException("Vault not found: ${credentials.vaultIdOrName}")
 
@@ -225,13 +229,15 @@ class ObsidianSyncOrchestrator(
         }
         val key = ObsidianCrypto.deriveKey(passwordForKey, vault.salt)
         val keyHash = ObsidianCrypto.computeKeyHash(key, vault.salt, vault.encryptionVersion)
-        val syncHost = api.vaultAccess(
+        val syncHost = ObsidianApiRetry.withRetry {
+            api.vaultAccess(
             token = signin.token,
             vaultUid = vault.id,
             keyHash = keyHash,
             fallbackHost = vault.host,
             encryptionVersion = vault.encryptionVersion
-        )
+            )
+        }
         return Session(
             token = signin.token,
             vault = vault,
@@ -241,10 +247,10 @@ class ObsidianSyncOrchestrator(
         )
     }
 
-    private fun drainUntilReady(client: ObsidianSyncConnection) {
+    private fun drainUntilReady(client: ObsidianSyncConnection): Long {
         while (true) {
             val msg = client.receivePush()
-            if (msg.op == "ready") return
+            if (msg.op == "ready") return msg.uid
         }
     }
 }

@@ -133,6 +133,36 @@ object ObsidianCrypto {
     fun decodePath(key: ByteArray, encoded: String, encryptionVersion: Int): String =
         if (encryptionVersion == 0) decryptPathHex(key, encoded) else decryptPath(key, encoded)
 
+    /**
+     * Decrypts a path from a server push, trying the vault format and the alternate encoding.
+     * Falls back to treating [encoded] as plaintext when it already looks like a vault path.
+     */
+    fun decodePathLenient(key: ByteArray, encoded: String, encryptionVersion: Int): String {
+        require(encoded.isNotBlank()) { "empty encoded path" }
+        var last: Exception? = null
+        for (version in pathDecodeAttempts(encryptionVersion)) {
+            try {
+                return decodePath(key, encoded, version)
+            } catch (e: Exception) {
+                last = e
+            }
+        }
+        if (looksLikePlainVaultPath(encoded)) return encoded
+        throw last ?: IllegalStateException("decode path failed")
+    }
+
+    private fun pathDecodeAttempts(encryptionVersion: Int): List<Int> =
+        when (encryptionVersion) {
+            0 -> listOf(0, 3)
+            2, 3 -> listOf(encryptionVersion, 0)
+            else -> listOf(encryptionVersion)
+        }
+
+    private fun looksLikePlainVaultPath(value: String): Boolean {
+        if (value.length > 512 || !value.contains('/')) return false
+        return value.all { it.isLetterOrDigit() || it in "./_ -%+" }
+    }
+
     private fun pathNonce(plaintext: ByteArray): ByteArray {
         val hash = MessageDigest.getInstance("SHA-256").digest(plaintext)
         return hash.copyOfRange(0, NONCE_SIZE)

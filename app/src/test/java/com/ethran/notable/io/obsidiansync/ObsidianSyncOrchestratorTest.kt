@@ -187,6 +187,7 @@ class ObsidianSyncOrchestratorTest {
 
                 val state = ObsidianSyncStateStore.load(vault)
                 assertEquals("vault-1", state.vaultUid)
+                assertEquals(5, state.version)
                 assertTrue(state.files.containsKey("notes/a.md"))
                 assertEquals(
                     com.ethran.notable.io.VaultFileStore.hashOf(note.readBytes()),

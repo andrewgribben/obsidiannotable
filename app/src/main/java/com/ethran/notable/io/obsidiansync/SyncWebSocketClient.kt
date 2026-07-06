@@ -180,13 +180,13 @@ class SyncWebSocketClient private constructor(
   override fun receivePush(): SyncPushMessage {
     val text = pollPush() ?: throw SyncWebSocketException("sync: connection closed")
     val json = SyncJson.instance
-    val envelope = json.decodeFromString<SyncServerResponse>(text)
-    if (envelope.op == "ready") {
-      val version = envelope.version.takeIf { it != 0L }
-        ?: SyncJson.instance.decodeFromString<SyncPushMessage>(text).uid
-      return SyncPushMessage(op = "ready", uid = version)
+    when (SyncJson.parseOp(text)) {
+        "ready" -> {
+            val envelope = json.decodeFromString<SyncServerResponse>(text)
+            return SyncPushMessage(op = "ready", uid = envelope.version)
+        }
+        else -> return json.decodeFromString(text)
     }
-    return json.decodeFromString(text)
   }
 
   override fun pullFile(uid: Long): ByteArray {

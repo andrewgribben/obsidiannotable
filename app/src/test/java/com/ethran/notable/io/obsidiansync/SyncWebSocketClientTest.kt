@@ -377,13 +377,14 @@ class SyncWebSocketClientTest {
                 params = testParams(key = key)
             ) { client ->
                 client.pushFile(
-                    path = "notes/test.md",
-                    data = plaintext,
-                    hash = "abc123",
-                    size = plaintext.size.toLong(),
-                    ctime = 1000,
-                    mtime = 2000
-                )
+                        path = "notes/test.md",
+                        data = plaintext,
+                        hash = "abc123",
+                        size = plaintext.size.toLong(),
+                        ctime = 1000,
+                        mtime = 2000,
+                        folder = false
+                    )
 
                 val encrypted = received.fold(ByteArray(0)) { acc, chunk -> acc + chunk }
                 assertEquals(piecesSeen, received.size)
