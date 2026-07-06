@@ -161,6 +161,7 @@ dependencies {
     implementation group: 'io.reactivex.rxjava2', name: 'rxandroid', version: '2.1.1'
 
     testImplementation 'junit:junit:4.13.2'
+    testImplementation 'com.squareup.okhttp3:mockwebserver:4.12.0'
     // Real org.json for JVM unit tests (the android.jar stub throws "not mocked")
     testImplementation 'org.json:json:20240303'
     androidTestImplementation 'androidx.test.ext:junit:1.3.0'
@@ -171,6 +172,10 @@ dependencies {
     implementation "androidx.compose.runtime:runtime-livedata:$compose_version"
     implementation "androidx.compose.runtime:runtime:$compose_version"
     implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.10.0'
+
+    // Obsidian Sync (Kotlin port of obsync protocol)
+    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+    implementation 'org.bouncycastle:bcprov-jdk18on:1.78.1'
 
     implementation "androidx.navigation:navigation-compose:2.9.7"
 
