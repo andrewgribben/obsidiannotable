@@ -1,7 +1,9 @@
 package com.ethran.notable.io.vault
 
 import com.ethran.notable.data.datastore.VaultConfig
+import com.ethran.notable.io.excalidraw.ExcalidrawSerializer
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
@@ -10,19 +12,17 @@ import java.nio.file.Files
 class VaultInboxCaptureTest {
 
     @Test
-    fun `listInboxNotesWithInk returns only inbox notes with flip side`() {
+    fun `listInboxNotesWithInk returns only inbox unified excalidraw captures`() {
         val root = Files.createTempDirectory("vault-root").toFile()
         val inbox = File(root, "inbox").apply { mkdirs() }
         val noteWithInk = File(inbox, "2026-03-18-20-09-39.md")
-        noteWithInk.writeText("# note")
-        File(inbox, "2026-03-18-20-09-39.flip.excalidraw.md").writeText("%%")
+        noteWithInk.writeText(ExcalidrawSerializer.serializeUnified("# note", emptyList()))
 
         val noteNoInk = File(inbox, "plain.md")
         noteNoInk.writeText("# plain")
 
         val outside = File(root, "other.md")
-        outside.writeText("# other")
-        File(root, "other.flip.excalidraw.md").writeText("%%")
+        outside.writeText(ExcalidrawSerializer.serializeUnified("# other", emptyList()))
 
         val vault = VaultConfig(
             id = "test-vault",
@@ -34,7 +34,7 @@ class VaultInboxCaptureTest {
         val notes = listInboxNotesWithInk(vault)
         assertEquals(1, notes.size)
         assertEquals("2026-03-18-20-09-39.md", notes[0].relativePath.substringAfterLast('/'))
-        assertTrue(notes[0].hasInk)
+        assertFalse(notes[0].hasInk)
     }
 
     @Test
@@ -56,8 +56,7 @@ class VaultInboxCaptureTest {
             val root = Files.createTempDirectory("vault-$id").toFile()
             val inbox = File(root, dirName).apply { mkdirs() }
             val note = File(inbox, "capture.md")
-            note.writeText("# note")
-            File(inbox, "capture.flip.excalidraw.md").writeText("%%")
+            note.writeText(ExcalidrawSerializer.serializeUnified("# note", emptyList()))
             return VaultConfig(
                 id = id,
                 name = id,
@@ -73,7 +72,6 @@ class VaultInboxCaptureTest {
         assertEquals(2, pairs.size)
         assertEquals(setOf("vault-a", "vault-b"), pairs.map { it.first.id }.toSet())
         pairs.forEach { (_, note) ->
-            assertTrue(note.hasInk)
             assertTrue(note.relativePath.endsWith("capture.md"))
         }
     }

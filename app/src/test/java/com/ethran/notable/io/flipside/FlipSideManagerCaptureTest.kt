@@ -1,5 +1,6 @@
 package com.ethran.notable.io.flipside
 
+import com.ethran.notable.io.excalidraw.ExcalidrawSerializer
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -8,18 +9,17 @@ import java.util.Date
 class FlipSideManagerCaptureTest {
 
     @Test
-    fun `buildCaptureNoteStub includes flip-side and no pdf`() {
-        val stub = FlipSideManager.buildCaptureNoteStub(
-            Date(1700000000000L),
-            "2026-03-18-20-09-39.flip.excalidraw"
-        )
-        assertTrue(stub.contains("flip-side: \"[[2026-03-18-20-09-39.flip.excalidraw]]\""))
+    fun `buildCaptureUnifiedStub has excalidraw frontmatter and no flip-side`() {
+        val stub = FlipSideManager.buildCaptureUnifiedStub(Date(1700000000000L))
+        assertTrue(stub.contains("excalidraw-plugin: parsed"))
         assertTrue(stub.contains("created:"))
+        assertFalse(stub.contains("flip-side:"))
         assertFalse(stub.contains("pdf:"))
+        assertTrue(stub.contains("compressed-json"))
     }
 
     @Test
-    fun `ensureCaptureFrontmatter strips pdf and adds flip-side`() {
+    fun `ensureCaptureFrontmatter strips pdf and produces unified excalidraw`() {
         val existing = """
             ---
             created: "[[2026-03-18]]"
@@ -30,21 +30,20 @@ class FlipSideManagerCaptureTest {
         """.trimIndent()
         val updated = FlipSideManager.ensureCaptureFrontmatter(
             existing,
-            "2026-03-18-20-09-39.flip.excalidraw"
+            "ignored.flip.excalidraw"
         )
         assertFalse(updated.contains("pdf:"))
-        assertTrue(updated.contains("flip-side: \"[[2026-03-18-20-09-39.flip.excalidraw]]\""))
+        assertFalse(updated.contains("flip-side:"))
+        assertTrue(updated.contains("excalidraw-plugin: parsed"))
         assertTrue(updated.contains("Some body"))
+        assertTrue(updated.contains("compressed-json"))
     }
 
     @Test
-    fun `ensureCaptureFrontmatter leaves existing flip-side`() {
-        val existing = """
-            ---
-            flip-side: "[[note.flip.excalidraw]]"
-            ---
-        """.trimIndent()
-        val updated = FlipSideManager.ensureCaptureFrontmatter(existing, "other.flip.excalidraw")
-        assertTrue(updated.contains("flip-side: \"[[note.flip.excalidraw]]\""))
+    fun `stripDrawingFromUnified keeps markdown text`() {
+        val unified = ExcalidrawSerializer.serializeUnified("Lyrics here", emptyList())
+        val stripped = ExcalidrawSerializer.stripDrawingFromUnified(unified)
+        assertTrue(stripped.contains("Lyrics here"))
+        assertFalse(stripped.contains("compressed-json"))
     }
 }

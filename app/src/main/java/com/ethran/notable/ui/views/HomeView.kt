@@ -32,6 +32,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupProperties
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -136,6 +140,7 @@ fun Library(
         onOpenFlipSide = onOpenFlipSide,
         onOpenLegacyCapture = onOpenLegacyCapture,
         onTogglePin = viewModel::togglePin,
+        onDeleteCaptureInk = viewModel::deleteCaptureInk,
         onSetHomeGridOptions = viewModel::setHomeGridOptions,
         onCreateNewFolder = viewModel::createNewFolder,
         onDeleteEmptyBook = viewModel::deleteEmptyBook,
@@ -161,6 +166,7 @@ fun LibraryContent(
     onOpenFlipSide: (String, String) -> Unit,
     onOpenLegacyCapture: (String) -> Unit,
     onTogglePin: (String) -> Unit,
+    onDeleteCaptureInk: (String, String) -> Unit,
     onSetHomeGridOptions: (String, Set<String>) -> Unit,
     onCreateNewFolder: () -> Unit,
     onDeleteEmptyBook: (String) -> Unit,
@@ -292,7 +298,9 @@ fun LibraryContent(
                         isPinned = item.captureKey in pinnedKeys,
                         showVaultName = multipleVaults,
                         onOpenFlipSide = onOpenFlipSide,
-                        onTogglePin = onTogglePin
+                        onOpenText = onOpenVaultNote,
+                        onTogglePin = onTogglePin,
+                        onDeleteInk = onDeleteCaptureInk
                     )
                     is HomeCaptureItem.LegacyQuickPage -> LegacyCaptureCard(
                         item = item,
@@ -367,15 +375,19 @@ private fun VaultCaptureCard(
     isPinned: Boolean,
     showVaultName: Boolean,
     onOpenFlipSide: (String, String) -> Unit,
-    onTogglePin: (String) -> Unit
+    onOpenText: (String) -> Unit,
+    onTogglePin: (String) -> Unit,
+    onDeleteInk: (String, String) -> Unit
 ) {
+    var showMenu by remember { mutableStateOf(false) }
+
     Column {
         Box {
             val previewId = item.previewPageId
             val clickModifier = Modifier
                 .combinedClickable(
                     onClick = { onOpenFlipSide(item.vaultId, item.note.relativePath) },
-                    onLongClick = { onTogglePin(item.captureKey) }
+                    onLongClick = { showMenu = true }
                 )
                 .aspectRatio(3f / 4f)
                 .border(1.dp, Color.Gray, RectangleShape)
@@ -407,6 +419,24 @@ private fun VaultCaptureCard(
                         .background(Color.Black, RectangleShape)
                 )
             }
+            if (showMenu) {
+                CaptureCardMenu(
+                    isPinned = isPinned,
+                    onPin = {
+                        onTogglePin(item.captureKey)
+                        showMenu = false
+                    },
+                    onDelete = {
+                        onDeleteInk(item.vaultId, item.note.relativePath)
+                        showMenu = false
+                    },
+                    onOpenText = {
+                        onOpenText(item.note.relativePath)
+                        showMenu = false
+                    },
+                    onDismiss = { showMenu = false }
+                )
+            }
         }
         Spacer(Modifier.height(4.dp))
         Text(
@@ -426,6 +456,50 @@ private fun VaultCaptureCard(
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.fillMaxWidth()
             )
+        }
+    }
+}
+
+@Composable
+private fun CaptureCardMenu(
+    isPinned: Boolean,
+    onPin: () -> Unit,
+    onDelete: () -> Unit,
+    onOpenText: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    Popup(
+        alignment = Alignment.TopStart,
+        onDismissRequest = onDismiss,
+        properties = PopupProperties(focusable = true)
+    ) {
+        Column(
+            Modifier
+                .border(1.dp, Color.Black, RectangleShape)
+                .background(Color.White)
+                .width(IntrinsicSize.Max)
+        ) {
+            Box(
+                Modifier
+                    .padding(10.dp)
+                    .noRippleClickable(onClick = onPin)
+            ) {
+                Text(if (isPinned) "Unpin" else "Pin")
+            }
+            Box(
+                Modifier
+                    .padding(10.dp)
+                    .noRippleClickable(onClick = onOpenText)
+            ) {
+                Text("Open text")
+            }
+            Box(
+                Modifier
+                    .padding(10.dp)
+                    .noRippleClickable(onClick = onDelete)
+            ) {
+                Text("Delete")
+            }
         }
     }
 }

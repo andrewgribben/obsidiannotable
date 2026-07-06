@@ -1,6 +1,7 @@
 package com.ethran.notable.io.vault
 
 import com.ethran.notable.data.datastore.VaultConfig
+import com.ethran.notable.io.excalidraw.ExcalidrawSerializer
 import com.ethran.notable.io.resolveExternalStoragePath
 import io.shipbook.shipbooksdk.ShipBook
 import java.io.File
@@ -37,15 +38,22 @@ fun inboxDirRelativeToVault(vault: VaultConfig): String? {
     return inboxDir.relativeTo(root).path.replace('\\', '/')
 }
 
-/** Notes under the vault inbox that have a flip-side Excalidraw file. */
+/** Notes under the vault inbox that use unified Excalidraw format with a drawing block. */
 fun listInboxNotesWithInk(vault: VaultConfig): List<VaultNote> {
     val index = VaultIndexRegistry.forVault(vault) ?: return emptyList()
     val inboxRel = inboxDirRelativeToVault(vault) ?: return emptyList()
     val prefix = if (inboxRel.isEmpty()) "" else "$inboxRel/"
     return index.refresh()
         .filter { note ->
-            note.hasInk && (inboxRel.isEmpty() || note.relativePath.startsWith(prefix))
+            (inboxRel.isEmpty() || note.relativePath.startsWith(prefix)) &&
+                isUnifiedInboxCapture(note)
         }
+}
+
+private fun isUnifiedInboxCapture(note: VaultNote): Boolean {
+    val content = runCatching { note.file.readText() }.getOrNull() ?: return note.hasInk
+    return ExcalidrawSerializer.isExcalidrawNote(content) &&
+        ExcalidrawSerializer.hasEmbeddedDrawing(content)
 }
 
 /** Inbox captures with ink across [vaults]. */
@@ -104,9 +112,20 @@ class VaultIndex(val vaultRoot: File) {
             file = file,
             relativePath = relative,
             name = file.name.removeSuffix(".md"),
-            hasInk = flipSideFileFor(file).exists(),
+            hasInk = hasInkInFile(file),
             lastModified = file.lastModified()
         )
+    }
+
+    private fun hasInkInFile(file: File): Boolean {
+        val content = runCatching { file.readText() }.getOrNull()
+        if (content != null) {
+            if (ExcalidrawSerializer.hasEmbeddedDrawing(content)) {
+                val strokes = ExcalidrawSerializer.parse(content, "index")
+                if (strokes != null && strokes.isNotEmpty()) return true
+            }
+        }
+        return flipSideFileFor(file).exists()
     }
 
     /** Direct children (folders + notes) of [relativeDir] for the tree browser. */

@@ -4,6 +4,7 @@ import com.ethran.notable.data.db.Stroke
 import com.ethran.notable.data.db.StrokePoint
 import com.ethran.notable.editor.utils.Pen
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -55,6 +56,54 @@ class ExcalidrawSerializerTest {
             assertEquals(a.tiltY, b.tiltY)
             assertEquals(a.dt, b.dt)
         }
+    }
+
+    @Test
+    fun `serializeUnified uses compressed-json and preserves text body`() {
+        val stroke = sampleStroke()
+        val content = ExcalidrawSerializer.serializeUnified("# Title\n\nBody text", listOf(stroke))
+        assertTrue(content.contains("excalidraw-plugin: parsed"))
+        assertTrue(content.contains("# Title"))
+        assertTrue(content.contains("Body text"))
+        assertTrue(content.contains("```compressed-json"))
+        assertFalse(content.contains("```json"))
+
+        val parsed = ExcalidrawSerializer.parse(content, "page-2")
+        assertNotNull(parsed)
+        assertEquals(1, parsed!!.size)
+        assertEquals("# Title\n\nBody text", ExcalidrawSerializer.extractMarkdownBody(content))
+    }
+
+    @Test
+    fun `replaceDrawingInUnified preserves text when strokes update`() {
+        val original = ExcalidrawSerializer.serializeUnified("Keep me", listOf(sampleStroke()))
+        val updated = ExcalidrawSerializer.replaceDrawingInUnified(
+            original,
+            listOf(sampleStroke(), sampleStroke(Pen.BALLPEN))
+        )
+        assertTrue(updated.contains("Keep me"))
+        assertTrue(updated.contains("compressed-json"))
+        val parsed = ExcalidrawSerializer.parse(updated, "page-1")
+        assertEquals(2, parsed!!.size)
+    }
+
+    @Test
+    fun `ensureExcalidrawFrontmatter merges into existing yaml`() {
+        val note = """
+            ---
+            title: My Note
+            pdf: "[[old.pdf]]"
+            flip-side: "[[sidecar]]"
+            ---
+
+            # Content
+        """.trimIndent()
+        val merged = ExcalidrawSerializer.ensureExcalidrawFrontmatter(note)
+        assertTrue(merged.contains("excalidraw-plugin: parsed"))
+        assertTrue(merged.contains("title: My Note"))
+        assertFalse(merged.contains("pdf:"))
+        assertFalse(merged.contains("flip-side:"))
+        assertTrue(merged.contains("# Content"))
     }
 
     @Test

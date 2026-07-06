@@ -19,6 +19,7 @@ import com.ethran.notable.io.flipside.FlipSideManager
 import com.ethran.notable.io.vault.listInboxNotesWithInkForVaults
 import com.ethran.notable.ui.SnackConf
 import com.ethran.notable.ui.SnackState
+import com.ethran.notable.ui.viewmodels.HomeCaptureKeys
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -154,6 +155,30 @@ class LibraryViewModel @Inject constructor(
                 settings.copy(homePinnedCaptureKeys = pins)
             )
             refreshHomeCaptures()
+        }
+    }
+
+    fun deleteCaptureInk(vaultId: String, relativePath: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val ok = FlipSideManager.deleteCaptureInk(appRepository, vaultId, relativePath)
+            if (ok) {
+                val settings = GlobalAppSettings.current
+                val captureKey = HomeCaptureKeys.vault(vaultId, relativePath)
+                val pins = settings.homePinnedCaptureKeys.filter { it != captureKey }
+                if (pins != settings.homePinnedCaptureKeys) {
+                    appRepository.kvProxy.setAppSettings(
+                        settings.copy(homePinnedCaptureKeys = pins)
+                    )
+                }
+                SnackState.globalSnackFlow.tryEmit(
+                    SnackConf(text = "Drawing deleted", duration = 3000)
+                )
+                refreshHomeCaptures()
+            } else {
+                SnackState.globalSnackFlow.tryEmit(
+                    SnackConf(text = "Could not delete drawing", duration = 4000)
+                )
+            }
         }
     }
 

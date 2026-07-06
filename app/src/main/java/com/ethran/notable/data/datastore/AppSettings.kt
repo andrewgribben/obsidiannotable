@@ -113,6 +113,9 @@ data class AppSettings(
     /** One-time migration of legacy quick pages → flip-side captures (see FlipSideManager). */
     val legacyQuickPagesMigrated: Boolean = false,
 
+    /** One-time merge of `.flip.excalidraw.md` sidecars into unified note files. */
+    val flipSidesUnifiedToExcalidrawMd: Boolean = false,
+
     // Last browsed folder per vault in the in-app vault browser (relative path, "" = root).
     val vaultBrowserDirByVault: Map<String, String> = emptyMap(),
 

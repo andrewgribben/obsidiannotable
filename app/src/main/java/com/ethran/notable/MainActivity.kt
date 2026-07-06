@@ -189,6 +189,33 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
+            LaunchedEffect(fullInitDone) {
+                if (!fullInitDone || !hasFilePermission(this@MainActivity)) return@LaunchedEffect
+                withContext(Dispatchers.IO) {
+                    val settings = GlobalAppSettings.current
+                    if (settings.flipSidesUnifiedToExcalidrawMd) return@withContext
+                    try {
+                        val repo = appRepositoryLazy.get()
+                        val result = FlipSideManager.runFlipSidesUnifiedMigration(repo)
+                        if (result.notesUnified > 0) {
+                            SnackState.globalSnackFlow.tryEmit(
+                                SnackConf(
+                                    text = "Unified ${result.notesUnified} note" +
+                                        "${if (result.notesUnified == 1) "" else "s"} to Excalidraw format",
+                                    duration = 5000
+                                )
+                            )
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Unified flip-side migration failed: ${e.message}", e)
+                    } finally {
+                        kvProxy.get().setAppSettings(
+                            GlobalAppSettings.current.copy(flipSidesUnifiedToExcalidrawMd = true)
+                        )
+                    }
+                }
+            }
+
             LaunchedEffect(firstLaunchCompleteState.value) {
                 if (firstLaunchCompleteState.value && hasFilePermission(this@MainActivity)) {
                     withContext(Dispatchers.IO) {
