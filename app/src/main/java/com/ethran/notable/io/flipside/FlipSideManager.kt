@@ -13,6 +13,7 @@ import com.ethran.notable.io.InboxSyncEngine
 import com.ethran.notable.io.VaultFileStore
 import com.ethran.notable.io.VaultWriteQueue
 import com.ethran.notable.io.excalidraw.ExcalidrawSerializer
+import com.ethran.notable.io.excalidraw.ExcalidrawUnifiedTemplate
 import com.ethran.notable.io.resolveExternalStoragePath
 import com.ethran.notable.io.vault.FLIP_SIDE_SUFFIX
 import com.ethran.notable.io.vault.NoteEditGuard
@@ -20,6 +21,10 @@ import com.ethran.notable.io.vault.vaultRootDir
 import com.ethran.notable.ui.SnackConf
 import com.ethran.notable.ui.SnackState
 import io.shipbook.shipbooksdk.ShipBook
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.serializer
 import java.io.File
@@ -76,6 +81,7 @@ object FlipSideManager {
 
     /** Open editing sessions: pageId -> (NoteEditGuard key, guard owner token). */
     private val editSessions = ConcurrentHashMap<String, Pair<String, String>>()
+    private val ioScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     /** Acquires the single-writer guard for a note, snacking on refusal. */
     private fun acquireGuard(vaultId: String, relativePath: String, pageId: String): Boolean {
@@ -225,11 +231,10 @@ object FlipSideManager {
         return null
     }
 
-    /** Builds a new unified inbox capture stub with Excalidraw frontmatter. */
+    /** Builds a new unified inbox capture stub matching [Template.excalidraw.md]. */
     fun buildCaptureUnifiedStub(createdAt: Date): String {
         val createdDate = CAPTURE_CREATED_DATE_FORMAT.format(createdAt)
-        val base = ExcalidrawSerializer.serializeUnified("", emptyList())
-        return addFrontmatterProperty(base, "created: \"[[$createdDate]]\"")
+        return ExcalidrawUnifiedTemplate.buildNewCapture(createdDate, emptyList())
     }
 
     /** Relative path of a vault note within [vault], or null when unconfigured. */
@@ -346,31 +351,35 @@ object FlipSideManager {
             ?: GlobalAppSettings.current.activeVault ?: return "Vault not found"
         val root = vaultRootDir(vault) ?: return "Vault root not found"
         val noteFile = File(root, link.relativePath.replace('/', File.separatorChar))
+        val pageStrokes = appRepository.pageRepository.getWithStrokeById(pageId).strokes
 
-        val read = VaultFileStore.read(noteFile)
-        val (newContent, expectedHash) = if (read == null) {
-            ExcalidrawSerializer.serializeUnified(text.trim(), emptyList()) to VaultFileStore.HASH_MISSING
-        } else {
-            val existingBody = ExcalidrawSerializer.extractMarkdownBody(read.content)
-            val strokes = ExcalidrawSerializer.parse(read.content, pageId).orEmpty()
-            val newBody = when (mode) {
-                HwrApplyMode.APPEND ->
-                    (existingBody + "\n\n" + text).trim()
-                HwrApplyMode.REPLACE -> text.trim()
+        return VaultFileStore.withFileLock(noteFile) {
+            val read = VaultFileStore.read(noteFile)
+            val (newContent, expectedHash) = if (read == null) {
+                ExcalidrawSerializer.serializeUnified(text.trim(), pageStrokes) to
+                    VaultFileStore.HASH_MISSING
+            } else {
+                val existingBody = ExcalidrawSerializer.extractMarkdownBody(read.content)
+                val newBody = when (mode) {
+                    HwrApplyMode.APPEND ->
+                        (existingBody + "\n\n" + text).trim()
+                    HwrApplyMode.REPLACE -> text.trim()
+                }
+                ExcalidrawSerializer.rewriteUnified(read.content, newBody, pageStrokes) to read.hash
             }
-            ExcalidrawSerializer.rewriteUnified(read.content, newBody, strokes) to read.hash
-        }
 
-        return when (val result = VaultFileStore.write(noteFile, newContent, expectedHash)) {
-            is VaultFileStore.WriteResult.Success -> {
-                updateHwrStrokeBaseline(appRepository, pageId)
-                "Saved to ${noteFile.name}"
+            when (val result = VaultFileStore.write(noteFile, newContent, expectedHash)) {
+                is VaultFileStore.WriteResult.Success -> {
+                    saveLink(appRepository, link.copy(fileHash = VaultFileStore.hashOf(newContent)))
+                    updateHwrStrokeBaseline(appRepository, pageId)
+                    "Saved to ${noteFile.name}"
+                }
+                is VaultFileStore.WriteResult.Conflict -> {
+                    val copy = VaultFileStore.writeConflictCopy(noteFile, newContent)
+                    "Note changed elsewhere — saved as ${copy?.name ?: "conflict copy"}"
+                }
+                is VaultFileStore.WriteResult.Error -> "Save failed: ${result.message}"
             }
-            is VaultFileStore.WriteResult.Conflict -> {
-                val copy = VaultFileStore.writeConflictCopy(noteFile, newContent)
-                "Note changed elsewhere — saved as ${copy?.name ?: "conflict copy"}"
-            }
-            is VaultFileStore.WriteResult.Error -> "Save failed: ${result.message}"
         }
     }
 
@@ -453,21 +462,30 @@ object FlipSideManager {
      */
     fun scheduleSaveIfFlipPage(appRepository: AppRepository, pageId: String) {
         val settings = GlobalAppSettings.current
-        // Cheap pre-check needs a file for the queue; resolve link first inside the queue
-        // is impossible (queue is keyed by file), so resolve link synchronously via a
-        // lightweight queue keyed by a placeholder when needed.
-        VaultWriteQueue.enqueue(File("flipside-$pageId"), "flip-side save") {
-            try {
-                val link = appRepository.kvProxy.get(pageKey(pageId), FlipSideLink.serializer())
-                    ?: return@enqueue
-                // Insert-purpose pages are scratch surfaces for HWR text entry — no sidecar export.
-                if (link.purpose != PURPOSE_FLIP) return@enqueue
-                val vault = settings.vaults.find { it.id == link.vaultId }
-                    ?: GlobalAppSettings.current.activeVault ?: return@enqueue
-                saveFlipSide(appRepository, link, vault)
-            } finally {
-                // Editor closed: this window is done editing the note.
+        ioScope.launch {
+            val link = appRepository.kvProxy.get(pageKey(pageId), FlipSideLink.serializer())
+            if (link == null || link.purpose != PURPOSE_FLIP) {
                 releaseGuard(pageId)
+                return@launch
+            }
+            val vault = settings.vaults.find { it.id == link.vaultId }
+                ?: GlobalAppSettings.current.activeVault
+            if (vault == null) {
+                releaseGuard(pageId)
+                return@launch
+            }
+            val root = vaultRootDir(vault)
+            if (root == null) {
+                releaseGuard(pageId)
+                return@launch
+            }
+            val noteFile = File(root, link.relativePath.replace('/', File.separatorChar))
+            VaultWriteQueue.enqueue(noteFile, "flip-side save") {
+                try {
+                    saveFlipSide(appRepository, link, vault)
+                } finally {
+                    releaseGuard(pageId)
+                }
             }
         }
     }

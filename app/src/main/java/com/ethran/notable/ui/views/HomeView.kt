@@ -120,10 +120,6 @@ fun Library(
         viewModel.loadFolder(folderId)
     }
 
-    LaunchedEffect(Unit) {
-        viewModel.refreshHomeCaptures()
-    }
-
     LibraryContent(
         appRepository = viewModel.appRepository,
         exportEngine = viewModel.exportEngine,

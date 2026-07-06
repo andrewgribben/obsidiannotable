@@ -160,6 +160,10 @@ object MarkdownRenderer {
         .includeSourceSpans(IncludeSourceSpans.BLOCKS_AND_INLINES)
         .build()
 
+    /** Renders note text for the vault reader (hides `%%` blocks and excalidraw tails). */
+    fun renderForReader(source: String, fontScale: Float = 1f): RenderedMarkdown =
+        render(MarkdownReaderContent.prepareForTextView(source), fontScale)
+
     fun render(source: String, fontScale: Float = 1f): RenderedMarkdown {
         val document = parser.parse(source)
 

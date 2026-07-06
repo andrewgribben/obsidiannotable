@@ -13,6 +13,10 @@ import java.util.Date
 
 class ExcalidrawSerializerTest {
 
+    init {
+        ExcalidrawTestTemplate.ensureInitialized()
+    }
+
     private fun sampleStroke(pen: Pen = Pen.FOUNTAIN): Stroke {
         val points = listOf(
             StrokePoint(x = 100f, y = 200f, pressure = 1000f, tiltX = 10, tiltY = -5, dt = 0u),
@@ -59,14 +63,16 @@ class ExcalidrawSerializerTest {
     }
 
     @Test
-    fun `serializeUnified uses compressed-json and preserves text body`() {
+    fun `serializeUnified uses template json block and preserves text body`() {
         val stroke = sampleStroke()
         val content = ExcalidrawSerializer.serializeUnified("# Title\n\nBody text", listOf(stroke))
         assertTrue(content.contains("excalidraw-plugin: parsed"))
+        assertTrue(content.contains("excalidraw-open-md: true"))
         assertTrue(content.contains("# Title"))
         assertTrue(content.contains("Body text"))
-        assertTrue(content.contains("```compressed-json"))
-        assertFalse(content.contains("```json"))
+        assertTrue(content.contains("%%"))
+        assertTrue(content.contains("```json"))
+        assertFalse(content.contains("```compressed-json"))
 
         val parsed = ExcalidrawSerializer.parse(content, "page-2")
         assertNotNull(parsed)
@@ -82,7 +88,7 @@ class ExcalidrawSerializerTest {
             listOf(sampleStroke(), sampleStroke(Pen.BALLPEN))
         )
         assertTrue(updated.contains("Keep me"))
-        assertTrue(updated.contains("compressed-json"))
+        assertTrue(updated.contains("```json"))
         val parsed = ExcalidrawSerializer.parse(updated, "page-1")
         assertEquals(2, parsed!!.size)
     }
@@ -228,6 +234,44 @@ class ExcalidrawSerializerTest {
     @Test
     fun `parse returns null when no drawing found`() {
         assertNull(ExcalidrawSerializer.parse("just some markdown", "page-1"))
+    }
+
+    @Test
+    fun `hasNonemptyInk detects strokes without full parse`() {
+        val unified = ExcalidrawSerializer.serializeUnified("# note", listOf(sampleStroke()))
+        assertTrue(ExcalidrawSerializer.hasNonemptyInk(unified))
+    }
+
+    @Test
+    fun `hasNonemptyInk is false for empty elements`() {
+        val unified = ExcalidrawSerializer.serializeUnified("# note", emptyList())
+        assertFalse(ExcalidrawSerializer.hasNonemptyInk(unified))
+    }
+
+    @Test
+    fun `hasNonemptyInkForListing scans large file tail only`() {
+        val dir = kotlin.io.path.createTempDirectory().toFile()
+        val note = java.io.File(dir, "large.md")
+        val body = buildString {
+            appendLine("---")
+            appendLine("excalidraw-plugin: parsed")
+            appendLine("---")
+            appendLine()
+            appendLine("# text")
+            appendLine()
+            append("%%\n# Excalidraw Data\n## Drawing\n```json\n")
+            append("""{"type":"excalidraw","version":2,"elements":[""")
+            repeat(200_000) { append("""{"type":"freedraw","x":0,"y":0,"points":[[0,0]],"isDeleted":false},""") }
+            append("""{"type":"freedraw","x":1,"y":1,"points":[[0,0],[1,1]],"isDeleted":false}""")
+            append("""],"files":{}}""")
+            appendLine()
+            appendLine("```")
+            append("%%")
+        }
+        note.writeText(body)
+        assertTrue(note.length() > 512 * 1024)
+        assertTrue(ExcalidrawSerializer.hasNonemptyInkForListing(note))
+        dir.deleteRecursively()
     }
 
     @Test

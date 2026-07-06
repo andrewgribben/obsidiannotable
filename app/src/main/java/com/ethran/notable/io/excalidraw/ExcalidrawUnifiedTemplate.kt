@@ -1,0 +1,66 @@
+package com.ethran.notable.io.excalidraw
+
+import com.ethran.notable.data.db.Stroke
+import org.json.JSONObject
+import java.io.BufferedReader
+
+/**
+ * Obsidian unified-note layout from [Template.excalidraw.md]:
+ * frontmatter + optional markdown body + `%%` comment block with pretty-printed JSON.
+ */
+object ExcalidrawUnifiedTemplate {
+
+    private const val ASSET_NAME = "Template.excalidraw.md"
+
+    private var defaultDrawingRoot: JSONObject? = null
+
+    fun initFromAsset(openAsset: (String) -> BufferedReader) {
+        openAsset(ASSET_NAME).use { reader ->
+            initFromMarkdown(reader.readText())
+        }
+    }
+
+    fun initFromMarkdown(templateMarkdown: String) {
+        val json = ExcalidrawSerializer.extractDrawingJson(templateMarkdown)
+            ?: throw IllegalArgumentException("Template missing drawing JSON")
+        defaultDrawingRoot = JSONObject(json)
+    }
+
+    fun defaultDrawingRoot(): JSONObject {
+        val root = defaultDrawingRoot
+        check(root != null) { "ExcalidrawUnifiedTemplate not initialized" }
+        return JSONObject(root.toString())
+    }
+
+    fun buildNewCapture(createdDate: String, strokes: List<Stroke>): String {
+        return buildString {
+            appendLine("---")
+            appendLine("excalidraw-plugin: parsed")
+            appendLine("excalidraw-open-md: true")
+            appendLine("tags: [excalidraw]")
+            appendLine("created: \"[[$createdDate]]\"")
+            appendLine("---")
+            appendLine()
+            append(wrapDrawingBlock(strokes))
+            appendLine()
+        }
+    }
+
+    fun wrapDrawingBlock(strokes: List<Stroke>): String {
+        val json = ExcalidrawSerializer.buildDrawingJsonForExport(strokes, defaultDrawingRoot())
+        return wrapDrawingJson(json.toString(2))
+    }
+
+    fun wrapDrawingJson(jsonBody: String): String = buildString {
+        appendLine("%%")
+        appendLine("# Excalidraw Data")
+        appendLine()
+        appendLine("## Text Elements")
+        appendLine()
+        appendLine("## Drawing")
+        appendLine("```json")
+        appendLine(jsonBody.trimEnd())
+        appendLine("```")
+        append("%%")
+    }
+}

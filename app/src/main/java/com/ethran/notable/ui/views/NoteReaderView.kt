@@ -100,7 +100,7 @@ class NoteReaderState(
         }
         content = result.content
         contentHash = result.hash
-        rendered = MarkdownRenderer.render(result.content, fontScale)
+        rendered = MarkdownRenderer.renderForReader(result.content, fontScale)
         error = null
     }
 
@@ -108,7 +108,7 @@ class NoteReaderState(
     fun rerender(fontScale: Float) {
         val current = content ?: return
         if (rendered?.theme?.scale == fontScale) return
-        rendered = MarkdownRenderer.render(current, fontScale)
+        rendered = MarkdownRenderer.renderForReader(current, fontScale)
     }
 }
 

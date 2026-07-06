@@ -39,6 +39,13 @@ object ExcalidrawSerializer {
         Regex("""^pdf:\s*.+$""", RegexOption.MULTILINE)
     private val EXCALIDRAW_TAG_REGEX =
         Regex("""^\s*-\s*excalidraw\s*$""", RegexOption.MULTILINE)
+    private val EXCALIDRAW_OPEN_MD_REGEX =
+        Regex("""^excalidraw-open-md:\s*.+$""", RegexOption.MULTILINE)
+    private val EXCALIDRAW_PLUGIN_FM_REGEX =
+        Regex("""^excalidraw-plugin:\s*.+$""", RegexOption.MULTILINE)
+    private val TAGS_EXCALIDRAW_INLINE_REGEX =
+        Regex("""^tags:\s*\[excalidraw\]\s*$""", RegexOption.MULTILINE)
+    private val PAIRED_COMMENT_REGEX = Regex("""%%[\s\S]*?%%""")
 
     // Excalidraw freedraw thickness ≈ strokeWidth in scene px; our stroke size is the
     // brush diameter in page px. Scale down so drawings look similar in Obsidian.
@@ -62,6 +69,64 @@ object ExcalidrawSerializer {
     /** True when [content] contains a parseable drawing (decompresses compressed-json). */
     fun hasEmbeddedDrawing(content: String): Boolean =
         extractDrawingJson(content) != null
+
+    /**
+     * Fast ink check for vault listing: avoids stroke conversion and full-file reads when
+     * [file] is large (drawing lives in the tail for unified / Obsidian notes).
+     */
+    fun hasNonemptyInkForListing(file: java.io.File): Boolean {
+        val length = file.length()
+        if (length <= LISTING_TAIL_SCAN_BYTES) {
+            return hasNonemptyInk(runCatching { file.readText() }.getOrNull().orEmpty())
+        }
+        scanFileTailForInk(file)?.let { return it }
+        return false
+    }
+
+    /** True when [file] has a drawing block without reading the whole file when it is large. */
+    fun hasDrawingSectionForListing(file: java.io.File): Boolean {
+        if (file.length() <= LISTING_TAIL_SCAN_BYTES) {
+            val content = runCatching { file.readText() }.getOrNull() ?: return false
+            return hasDrawingSection(content)
+        }
+        val tail = readFileTail(file, LISTING_TAIL_SCAN_BYTES) ?: return false
+        return drawingSectionStartIndex(tail) >= 0 || tail.contains("%%")
+    }
+
+    /**
+     * True when the note contains at least one non-deleted freedraw element.
+     * Cheaper than [parse] — used for vault / home listing only.
+     */
+    fun hasNonemptyInk(content: String): Boolean {
+        if (!hasDrawingSection(content)) return false
+        return hasNonemptyInkInChunk(content)
+    }
+
+    internal fun hasNonemptyInkInChunk(chunk: String): Boolean {
+        extractFencedBlock(chunk, "json", searchFrom = 0)?.let { block ->
+            if (EMPTY_ELEMENTS_JSON_REGEX.containsMatchIn(block)) return false
+            return block.contains("\"freedraw\"")
+        }
+        extractFencedBlock(chunk, "compressed-json", searchFrom = 0)?.let { compressed ->
+            if (compressed.length < 32) return false
+            val cleaned = buildString(compressed.length) {
+                for (ch in compressed) {
+                    if (ch != '\n' && ch != '\r') append(ch)
+                }
+            }
+            val decoded = runCatching { LZSEncoding.decompressFromBase64(cleaned) }.getOrNull()
+                ?: return compressed.isNotBlank()
+            if (!decoded.contains("freedraw")) return false
+            return !EMPTY_ELEMENTS_JSON_REGEX.containsMatchIn(decoded)
+        }
+        return false
+    }
+
+    private const val LISTING_TAIL_SCAN_BYTES = 512 * 1024
+    private const val LARGE_FILE_WINDOW_BYTES = 64 * 1024
+    private const val LARGE_FILE_MAX_SCAN_BYTES = 4 * 1024 * 1024
+    private val EMPTY_ELEMENTS_JSON_REGEX =
+        Regex("""\"elements\"\s*:\s*\[\s*\]""")
 
     /** Markdown body between YAML frontmatter and the drawing section (trimmed). */
     fun extractMarkdownBody(content: String): String {
@@ -106,6 +171,9 @@ object ExcalidrawSerializer {
         if (!fm.contains("excalidraw-plugin:")) {
             fm += "\n$EXCALIDRAW_PLUGIN_LINE"
         }
+        if (!fm.contains("excalidraw-open-md:")) {
+            fm += "\nexcalidraw-open-md: true"
+        }
         if (!fm.contains("excalidraw")) {
             if (fm.contains("tags:")) {
                 fm += "\n  - excalidraw"
@@ -117,14 +185,14 @@ object ExcalidrawSerializer {
         return fm + tail
     }
 
-    /** Full unified Excalidraw markdown: frontmatter + [markdownBody] + compressed drawing. */
+    /** Full unified Excalidraw markdown: frontmatter + [markdownBody] + Obsidian `%%` drawing block. */
     fun serializeUnified(markdownBody: String, strokes: List<Stroke>): String {
         val body = markdownBody.trim()
         return buildString {
             appendLine("---")
             appendLine(EXCALIDRAW_PLUGIN_LINE)
-            appendLine("tags:")
-            appendLine("  - excalidraw")
+            appendLine("excalidraw-open-md: true")
+            appendLine("tags: [excalidraw]")
             appendLine("---")
             if (body.isNotEmpty()) {
                 appendLine()
@@ -155,22 +223,57 @@ object ExcalidrawSerializer {
         }
     }
 
-    /** Removes the drawing section; keeps frontmatter and markdown body. */
+    /** Removes excalidraw drawing data and excalidraw frontmatter; keeps markdown text. */
     fun stripDrawingFromUnified(content: String): String {
-        val bodyStart = frontmatterEndIndex(content)
-        val drawStart = drawingSectionStartIndex(content, bodyStart)
-        if (drawStart < 0) return content.trimEnd() + "\n"
-        val textBody = content.substring(bodyStart, drawStart).trim()
-        val head = content.substring(0, bodyStart).trimEnd()
+        val withoutComments = PAIRED_COMMENT_REGEX.replace(content, "")
+        val textBody = extractMarkdownBody(withoutComments)
+        val head = stripExcalidrawFrontmatterBlock(withoutComments)
         return buildString {
-            append(head)
+            if (head.isNotEmpty()) {
+                append(head.trimEnd())
+                appendLine()
+            }
             if (textBody.isNotEmpty()) {
-                appendLine()
-                appendLine()
+                if (head.isNotEmpty()) appendLine()
                 appendLine(textBody)
             }
             appendLine()
         }
+    }
+
+    /** YAML frontmatter with excalidraw / flip-side keys removed; empty when nothing remains. */
+    private fun stripExcalidrawFrontmatterBlock(content: String): String {
+        if (!content.startsWith("---")) return ""
+        val end = content.indexOf("\n---", 3)
+        if (end < 0) return ""
+
+        val lines = content.substring(3, end).lines()
+        val kept = mutableListOf<String>()
+        var i = 0
+        while (i < lines.size) {
+            val line = lines[i]
+            val trimmed = line.trim()
+            when {
+                EXCALIDRAW_PLUGIN_FM_REGEX.matches(trimmed) -> i++
+                EXCALIDRAW_OPEN_MD_REGEX.matches(trimmed) -> i++
+                FLIP_SIDE_FRONTMATTER_REGEX.matches(trimmed) -> i++
+                PDF_FRONTMATTER_REGEX.matches(trimmed) -> i++
+                TAGS_EXCALIDRAW_INLINE_REGEX.matches(trimmed) -> i++
+                trimmed == "tags:" -> {
+                    i++
+                    while (i < lines.size && EXCALIDRAW_TAG_REGEX.matches(lines[i])) i++
+                }
+                EXCALIDRAW_TAG_REGEX.matches(line) -> i++
+                else -> {
+                    kept.add(line)
+                    i++
+                }
+            }
+        }
+
+        val fm = kept.joinToString("\n").trim()
+        if (fm.isBlank()) return ""
+        return "---\n$fm\n---"
     }
 
     /** End index (exclusive) of the YAML frontmatter block, or 0 when absent. */
@@ -253,20 +356,72 @@ object ExcalidrawSerializer {
             ?.takeIf { it.isNotBlank() }
     }
 
-    private fun extractFencedBlock(content: String, language: String): String? {
+    private fun extractFencedBlock(content: String, language: String, searchFrom: Int = -1): String? {
         val fence = "```$language"
-        val drawingMarkers = listOf("## Drawing", "# Drawing")
-        val searchFrom = drawingMarkers
-            .map { content.indexOf(it) }
-            .filter { it >= 0 }
-            .minOrNull() ?: 0
+        val drawingMarkers = listOf("## Drawing", "# Drawing", "# Excalidraw Data")
+        val from = if (searchFrom >= 0) {
+            searchFrom
+        } else {
+            drawingMarkers
+                .map { content.indexOf(it) }
+                .filter { it >= 0 }
+                .minOrNull() ?: 0
+        }
 
-        var fenceStart = content.indexOf(fence, searchFrom)
+        var fenceStart = content.indexOf(fence, from)
         if (fenceStart < 0) {
             fenceStart = content.indexOf(fence)
             if (fenceStart < 0) return null
         }
         return readFencedContent(content, fenceStart + fence.length)
+    }
+
+    private fun readFileTail(file: java.io.File, maxBytes: Int): String? {
+        return try {
+            val length = file.length()
+            if (length <= 0) return null
+            val readLen = minOf(length, maxBytes.toLong()).toInt()
+            val start = length - readLen
+            java.io.RandomAccessFile(file, "r").use { raf ->
+                raf.seek(start)
+                val buf = ByteArray(readLen)
+                raf.readFully(buf)
+                String(buf, Charsets.UTF_8)
+            }
+        } catch (e: Exception) {
+            log.e("Failed to read tail of ${file.absolutePath}: ${e.message}")
+            null
+        }
+    }
+
+    /**
+     * Scans backwards through large unified notes for freedraw elements without loading
+     * the whole file (migrated Obsidian json blocks can be many MB).
+     */
+    private fun scanFileTailForInk(file: java.io.File): Boolean? {
+        return try {
+            java.io.RandomAccessFile(file, "r").use { raf ->
+                val fileLen = raf.length()
+                if (fileLen <= 0) return false
+                val window = ByteArray(LARGE_FILE_WINDOW_BYTES)
+                var scanned = 0L
+                var pos = fileLen
+                while (pos > 0 && scanned < LARGE_FILE_MAX_SCAN_BYTES) {
+                    val readLen = minOf(pos, window.size.toLong()).toInt()
+                    pos -= readLen
+                    raf.seek(pos)
+                    raf.readFully(window, 0, readLen)
+                    val chunk = String(window, 0, readLen, Charsets.UTF_8)
+                    scanned += readLen
+                    if (chunk.contains("\"freedraw\"")) return true
+                    if (EMPTY_ELEMENTS_JSON_REGEX.containsMatchIn(chunk)) return false
+                }
+                false
+            }
+        } catch (e: Exception) {
+            log.e("Failed to scan ${file.absolutePath} for ink: ${e.message}")
+            null
+        }
     }
 
     private fun readFencedContent(content: String, bodyStart: Int): String? {
@@ -277,7 +432,9 @@ object ExcalidrawSerializer {
 
     private fun drawingSectionStartIndex(content: String, searchFrom: Int = 0): Int {
         val markers = listOf(
+            "%%",
             "==⚠",
+            "# Excalidraw Data",
             "## Drawing",
             "# Drawing",
             "```compressed-json",
@@ -289,38 +446,41 @@ object ExcalidrawSerializer {
             .minOrNull() ?: -1
     }
 
-    private fun buildDrawingJson(strokes: List<Stroke>): JSONObject {
+    private fun buildDrawingSection(strokes: List<Stroke>): String {
+        val templateRoot = runCatching { ExcalidrawUnifiedTemplate.defaultDrawingRoot() }.getOrNull()
+        val drawing = buildDrawingJsonForExport(strokes, templateRoot)
+        return ExcalidrawUnifiedTemplate.wrapDrawingJson(drawing.toString(2))
+    }
+
+    /** Builds excalidraw JSON for vault export, optionally merging template [appState]. */
+    fun buildDrawingJsonForExport(
+        strokes: List<Stroke>,
+        templateRoot: JSONObject? = null
+    ): JSONObject {
         val elements = JSONArray()
         for (stroke in strokes) {
             elements.put(strokeToElement(stroke))
         }
-        return JSONObject()
-            .put("type", "excalidraw")
-            .put("version", 2)
-            .put("source", "https://github.com/singularity-notes")
-            .put("elements", elements)
-            .put(
+        val root = templateRoot?.let { JSONObject(it.toString()) } ?: JSONObject()
+        if (!root.has("type")) root.put("type", "excalidraw")
+        if (!root.has("version")) root.put("version", 2)
+        if (!root.has("source")) {
+            root.put("source", "https://github.com/singularity-notes")
+        }
+        root.put("elements", elements)
+        if (!root.has("files")) root.put("files", JSONObject())
+        if (!root.has("appState")) {
+            root.put(
                 "appState", JSONObject()
                     .put("gridSize", JSONObject.NULL)
                     .put("viewBackgroundColor", "#ffffff")
             )
-            .put("files", JSONObject())
+        }
+        return root
     }
 
-    private fun buildDrawingSection(strokes: List<Stroke>): String {
-        val json = buildDrawingJson(strokes).toString()
-        val compressed = LZSEncoding.compressToBase64(json)
-        return buildString {
-            appendLine(DRAWING_WARNING_LINE)
-            appendLine()
-            appendLine()
-            appendLine("## Drawing")
-            appendLine("```compressed-json")
-            appendLine(compressed)
-            appendLine("```")
-            append("%%")
-        }
-    }
+    private fun buildDrawingJson(strokes: List<Stroke>): JSONObject =
+        buildDrawingJsonForExport(strokes, null)
 
     // --- Stroke → freedraw element ---
 

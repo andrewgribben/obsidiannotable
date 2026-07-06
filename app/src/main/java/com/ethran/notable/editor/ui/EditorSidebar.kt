@@ -447,9 +447,7 @@ fun EditorSidebar(
                         if (!drawingChanged) {
                             withContext(Dispatchers.Main) {
                                 isRecognizingFlip = false
-                                openFlipSideTextNote(
-                                    appRepository, navController, state.currentPageId, notePath
-                                )
+                                openFlipSideTextNote(navController, notePath)
                             }
                             return@launch
                         }
@@ -514,9 +512,7 @@ fun EditorSidebar(
             text = previewText,
             onApplied = {
                 flipPreviewText = null
-                openFlipSideTextNote(
-                    appRepository, navController, state.currentPageId, notePathForFlip
-                )
+                openFlipSideTextNote(navController, notePathForFlip)
             },
             onDismiss = { flipPreviewText = null }
         )
@@ -524,12 +520,9 @@ fun EditorSidebar(
 }
 
 private fun openFlipSideTextNote(
-    appRepository: AppRepository,
     navController: NavController,
-    pageId: String,
     relativePath: String
 ) {
-    FlipSideManager.scheduleSaveIfFlipPage(appRepository, pageId)
     navController.popBackStack()
     navController.navigate(NoteReaderDestination.createRoute(relativePath))
 }

@@ -3,11 +3,11 @@
 Merge legacy Singularity / Notable flip-side sidecars into unified Excalidraw notes.
 
 Converts pairs like:
-  inbox/2026-03-18-20-09-39.md          (text + flip-side: frontmatter)
+  inbox/2026-03-18-20-09-39.md          (markdown text + flip-side: frontmatter)
   inbox/2026-03-18-20-09-39.flip.excalidraw.md
 
-Into one Obsidian-compatible file:
-  excalidraw-plugin frontmatter + markdown body + compressed-json drawing block
+Into one Obsidian-compatible file (see Template.excalidraw.md):
+  excalidraw frontmatter + markdown body + %% commented excalidraw json block
 
 Usage (from your Mac, vault root as cwd or argument):
 
@@ -22,6 +22,7 @@ Skips notes that already contain a drawing section unless --force is passed.
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 import re
 import sys
@@ -38,18 +39,27 @@ except ImportError:
     sys.exit(1)
 
 FLIP_SIDE_SUFFIX = ".flip.excalidraw.md"
-DRAWING_WARNING = (
-    "==⚠  Switch to EXCALIDRAW VIEW in the MORE OPTIONS menu of this document. ⚠== "
-    "You can decompress Drawing data with the command palette: "
-    "'Decompress current Excalidraw file'. For more info check in plugin settings under 'Saving'"
-)
+DEFAULT_TEMPLATE = Path(__file__).resolve().parent.parent / "Template.excalidraw.md"
 
 FLIP_SIDE_FM_RE = re.compile(r"^flip-side:\s*.+$", re.MULTILINE)
 PDF_FM_RE = re.compile(r"^pdf:\s*.+$", re.MULTILINE)
 FLIP_SIDE_LINK_RE = re.compile(
     r'^flip-side:\s*["\']?\[\[([^\]]+)]]', re.MULTILINE
 )
-DRAWING_MARKERS = ("==⚠", "## Drawing", "# Drawing", "```compressed-json", "```json")
+PAIRED_COMMENT_RE = re.compile(r"%%[\s\S]*?%%")
+DRAWING_MARKERS = (
+    "==⚠",
+    "# Excalidraw Data",
+    "## Drawing",
+    "# Drawing",
+    "```compressed-json",
+    "```json",
+    "\n%%",
+)
+TEMPLATE_BLOCK_RE = re.compile(
+    r"(%%\s*\n# Excalidraw Data[\s\S]*?```json\n)([\s\S]*?)(\n```\s*\n%%\s*)",
+    re.MULTILINE,
+)
 
 
 def frontmatter_end(content: str) -> int:
@@ -74,11 +84,37 @@ def has_drawing_section(content: str) -> bool:
     return drawing_section_start(content) >= 0 or content.strip().startswith("{")
 
 
+def strip_hidden_regions(content: str) -> str:
+    visible = PAIRED_COMMENT_RE.sub("", content)
+    start = frontmatter_end(visible)
+    draw = drawing_section_start(visible, start)
+    if draw >= 0:
+        visible = visible[:draw]
+    return visible
+
+
 def extract_markdown_body(content: str) -> str:
-    start = frontmatter_end(content)
-    draw = drawing_section_start(content, start)
-    body = content[start:draw] if draw >= 0 else content[start:]
-    return body.strip()
+    cleaned = strip_hidden_regions(content)
+    start = frontmatter_end(cleaned)
+    return cleaned[start:].strip()
+
+
+def parse_frontmatter_keys(content: str) -> dict[str, str]:
+    if not content.startswith("---"):
+        return {}
+    end = content.find("\n---", 3)
+    if end < 0:
+        return {}
+    keys: dict[str, str] = {}
+    for line in content[3:end].splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        if ":" not in stripped:
+            continue
+        key, _, value = stripped.partition(":")
+        keys[key.strip()] = value.strip()
+    return keys
 
 
 def extract_fenced_block(content: str, language: str) -> str | None:
@@ -91,6 +127,8 @@ def extract_fenced_block(content: str, language: str) -> str | None:
     if pos < 0:
         return None
     body_start = pos + len(fence)
+    if body_start < len(content) and content[body_start] == "\n":
+        body_start += 1
     end = content.find("```", body_start)
     if end < 0:
         return None
@@ -120,64 +158,71 @@ def extract_drawing_json(content: str) -> str | None:
     return None
 
 
-def ensure_excalidraw_frontmatter(content: str) -> str:
-    stripped = FLIP_SIDE_FM_RE.sub("", content)
-    stripped = PDF_FM_RE.sub("", stripped)
-    stripped = re.sub(r"\n{3,}", "\n\n", stripped)
-
-    if not stripped.startswith("---"):
-        parts = [
-            "---",
-            "excalidraw-plugin: parsed",
-            "tags:",
-            "  - excalidraw",
-            "---",
-        ]
-        if stripped.strip():
-            parts.extend(["", stripped.strip(), ""])
-        return "\n".join(parts)
-
-    end = stripped.find("\n---", 3)
-    if end < 0:
-        return stripped
-
-    fm = stripped[:end]
-    tail = stripped[end:]
-    if "excalidraw-plugin:" not in fm:
-        fm += "\nexcalidraw-plugin: parsed"
-    if "excalidraw" not in fm:
-        if "tags:" in fm:
-            fm += "\n  - excalidraw"
-        else:
-            fm += "\ntags:\n  - excalidraw"
-    return fm + tail
+def load_template(template_path: Path) -> dict:
+    text = template_path.read_text(encoding="utf-8")
+    fm_end = frontmatter_end(text)
+    fm = text[:fm_end].rstrip() + "\n"
+    rest = text[fm_end:].lstrip("\n")
+    match = TEMPLATE_BLOCK_RE.search(rest)
+    if not match:
+        raise ValueError(f"Template missing Excalidraw comment block: {template_path}")
+    default_json = json.loads(match.group(2))
+    return {
+        "frontmatter": fm,
+        "comment_prefix": match.group(1),
+        "comment_suffix": match.group(3),
+        "default_json": default_json,
+    }
 
 
-def build_drawing_section(json_text: str) -> str:
-    # Normalise JSON so compression matches Obsidian / Singularity expectations.
-    parsed = json.loads(json_text)
-    compact = json.dumps(parsed, separators=(",", ":"), ensure_ascii=False)
-    compressed = lzstring.LZString().compressToBase64(compact)
-    return (
-        f"{DRAWING_WARNING}\n\n\n"
-        f"## Drawing\n"
-        f"```compressed-json\n"
-        f"{compressed}\n"
-        f"```\n"
-        f"%%"
-    )
+def merge_frontmatter(note_content: str, template_fm: str) -> str:
+    note_keys = parse_frontmatter_keys(note_content)
+    for obsolete in ("flip-side", "pdf"):
+        note_keys.pop(obsolete, None)
 
+    lines = template_fm.rstrip().splitlines()
+    closing_idx = len(lines) - 1
+    extras: list[str] = []
+    for key, value in note_keys.items():
+        if key in ("excalidraw-plugin", "excalidraw-open-md", "tags"):
+            continue
+        extras.append(f"{key}: {value}")
 
-def rewrite_unified(note_content: str, markdown_body: str, drawing_json: str) -> str:
-    with_fm = ensure_excalidraw_frontmatter(note_content)
-    head_end = frontmatter_end(with_fm)
-    head = with_fm[:head_end].rstrip()
-    body = markdown_body.strip()
-    lines = [head]
-    if body:
-        lines.extend(["", body])
-    lines.extend(["", build_drawing_section(drawing_json)])
+    if extras:
+        lines = lines[:closing_idx] + extras + lines[closing_idx:]
     return "\n".join(lines) + "\n"
+
+
+def merge_drawing_json(sidecar_json: str, default_json: dict) -> str:
+    side = json.loads(sidecar_json)
+    merged = copy.deepcopy(default_json)
+    for key in ("type", "version", "source", "elements", "files", "appState"):
+        if key in side:
+            merged[key] = side[key]
+    if not merged.get("elements"):
+        merged["elements"] = side.get("elements", [])
+    return json.dumps(merged, indent="\t", ensure_ascii=False)
+
+
+def build_unified_note(
+    note_content: str,
+    markdown_body: str,
+    drawing_json: str,
+    template: dict,
+) -> str:
+    fm = merge_frontmatter(note_content, template["frontmatter"])
+    body = markdown_body.strip()
+    drawing = merge_drawing_json(drawing_json, template["default_json"])
+    parts = [fm.rstrip()]
+    if body:
+        parts.extend(["", body])
+    parts.extend(
+        [
+            "",
+            template["comment_prefix"] + drawing + template["comment_suffix"].rstrip(),
+        ]
+    )
+    return "\n".join(parts) + "\n"
 
 
 def default_sidecar_for(note_file: Path) -> Path:
@@ -219,6 +264,7 @@ def unify_pair(
     vault_root: Path,
     note_file: Path,
     sidecar_file: Path,
+    template: dict,
     *,
     dry_run: bool,
     force: bool,
@@ -243,17 +289,21 @@ def unify_pair(
             return f"skip (note already has drawing): {note_file.name}"
 
         body = extract_markdown_body(note_content)
-        # Sidecar may contain text only in rare cases; prefer note body.
         if not body.strip():
             body = extract_markdown_body(sidecar_content)
-        unified = rewrite_unified(note_content, body, drawing_json)
+        unified = build_unified_note(note_content, body, drawing_json, template)
     else:
         body = extract_markdown_body(sidecar_content)
-        unified = rewrite_unified("", body, drawing_json)
+        unified = build_unified_note("", body, drawing_json, template)
 
     if dry_run:
-        rel = note_file.relative_to(vault_root) if note_file.is_relative_to(vault_root) else note_file.name
-        return f"would unify -> {rel}"
+        rel = (
+            note_file.relative_to(vault_root)
+            if note_file.is_relative_to(vault_root)
+            else note_file.name
+        )
+        preview = " (no md body)" if not body.strip() else ""
+        return f"would unify -> {rel}{preview}"
 
     note_file.parent.mkdir(parents=True, exist_ok=True)
     note_file.write_text(unified, encoding="utf-8")
@@ -303,6 +353,12 @@ def main() -> int:
         help="Vault root directory (folder containing inbox, .obsidian, etc.)",
     )
     parser.add_argument(
+        "--template",
+        type=Path,
+        default=DEFAULT_TEMPLATE,
+        help=f"Excalidraw template markdown (default: {DEFAULT_TEMPLATE})",
+    )
+    parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Print actions without writing files",
@@ -324,6 +380,17 @@ def main() -> int:
         print(f"Not a directory: {vault_root}", file=sys.stderr)
         return 1
 
+    template_path = args.template.expanduser().resolve()
+    if not template_path.is_file():
+        print(f"Template not found: {template_path}", file=sys.stderr)
+        return 1
+
+    try:
+        template = load_template(template_path)
+    except (ValueError, json.JSONDecodeError) as exc:
+        print(f"Invalid template: {exc}", file=sys.stderr)
+        return 1
+
     seen: set[tuple[Path, Path]] = set()
     results: list[str] = []
 
@@ -338,6 +405,7 @@ def main() -> int:
                 vault_root,
                 note,
                 sidecar,
+                template,
                 dry_run=args.dry_run,
                 force=args.force,
                 delete_sidecars=args.delete_sidecars,
@@ -354,6 +422,7 @@ def main() -> int:
                 vault_root,
                 note,
                 sidecar,
+                template,
                 dry_run=args.dry_run,
                 force=args.force,
                 delete_sidecars=args.delete_sidecars,

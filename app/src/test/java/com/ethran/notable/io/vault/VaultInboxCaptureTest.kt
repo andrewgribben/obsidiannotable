@@ -2,6 +2,7 @@ package com.ethran.notable.io.vault
 
 import com.ethran.notable.data.datastore.VaultConfig
 import com.ethran.notable.io.excalidraw.ExcalidrawSerializer
+import com.ethran.notable.io.excalidraw.ExcalidrawTestTemplate
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -10,6 +11,10 @@ import java.io.File
 import java.nio.file.Files
 
 class VaultInboxCaptureTest {
+
+    init {
+        ExcalidrawTestTemplate.ensureInitialized()
+    }
 
     @Test
     fun `listInboxNotesWithInk returns only inbox unified excalidraw captures`() {

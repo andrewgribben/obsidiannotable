@@ -57,25 +57,38 @@ fun listInboxNotesWithInk(vault: VaultConfig): List<VaultNote> {
         .toList()
 }
 
+private const val INBOX_HEAD_SCAN_BYTES = 8 * 1024
+
+private fun readFileHead(file: File, maxBytes: Int = INBOX_HEAD_SCAN_BYTES): String? {
+    return try {
+        file.inputStream().use { input ->
+            val buf = ByteArray(maxBytes)
+            val read = input.read(buf)
+            if (read <= 0) return null
+            String(buf, 0, read, Charsets.UTF_8)
+        }
+    } catch (e: Exception) {
+        log.e("Failed to read head of ${file.absolutePath}: ${e.message}")
+        null
+    }
+}
+
 private fun inboxCaptureNote(file: File, vaultRoot: File): VaultNote? {
-    val content = runCatching { file.readText() }.getOrNull() ?: return null
-    if (!ExcalidrawSerializer.isExcalidrawNote(content)) return null
-    if (!ExcalidrawSerializer.hasDrawingSection(content)) return null
+    val head = readFileHead(file) ?: return null
+    if (!ExcalidrawSerializer.isExcalidrawNote(head)) return null
+    if (!ExcalidrawSerializer.hasDrawingSectionForListing(file)) return null
     val relative = file.relativeTo(vaultRoot).path.replace('\\', '/')
     return VaultNote(
         file = file,
         relativePath = relative,
         name = file.name.removeSuffix(".md"),
-        hasInk = hasInkInNoteContent(content),
+        hasInk = ExcalidrawSerializer.hasNonemptyInkForListing(file),
         lastModified = file.lastModified()
     )
 }
 
-private fun hasInkInNoteContent(content: String): Boolean {
-    if (!ExcalidrawSerializer.hasDrawingSection(content)) return false
-    val strokes = ExcalidrawSerializer.parse(content, "index")
-    return strokes != null && strokes.isNotEmpty()
-}
+private fun hasInkInNoteContent(content: String): Boolean =
+    ExcalidrawSerializer.hasNonemptyInk(content)
 
 /** Inbox captures with ink across [vaults]. */
 fun listInboxNotesWithInkForVaults(
@@ -138,10 +151,8 @@ class VaultIndex(val vaultRoot: File) {
         )
     }
 
-    private fun hasInkInFile(file: File): Boolean {
-        val content = runCatching { file.readText() }.getOrNull() ?: return false
-        return hasInkInNoteContent(content)
-    }
+    private fun hasInkInFile(file: File): Boolean =
+        ExcalidrawSerializer.hasNonemptyInkForListing(file)
 
     /** Direct children (folders + notes) of [relativeDir] for the tree browser. */
     fun listDir(relativeDir: String): List<VaultNote> {
