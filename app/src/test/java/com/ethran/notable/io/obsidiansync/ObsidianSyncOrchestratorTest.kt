@@ -97,6 +97,7 @@ class ObsidianSyncOrchestratorTest {
                 vault,
                 ObsidianSyncState(
                     vaultUid = "vault-1",
+                    version = 5,
                     files = mutableMapOf(
                         "notes/a.md" to ObsidianSyncFileState(
                             hash = hash,
@@ -306,6 +307,82 @@ class ObsidianSyncOrchestratorTest {
                 assertTrue(local.exists())
                 assertEquals("remote content", local.readText())
                 assertTrue(ObsidianSyncStateStore.load(vault).files.containsKey(plainPath))
+            } finally {
+                serverSocket.get()?.close(1000, "done")
+                server.shutdown()
+            }
+        }
+    }
+
+    @Test
+    fun push_noChanges_withZeroVersion_refreshesServerVersion() {
+        withFullSync {
+            val vault = createTempDirectory().toFile()
+            val note = File(vault, "notes/a.md").apply {
+                parentFile.mkdirs()
+                writeText("hello")
+            }
+            val hash = com.ethran.notable.io.VaultFileStore.hashOf(note.readBytes())
+            ObsidianSyncStateStore.save(
+                vault,
+                ObsidianSyncState(
+                    vaultUid = "vault-1",
+                    version = 0,
+                    files = mutableMapOf(
+                        "notes/a.md" to ObsidianSyncFileState(
+                            hash = hash,
+                            syncHash = hash,
+                            mtime = note.lastModified(),
+                            ctime = note.lastModified(),
+                            size = note.length()
+                        )
+                    )
+                )
+            )
+
+            val serverSocket = AtomicReference<WebSocket>()
+            val server = MockWebServer()
+            server.start()
+            try {
+                enqueueAuth(server)
+                server.enqueue(
+                    MockResponse().withWebSocketUpgrade(
+                        object : WebSocketListener() {
+                            override fun onOpen(webSocket: WebSocket, response: Response) {
+                                serverSocket.set(webSocket)
+                            }
+
+                            override fun onMessage(webSocket: WebSocket, text: String) {
+                                if (text.contains("\"op\":\"init\"")) {
+                                    webSocket.send(json.encodeToString(SyncServerResponse(res = "ok")))
+                                    webSocket.send(
+                                        buildJsonObject {
+                                            put("op", "ready")
+                                            put("version", 42)
+                                        }.toString()
+                                    )
+                                }
+                            }
+                        }
+                    )
+                )
+
+                val wsUrl = server.url("/").toString().replace("http://", "ws://")
+                val orchestrator = ObsidianSyncOrchestrator(
+                    api = apiClient(server),
+                    connect = { params ->
+                        SyncWebSocketClient.connectForTest(wsUrl, params, OkHttpClient.Builder().build())
+                    }
+                )
+
+                val result = orchestrator.push(
+                    vaultRoot = vault,
+                    credentials = testCredentials(e2ePassword = "vault-password")
+                )
+
+                assertEquals(0, result.filesPushed)
+                assertEquals(0, result.filesDeleted)
+                assertEquals(42, ObsidianSyncStateStore.load(vault).version)
             } finally {
                 serverSocket.get()?.close(1000, "done")
                 server.shutdown()

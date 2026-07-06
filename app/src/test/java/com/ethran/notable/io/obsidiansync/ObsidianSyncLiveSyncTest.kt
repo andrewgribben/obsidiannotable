@@ -52,11 +52,18 @@ class ObsidianSyncLiveSyncTest {
             )
             val orchestrator = ObsidianSyncOrchestrator()
             val push = orchestrator.push(vaultRoot, credentials)
+            println("ObsidianSyncLiveSyncTest push: pushed=${push.filesPushed} deleted=${push.filesDeleted}")
+            val stateAfterPush = ObsidianSyncStateStore.load(vaultRoot)
+            println("ObsidianSyncLiveSyncTest state version after push: ${stateAfterPush.version}")
             require(push.filesPushed >= 0)
+            require(stateAfterPush.version > 0L) {
+                "Expected non-zero sync version after push; check .obsync-state.json"
+            }
 
             val skipPull = System.getenv(ENV_SKIP_PULL)?.equals("true", ignoreCase = true) == true
             if (!skipPull) {
                 val pull = orchestrator.pull(vaultRoot, credentials)
+                println("ObsidianSyncLiveSyncTest pull: synced=${pull.filesSynced} deleted=${pull.filesDeleted} version=${pull.version}")
                 require(pull.version >= 0)
             }
         } finally {

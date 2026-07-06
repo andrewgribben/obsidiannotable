@@ -55,22 +55,13 @@ class ObsidianSyncOrchestrator(
         val deletePaths = state.files.keys.filter { it !in localFiles }.sorted()
 
         if (pushPaths.isEmpty() && deletePaths.isEmpty()) {
+            if (state.version == 0L) {
+                refreshServerVersion(vaultRoot, session, state, credentials)
+            }
             return PushResult(filesPushed = 0, filesDeleted = 0)
         }
 
-        val client = connect(
-            SyncConnectParams(
-                host = session.syncHost,
-                token = session.token,
-                vaultUid = session.vault.id,
-                keyHash = session.keyHash,
-                version = state.version,
-                initial = false,
-                device = credentials.device,
-                encryptionVersion = session.vault.encryptionVersion,
-                key = session.key
-            )
-        )
+        val client = openSyncClient(session, state, credentials)
         try {
             val version = drainUntilReady(client)
 
@@ -124,19 +115,7 @@ class ObsidianSyncOrchestrator(
         state.vaultUid = session.vault.id
 
         val initial = state.version == 0L
-        val client = connect(
-            SyncConnectParams(
-                host = session.syncHost,
-                token = session.token,
-                vaultUid = session.vault.id,
-                keyHash = session.keyHash,
-                version = state.version,
-                initial = initial,
-                device = credentials.device,
-                encryptionVersion = session.vault.encryptionVersion,
-                key = session.key
-            )
-        )
+        val client = openSyncClient(session, state, credentials, initial = initial)
         try {
             val pushes = mutableListOf<SyncPushMessage>()
             while (true) {
@@ -246,6 +225,40 @@ class ObsidianSyncOrchestrator(
             syncHost = syncHost
         )
     }
+
+    private fun refreshServerVersion(
+        vaultRoot: File,
+        session: Session,
+        state: ObsidianSyncState,
+        credentials: Credentials
+    ) {
+        val client = openSyncClient(session, state, credentials)
+        try {
+            state.version = drainUntilReady(client)
+            ObsidianSyncStateStore.save(vaultRoot, state)
+        } finally {
+            client.close()
+        }
+    }
+
+    private fun openSyncClient(
+        session: Session,
+        state: ObsidianSyncState,
+        credentials: Credentials,
+        initial: Boolean = false
+    ): ObsidianSyncConnection = connect(
+        SyncConnectParams(
+            host = session.syncHost,
+            token = session.token,
+            vaultUid = session.vault.id,
+            keyHash = session.keyHash,
+            version = state.version,
+            initial = initial,
+            device = credentials.device,
+            encryptionVersion = session.vault.encryptionVersion,
+            key = session.key
+        )
+    )
 
     private fun drainUntilReady(client: ObsidianSyncConnection): Long {
         while (true) {
