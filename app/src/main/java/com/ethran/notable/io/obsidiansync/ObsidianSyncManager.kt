@@ -23,6 +23,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
 import javax.inject.Singleton
 import android.content.Context
@@ -38,6 +39,7 @@ class ObsidianSyncManager @Inject constructor(
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val vaultMutexes = ConcurrentHashMap<String, Mutex>()
     private val debouncedPushJobs = ConcurrentHashMap<String, Job>()
+    private val activeSyncOperations = AtomicInteger(0)
 
     private val _uiState = MutableStateFlow(ObsidianSyncUiState())
     val uiState: StateFlow<ObsidianSyncUiState> = _uiState.asStateFlow()
@@ -161,7 +163,7 @@ class ObsidianSyncManager @Inject constructor(
                 return@launch
             }
 
-            _uiState.value = ObsidianSyncUiState(syncing = true, statusMessage = "Syncing…")
+            beginSyncIndicator("Syncing…")
             val warning = dualClientWarning()
             val results = mutableListOf<VaultSyncResult>()
             try {
@@ -170,10 +172,7 @@ class ObsidianSyncManager @Inject constructor(
                 }
                 VaultIndexRegistry.invalidateAll()
             } finally {
-                _uiState.value = ObsidianSyncUiState(
-                    syncing = false,
-                    statusMessage = formatSyncSummary(results)
-                )
+                endSyncIndicator(formatSyncSummary(results))
             }
             onComplete(MultiVaultSyncResult(results = results, warning = warning))
         }
@@ -263,10 +262,34 @@ class ObsidianSyncManager @Inject constructor(
     private suspend fun pushVault(vault: VaultConfig) {
         val root = vaultRootDir(vault) ?: return
         val creds = orchestratorCredentials(vault) ?: return
+        beginSyncIndicator("Uploading ${vault.displayName}…", vault.id)
         try {
             withFullSync { orchestrator.push(root, creds) }
         } catch (e: Exception) {
             log.e("Background push failed for ${vault.displayName}: ${e.message}")
+        } finally {
+            endSyncIndicator()
+        }
+    }
+
+    private fun beginSyncIndicator(message: String, vaultId: String? = null) {
+        if (activeSyncOperations.incrementAndGet() == 1) {
+            _uiState.value = ObsidianSyncUiState(
+                syncing = true,
+                vaultId = vaultId,
+                statusMessage = message
+            )
+        }
+    }
+
+    private fun endSyncIndicator(statusMessage: String? = null) {
+        val remaining = activeSyncOperations.decrementAndGet()
+        if (remaining <= 0) {
+            activeSyncOperations.set(0)
+            _uiState.value = ObsidianSyncUiState(
+                syncing = false,
+                statusMessage = statusMessage ?: _uiState.value.statusMessage
+            )
         }
     }
 

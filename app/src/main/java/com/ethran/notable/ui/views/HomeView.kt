@@ -69,6 +69,7 @@ import com.ethran.notable.ui.SnackState
 import com.ethran.notable.ui.components.BreadCrumb
 import com.ethran.notable.ui.components.NotebookCard
 import com.ethran.notable.ui.components.CaptureCoverPreview
+import com.ethran.notable.ui.components.ObsidianSyncIndicator
 import com.ethran.notable.ui.components.PagePreview
 import com.ethran.notable.ui.components.QuickSwitcher
 import com.ethran.notable.ui.components.ShowPagesRow
@@ -87,7 +88,6 @@ import compose.icons.feathericons.Edit3
 import compose.icons.feathericons.FilePlus
 import compose.icons.feathericons.Folder
 import compose.icons.feathericons.FolderPlus
-import compose.icons.feathericons.RefreshCcw
 import compose.icons.feathericons.Search
 import compose.icons.feathericons.Settings
 import compose.icons.feathericons.Sliders
@@ -118,6 +118,7 @@ fun Library(
     viewModel: LibraryViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val syncState by viewModel.obsidianSyncState.collectAsStateWithLifecycle()
 
     LaunchedEffect(folderId) {
         viewModel.loadFolder(folderId)
@@ -147,6 +148,7 @@ fun Library(
         onCreateNewNotebook = viewModel::onCreateNewNotebook,
         onImportPdf = viewModel::onPdfFile,
         onImportXopp = viewModel::onXoppFile,
+        obsidianSyncing = syncState.syncing,
         onSyncVaults = viewModel::syncObsidianVaults
     )
 }
@@ -176,6 +178,7 @@ fun LibraryContent(
     onCreateNewNotebook: () -> Unit,
     onImportPdf: (Uri, Boolean) -> Unit,
     onImportXopp: (Uri) -> Unit,
+    obsidianSyncing: Boolean = false,
     onSyncVaults: () -> Unit = {},
 ) {
     val context = LocalContext.current
@@ -243,12 +246,9 @@ fun LibraryContent(
                     .padding(8.dp)
                     .noRippleClickable { showHomeGridOptions = true }
             )
-            Icon(
-                imageVector = FeatherIcons.RefreshCcw,
-                contentDescription = "Sync vaults",
-                Modifier
-                    .padding(8.dp)
-                    .noRippleClickable { onSyncVaults() }
+            ObsidianSyncIndicator(
+                syncing = obsidianSyncing,
+                onClick = onSyncVaults
             )
             Icon(
                 imageVector = FeatherIcons.Settings, contentDescription = "Settings",

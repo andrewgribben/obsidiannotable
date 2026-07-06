@@ -102,6 +102,7 @@ class LibraryViewModel @Inject constructor(
     val obsidianSyncState = obsidianSyncManager.uiState
 
     fun syncObsidianVaults() {
+        if (obsidianSyncManager.uiState.value.syncing) return
         viewModelScope.launch {
             val settings = GlobalAppSettings.current.normalizedVaults()
             obsidianSyncManager.syncAll(settings) { result ->
