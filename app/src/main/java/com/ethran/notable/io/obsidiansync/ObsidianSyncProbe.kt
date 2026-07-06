@@ -7,7 +7,9 @@ package com.ethran.notable.io.obsidiansync
  * Safe to run with real credentials during development.
  */
 class ObsidianSyncProbe(
-    private val api: ObsidianApiClient = ObsidianApiClient()
+    private val api: ObsidianApiClient = ObsidianApiClient(),
+    private val maxAttempts: Int = 3,
+    private val retryDelayMs: Long = 2_000L
 ) {
 
     data class VaultSummary(
@@ -43,8 +45,8 @@ class ObsidianSyncProbe(
         require(credentials.email.isNotBlank()) { "email required" }
         require(credentials.password.isNotBlank()) { "password required" }
 
-        val signin = api.signin(credentials.email, credentials.password, credentials.mfa)
-        val listed = api.listVaults(signin.token)
+        val signin = withRetry { api.signin(credentials.email, credentials.password, credentials.mfa) }
+        val listed = withRetry { api.listVaults(signin.token) }
         val summaries = listed.allVaults().map { vault ->
             VaultSummary(
                 id = vault.id,
@@ -76,13 +78,15 @@ class ObsidianSyncProbe(
         val passwordForKey = e2ePassword.ifBlank { vault.password }
         val key = ObsidianCrypto.deriveKey(passwordForKey, vault.salt)
         val keyHash = ObsidianCrypto.computeKeyHash(key, vault.salt, vault.encryptionVersion)
-        val syncHost = api.vaultAccess(
-            token = signin.token,
-            vaultUid = vault.id,
-            keyHash = keyHash,
-            fallbackHost = vault.host,
-            encryptionVersion = vault.encryptionVersion
-        )
+        val syncHost = withRetry {
+            api.vaultAccess(
+                token = signin.token,
+                vaultUid = vault.id,
+                keyHash = keyHash,
+                fallbackHost = vault.host,
+                encryptionVersion = vault.encryptionVersion
+            )
+        }
 
         val validated = VaultSummary(
             id = vault.id,
@@ -97,5 +101,26 @@ class ObsidianSyncProbe(
             validatedVault = validated,
             syncHost = syncHost
         )
+    }
+
+    private fun <T> withRetry(block: () -> T): T {
+        var last: ObsidianApiException? = null
+        repeat(maxAttempts) { attempt ->
+            try {
+                return block()
+            } catch (e: ObsidianApiException) {
+                last = e
+                if (!e.isRetryable() || attempt == maxAttempts - 1) throw e
+                Thread.sleep(retryDelayMs)
+            }
+        }
+        throw last ?: IllegalStateException("retry exhausted")
+    }
+
+    private fun ObsidianApiException.isRetryable(): Boolean {
+        val msg = apiMessage.lowercase()
+        return msg.contains("overloaded") ||
+            msg.contains("try again") ||
+            msg.contains("rate limit")
     }
 }
