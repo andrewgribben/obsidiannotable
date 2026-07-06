@@ -110,12 +110,6 @@ data class AppSettings(
     // Ordered pin keys for home captures (see HomeCaptureKeys).
     val homePinnedCaptureKeys: List<String> = emptyList(),
 
-    /** One-time migration of legacy quick pages → flip-side captures (see FlipSideManager). */
-    val legacyQuickPagesMigrated: Boolean = false,
-
-    /** One-time merge of `.flip.excalidraw.md` sidecars into unified note files. */
-    val flipSidesUnifiedToExcalidrawMd: Boolean = false,
-
     // Last browsed folder per vault in the in-app vault browser (relative path, "" = root).
     val vaultBrowserDirByVault: Map<String, String> = emptyMap(),
 

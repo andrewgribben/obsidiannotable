@@ -3,8 +3,6 @@ package com.ethran.notable.ui.viewmodels
 /** Stable keys for home-grid captures (pinning, filter bookkeeping). */
 object HomeCaptureKeys {
     fun vault(vaultId: String, relativePath: String) = "v:$vaultId:$relativePath"
-
-    fun legacy(pageId: String) = "l:$pageId"
 }
 
 /**
@@ -15,15 +13,10 @@ fun orderHomeCaptures(
     items: List<HomeCaptureItem>,
     sortMode: String,
     pinnedKeys: List<String>,
-    vaultFilterIds: Set<String>,
-    showLegacy: Boolean
+    vaultFilterIds: Set<String>
 ): List<HomeCaptureItem> {
     val filtered = items.filter { item ->
-        when (item) {
-            is HomeCaptureItem.LegacyQuickPage -> showLegacy
-            is HomeCaptureItem.VaultCapture ->
-                vaultFilterIds.isEmpty() || item.vaultId in vaultFilterIds
-        }
+        vaultFilterIds.isEmpty() || item.vaultId in vaultFilterIds
     }
     val validKeys = filtered.map { it.captureKey }.toSet()
     val pinOrder = pinnedKeys.filter { it in validKeys }

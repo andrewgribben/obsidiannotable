@@ -55,7 +55,11 @@ object ExcalidrawSerializer {
             EXCALIDRAW_TAG_REGEX.containsMatchIn(fm)
     }
 
-    /** True when [content] contains a drawing block (compressed-json, json fence, or raw JSON). */
+    /** True when [content] contains a drawing block fence (no decompression). */
+    fun hasDrawingSection(content: String): Boolean =
+        drawingSectionStartIndex(content) >= 0 || content.trimStart().startsWith("{")
+
+    /** True when [content] contains a parseable drawing (decompresses compressed-json). */
     fun hasEmbeddedDrawing(content: String): Boolean =
         extractDrawingJson(content) != null
 

@@ -210,16 +210,6 @@ class NotableNavigator(
         }
     }
 
-    /** Migrates a legacy quick page to flip-side capture and opens it. */
-    fun onOpenLegacyCapture(appRepository: AppRepository, pageId: String) {
-        coroutineScope.launch {
-            val openId = withContext(Dispatchers.IO) {
-                FlipSideManager.migrateQuickPageToCapture(appRepository, pageId)
-            } ?: return@launch
-            navController.navigate(EditorDestination.createRoute(openId, null))
-        }
-    }
-
     fun onCreateNewQuickPage(appRepository: AppRepository, folderId: String?) {
         coroutineScope.launch {
             val pageId = withContext(Dispatchers.IO) {

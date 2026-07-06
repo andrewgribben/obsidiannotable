@@ -112,7 +112,6 @@ fun Library(
     goToPage: (String) -> Unit = {},
     onCreateNewCapture: (String) -> Unit = {},
     onOpenFlipSide: (String, String) -> Unit = { _, _ -> },
-    onOpenLegacyCapture: (String) -> Unit = {},
     viewModel: LibraryViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -138,7 +137,6 @@ fun Library(
         goToPage = goToPage,
         onCreateNewCapture = onCreateNewCapture,
         onOpenFlipSide = onOpenFlipSide,
-        onOpenLegacyCapture = onOpenLegacyCapture,
         onTogglePin = viewModel::togglePin,
         onDeleteCaptureInk = viewModel::deleteCaptureInk,
         onSetHomeGridOptions = viewModel::setHomeGridOptions,
@@ -164,7 +162,6 @@ fun LibraryContent(
     goToPage: (String) -> Unit,
     onCreateNewCapture: (String) -> Unit,
     onOpenFlipSide: (String, String) -> Unit,
-    onOpenLegacyCapture: (String) -> Unit,
     onTogglePin: (String) -> Unit,
     onDeleteCaptureInk: (String, String) -> Unit,
     onSetHomeGridOptions: (String, Set<String>) -> Unit,
@@ -248,9 +245,8 @@ fun LibraryContent(
             )
         }
 
-        // Capture grid: vault notes with flip-side ink + unmigrated legacy quick pages.
+        // Capture grid: unified inbox Excalidraw captures.
         val captures = uiState.homeCaptures
-        val nameFormat = remember { SimpleDateFormat("yyyy-MM-dd-HH-mm-ss", Locale.US) }
         LazyVerticalGrid(
             columns = GridCells.Adaptive(140.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -286,30 +282,16 @@ fun LibraryContent(
                 }
             }
 
-            items(captures, key = { item ->
-                when (item) {
-                    is HomeCaptureItem.VaultCapture -> "vault:${item.vaultId}:${item.note.relativePath}"
-                    is HomeCaptureItem.LegacyQuickPage -> "legacy:${item.page.id}"
-                }
-            }) { item ->
-                when (item) {
-                    is HomeCaptureItem.VaultCapture -> VaultCaptureCard(
-                        item = item,
-                        isPinned = item.captureKey in pinnedKeys,
-                        showVaultName = multipleVaults,
-                        onOpenFlipSide = onOpenFlipSide,
-                        onOpenText = onOpenVaultNote,
-                        onTogglePin = onTogglePin,
-                        onDeleteInk = onDeleteCaptureInk
-                    )
-                    is HomeCaptureItem.LegacyQuickPage -> LegacyCaptureCard(
-                        item = item,
-                        nameFormat = nameFormat,
-                        isPinned = item.captureKey in pinnedKeys,
-                        onOpen = onOpenLegacyCapture,
-                        onTogglePin = onTogglePin
-                    )
-                }
+            items(captures, key = { item -> "vault:${item.vaultId}:${item.note.relativePath}" }) { item ->
+                VaultCaptureCard(
+                    item = item,
+                    isPinned = item.captureKey in pinnedKeys,
+                    showVaultName = multipleVaults,
+                    onOpenFlipSide = onOpenFlipSide,
+                    onOpenText = onOpenVaultNote,
+                    onTogglePin = onTogglePin,
+                    onDeleteInk = onDeleteCaptureInk
+                )
             }
         }
     }
@@ -364,14 +346,10 @@ fun LibraryContent(
     }
 }
 
-/** A legacy capture page's display name from its creation timestamp. */
-private fun pageDisplayName(page: Page, format: SimpleDateFormat): String =
-    format.format(page.createdAt)
-
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun VaultCaptureCard(
-    item: HomeCaptureItem.VaultCapture,
+    item: HomeCaptureItem,
     isPinned: Boolean,
     showVaultName: Boolean,
     onOpenFlipSide: (String, String) -> Unit,
@@ -501,49 +479,6 @@ private fun CaptureCardMenu(
                 Text("Delete")
             }
         }
-    }
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-private fun LegacyCaptureCard(
-    item: HomeCaptureItem.LegacyQuickPage,
-    nameFormat: SimpleDateFormat,
-    isPinned: Boolean,
-    onOpen: (String) -> Unit,
-    onTogglePin: (String) -> Unit
-) {
-    Column {
-        Box {
-            PagePreview(
-                modifier = Modifier
-                    .combinedClickable(
-                        onClick = { onOpen(item.page.id) },
-                        onLongClick = { onTogglePin(item.captureKey) }
-                    )
-                    .aspectRatio(3f / 4f)
-                    .border(1.dp, Color.Gray, RectangleShape),
-                pageId = item.page.id
-            )
-            if (isPinned) {
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(6.dp)
-                        .size(10.dp)
-                        .background(Color.Black, RectangleShape)
-                )
-            }
-        }
-        Spacer(Modifier.height(4.dp))
-        Text(
-            text = pageDisplayName(item.page, nameFormat),
-            fontSize = 12.sp,
-            color = Color.DarkGray,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.fillMaxWidth()
-        )
     }
 }
 

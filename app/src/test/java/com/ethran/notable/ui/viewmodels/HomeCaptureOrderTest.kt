@@ -1,12 +1,10 @@
 package com.ethran.notable.ui.viewmodels
 
-import com.ethran.notable.data.db.Page
 import com.ethran.notable.io.vault.VaultNote
 import com.ethran.notable.ui.views.VaultSort
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.io.File
-import java.util.Date
 
 class HomeCaptureOrderTest {
 
@@ -15,9 +13,9 @@ class HomeCaptureOrderTest {
         path: String,
         name: String,
         lastModified: Long
-    ): HomeCaptureItem.VaultCapture {
+    ): HomeCaptureItem {
         val file = File(path)
-        return HomeCaptureItem.VaultCapture(
+        return HomeCaptureItem(
             vaultId = vaultId,
             vaultName = vaultId,
             note = VaultNote(
@@ -34,7 +32,6 @@ class HomeCaptureOrderTest {
     @Test
     fun `capture keys are stable`() {
         assertEquals("v:v1:inbox/a.md", HomeCaptureKeys.vault("v1", "inbox/a.md"))
-        assertEquals("l:page-1", HomeCaptureKeys.legacy("page-1"))
     }
 
     @Test
@@ -46,8 +43,7 @@ class HomeCaptureOrderTest {
             items = listOf(a, b, c),
             sortMode = VaultSort.NEWEST,
             pinnedKeys = listOf(a.captureKey, c.captureKey),
-            vaultFilterIds = emptySet(),
-            showLegacy = true
+            vaultFilterIds = emptySet()
         )
         assertEquals(listOf(a, c, b), ordered)
     }
@@ -60,8 +56,7 @@ class HomeCaptureOrderTest {
             items = listOf(v1, v2),
             sortMode = VaultSort.NEWEST,
             pinnedKeys = emptyList(),
-            vaultFilterIds = setOf("v1"),
-            showLegacy = true
+            vaultFilterIds = setOf("v1")
         )
         assertEquals(listOf(v1), ordered)
     }
@@ -74,8 +69,7 @@ class HomeCaptureOrderTest {
             items = listOf(v1, v2),
             sortMode = VaultSort.NEWEST,
             pinnedKeys = emptyList(),
-            vaultFilterIds = emptySet(),
-            showLegacy = true
+            vaultFilterIds = emptySet()
         )
         assertEquals(listOf(v2, v1), ordered)
     }
@@ -89,64 +83,14 @@ class HomeCaptureOrderTest {
             items = listOf(a, b),
             sortMode = VaultSort.NAME_ASC,
             pinnedKeys = pinned,
-            vaultFilterIds = emptySet(),
-            showLegacy = true
+            vaultFilterIds = emptySet()
         )
         assertEquals(listOf(b, a), byName)
     }
 
     @Test
-    fun `legacy items included when showLegacy is true`() {
-        val legacy = HomeCaptureItem.LegacyQuickPage(
-            Page(id = "legacy-1", updatedAt = Date(500L))
-        )
-        val vault = vaultCapture("v1", "inbox/a.md", "a", 100L)
-        val ordered = orderHomeCaptures(
-            items = listOf(vault, legacy),
-            sortMode = VaultSort.NEWEST,
-            pinnedKeys = emptyList(),
-            vaultFilterIds = emptySet(),
-            showLegacy = true
-        )
-        assertEquals(listOf(legacy, vault), ordered)
-    }
-
-    @Test
-    fun `vault capture sort key uses newer of note and flip side mtime`() {
-        val noteFile = java.io.File("/vault/inbox/capture.md")
-        val flipFile = java.io.File("/vault/inbox/capture.flip.excalidraw.md")
-        val item = HomeCaptureItem.VaultCapture(
-            vaultId = "v1",
-            vaultName = "Vault",
-            note = VaultNote(
-                file = noteFile,
-                relativePath = "inbox/capture.md",
-                name = "capture",
-                hasInk = true,
-                lastModified = 100L
-            ),
-            previewPageId = null
-        )
-        // Without a real flip file on disk, falls back to note mtime.
+    fun `sort key uses note file mtime`() {
+        val item = vaultCapture("v1", "inbox/capture.md", "capture", 100L)
         assertEquals(100L, item.sortKeyModified)
-
-        val tempDir = kotlin.io.path.createTempDirectory("flip-mtime").toFile()
-        val note = java.io.File(tempDir, "capture.md").apply { writeText("# note") }
-        val flip = java.io.File(tempDir, "capture.flip.excalidraw.md").apply { writeText("%%") }
-        flip.setLastModified(500L)
-        note.setLastModified(100L)
-        val withInk = HomeCaptureItem.VaultCapture(
-            vaultId = "v1",
-            vaultName = "Vault",
-            note = VaultNote(
-                file = note,
-                relativePath = "capture.md",
-                name = "capture",
-                hasInk = true,
-                lastModified = note.lastModified()
-            ),
-            previewPageId = null
-        )
-        assertEquals(flip.lastModified(), withInk.sortKeyModified)
     }
 }

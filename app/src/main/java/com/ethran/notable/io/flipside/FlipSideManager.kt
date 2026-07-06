@@ -16,8 +16,6 @@ import com.ethran.notable.io.excalidraw.ExcalidrawSerializer
 import com.ethran.notable.io.resolveExternalStoragePath
 import com.ethran.notable.io.vault.FLIP_SIDE_SUFFIX
 import com.ethran.notable.io.vault.NoteEditGuard
-import com.ethran.notable.io.vault.flipSideFileFor
-import com.ethran.notable.io.vault.resolveFlipSideFile
 import com.ethran.notable.io.vault.vaultRootDir
 import com.ethran.notable.ui.SnackConf
 import com.ethran.notable.ui.SnackState
@@ -71,22 +69,7 @@ object FlipSideManager {
     private val CAPTURE_CREATED_DATE_FORMAT =
         SimpleDateFormat("yyyy-MM-dd", Locale.US)
 
-    private val PDF_FRONTMATTER_REGEX =
-        Regex("""^pdf:\s*.+$""", RegexOption.MULTILINE)
-
     enum class HwrApplyMode { REPLACE, APPEND }
-
-    data class LegacyMigrationResult(
-        val pagesMigrated: Int,
-        val mdNotesUpdated: Int,
-        val failed: Int
-    )
-
-    data class UnifiedMigrationResult(
-        val notesUnified: Int,
-        val sidecarsRemoved: Int,
-        val failed: Int
-    )
 
     private fun noteKey(vaultId: String, relativePath: String) = "FLIP_PAGE:$vaultId:$relativePath"
     private fun pageKey(pageId: String) = "FLIP_NOTE:$pageId"
@@ -139,7 +122,6 @@ object FlipSideManager {
         val vault = vaultById(vaultId) ?: return null
         val root = vaultRootDir(vault) ?: return null
         val noteFile = File(root, noteRelativePath.replace('/', File.separatorChar))
-        mergeLegacySidecarIfNeeded(noteFile, root)
 
         val existingLink = appRepository.kvProxy.get(
             noteKey(vault.id, noteRelativePath), FlipSideLink.serializer()
@@ -243,219 +225,11 @@ object FlipSideManager {
         return null
     }
 
-    /**
-     * Migrates a legacy quick page (DB-only capture) to the flip-side vault model.
-     * Reuses the existing page as the flip-side editor surface when possible.
-     */
-    suspend fun migrateQuickPageToCapture(
-        appRepository: AppRepository,
-        pageId: String
-    ): String? {
-        if (linkForPage(appRepository, pageId) != null) {
-            return pageId
-        }
-
-        val vault = GlobalAppSettings.current.activeVault
-        if (vault == null || vault.inboxPath.isBlank()) {
-            SnackState.globalSnackFlow.tryEmit(
-                SnackConf(text = "Configure a vault and inbox in Settings", duration = 4000)
-            )
-            return null
-        }
-        val root = vaultRootDir(vault) ?: return null
-        val inboxDir = resolveExternalStoragePath(vault.inboxPath)
-        inboxDir.mkdirs()
-
-        val pageWithStrokes = appRepository.pageRepository.getWithStrokeById(pageId)
-        val page = pageWithStrokes.page
-        val strokes = pageWithStrokes.strokes
-        val createdAt = page.createdAt
-        val timestamp = CAPTURE_TIMESTAMP_FORMAT.format(createdAt)
-        val noteFile = File(inboxDir, "$timestamp.md")
-
-        if (noteFile.exists()) {
-            val read = VaultFileStore.read(noteFile) ?: return null
-            val updated = ExcalidrawSerializer.rewriteUnified(
-                read.content,
-                ExcalidrawSerializer.extractMarkdownBody(read.content),
-                strokes
-            )
-            when (val result = VaultFileStore.write(noteFile, updated, expectedHash = read.hash)) {
-                is VaultFileStore.WriteResult.Success -> { /* ok */ }
-                else -> {
-                    log.w("Could not update unified capture for ${noteFile.name}: $result")
-                    return null
-                }
-            }
-        } else {
-            val markdown = ExcalidrawSerializer.rewriteUnified(
-                buildCaptureUnifiedStub(createdAt),
-                "",
-                strokes
-            )
-            when (val result = VaultFileStore.write(noteFile, markdown)) {
-                is VaultFileStore.WriteResult.Success -> { /* ok */ }
-                else -> {
-                    log.e("Failed to create capture note ${noteFile.name}: $result")
-                    return null
-                }
-            }
-        }
-
-        val relativePath = noteFile.relativeTo(root).path.replace('\\', '/')
-        val folderId = ensureFlipFolder(appRepository)
-        if (page.parentFolderId != folderId) {
-            appRepository.pageRepository.update(page.copy(parentFolderId = folderId))
-        }
-
-        val fileHash = VaultFileStore.currentHash(noteFile)
-        if (!acquireGuard(vault.id, relativePath, pageId)) return null
-
-        val link = FlipSideLink(
-            vaultId = vault.id,
-            relativePath = relativePath,
-            pageId = pageId,
-            fileHash = fileHash
-        )
-        saveLink(appRepository, link)
-        PageDataManager.evictLoadedPageData(pageId)
-        log.i("Migrated quick page $pageId to unified capture $relativePath")
-        return pageId
-    }
-
-    /**
-     * One-time pass: migrates all legacy DB quick pages to flip-side captures and updates
-     * any inbox markdown notes that still reference a PDF to use flip-side Excalidraw instead.
-     */
-    suspend fun runLegacyQuickPageMigration(
-        appRepository: AppRepository
-    ): LegacyMigrationResult {
-        var pagesMigrated = 0
-        var failed = 0
-
-        val unmigrated = appRepository.pageRepository.getAllSinglePages().filter { page ->
-            page.notebookId == null && linkForPage(appRepository, page.id) == null
-        }
-        for (page in unmigrated) {
-            try {
-                if (migrateQuickPageToCapture(appRepository, page.id) != null) {
-                    pagesMigrated++
-                } else {
-                    failed++
-                }
-            } catch (e: OutOfMemoryError) {
-                log.e("OOM migrating quick page ${page.id}", e)
-                failed++
-            } catch (e: Exception) {
-                log.e("Failed migrating quick page ${page.id}: ${e.message}", e)
-                failed++
-            }
-        }
-
-        var mdNotesUpdated = 0
-        for (vault in GlobalAppSettings.current.normalizedVaults().vaults) {
-            if (vault.inboxPath.isBlank()) continue
-            try {
-                mdNotesUpdated += migrateInboxPdfNotesToFlipSide(appRepository, vault)
-            } catch (e: OutOfMemoryError) {
-                log.e("OOM migrating inbox PDF notes for vault ${vault.id}", e)
-            } catch (e: Exception) {
-                log.e("Failed migrating inbox PDF notes for vault ${vault.id}: ${e.message}", e)
-            }
-        }
-
-        log.i(
-            "Legacy quick-page migration: $pagesMigrated pages, $mdNotesUpdated md notes, $failed failed"
-        )
-        return LegacyMigrationResult(pagesMigrated, mdNotesUpdated, failed)
-    }
-
-    /**
-     * Updates inbox notes that still have `pdf:` frontmatter: strips the PDF link and
-     * embeds strokes in the unified Excalidraw format when missing.
-     */
-    internal suspend fun migrateInboxPdfNotesToFlipSide(
-        appRepository: AppRepository,
-        vault: VaultConfig
-    ): Int {
-        val inboxDir = resolveExternalStoragePath(vault.inboxPath)
-        if (!inboxDir.isDirectory) return 0
-        val root = vaultRootDir(vault) ?: return 0
-        var updated = 0
-
-        for (noteFile in inboxDir.listFiles().orEmpty()) {
-            if (!noteFile.isFile) continue
-            val name = noteFile.name
-            if (!name.endsWith(".md", ignoreCase = true) ||
-                name.endsWith(FLIP_SIDE_SUFFIX, ignoreCase = true)
-            ) {
-                continue
-            }
-
-            val read = VaultFileStore.read(noteFile) ?: continue
-            if (!PDF_FRONTMATTER_REGEX.containsMatchIn(read.content) &&
-                !Regex("^flip-side:", RegexOption.MULTILINE).containsMatchIn(read.content)
-            ) {
-                continue
-            }
-
-            mergeLegacySidecarIfNeeded(noteFile, root)
-
-            val strokes = if (ExcalidrawSerializer.hasEmbeddedDrawing(read.content)) {
-                ExcalidrawSerializer.parse(read.content, "migrate") ?: emptyList()
-            } else {
-                findPageByNoteTimestamp(appRepository, noteFile)
-                    ?.let { page ->
-                        appRepository.pageRepository.getWithStrokeById(page.id).strokes
-                    }
-                    .orEmpty()
-            }
-
-            val textBody = ExcalidrawSerializer.extractMarkdownBody(read.content)
-            val unified = try {
-                ExcalidrawSerializer.rewriteUnified(read.content, textBody, strokes)
-            } catch (e: OutOfMemoryError) {
-                log.e("OOM unifying ${noteFile.name} — skipping", e)
-                continue
-            } catch (e: Exception) {
-                log.e("Failed unifying ${noteFile.name}: ${e.message}", e)
-                continue
-            }
-
-            when (VaultFileStore.write(noteFile, unified, expectedHash = read.hash)) {
-                is VaultFileStore.WriteResult.Success -> updated++
-                else -> log.w("Could not update unified note ${noteFile.name}")
-            }
-        }
-        return updated
-    }
-
-    /** Matches a legacy quick page to an inbox note by timestamp filename. */
-    internal suspend fun findPageByNoteTimestamp(
-        appRepository: AppRepository,
-        noteFile: File
-    ): Page? {
-        val base = noteFile.name.removeSuffix(".md")
-        return appRepository.pageRepository.getAllSinglePages()
-            .find { CAPTURE_TIMESTAMP_FORMAT.format(it.createdAt) == base }
-    }
-
     /** Builds a new unified inbox capture stub with Excalidraw frontmatter. */
     fun buildCaptureUnifiedStub(createdAt: Date): String {
         val createdDate = CAPTURE_CREATED_DATE_FORMAT.format(createdAt)
         val base = ExcalidrawSerializer.serializeUnified("", emptyList())
         return addFrontmatterProperty(base, "created: \"[[$createdDate]]\"")
-    }
-
-    /** @deprecated Use [buildCaptureUnifiedStub]; kept for tests migrating from sidecar model. */
-    fun buildCaptureNoteStub(createdAt: Date, @Suppress("UNUSED_PARAMETER") flipTarget: String): String =
-        buildCaptureUnifiedStub(createdAt)
-
-    /** @deprecated Sidecars retired; ensures Excalidraw frontmatter and strips pdf. */
-    fun ensureCaptureFrontmatter(content: String, @Suppress("UNUSED_PARAMETER") flipTarget: String): String {
-        val textBody = ExcalidrawSerializer.extractMarkdownBody(content)
-        val strokes = ExcalidrawSerializer.parse(content, "ensure") ?: emptyList()
-        return ExcalidrawSerializer.rewriteUnified(content, textBody, strokes)
     }
 
     /** Relative path of a vault note within [vault], or null when unconfigured. */
@@ -473,13 +247,6 @@ object FlipSideManager {
         noteKey(vaultId, relativePath), FlipSideLink.serializer()
     )?.pageId
 
-    /** True when [pageId] is a legacy quick page not yet linked to a vault flip side. */
-    suspend fun isUnmigratedQuickPage(appRepository: AppRepository, pageId: String): Boolean {
-        if (linkForPage(appRepository, pageId) != null) return false
-        val page = appRepository.pageRepository.getById(pageId) ?: return false
-        return page.notebookId == null
-    }
-
     /** True when [pageId] is a flip-side drawing page (of either purpose). */
     suspend fun isFlipPage(appRepository: AppRepository, pageId: String): Boolean =
         appRepository.kvProxy.get(pageKey(pageId), FlipSideLink.serializer()) != null
@@ -496,7 +263,6 @@ object FlipSideManager {
             ?: GlobalAppSettings.current.activeVault ?: return
         val root = vaultRootDir(vault) ?: return
         val noteFile = File(root, link.relativePath.replace('/', File.separatorChar))
-        mergeLegacySidecarIfNeeded(noteFile, root)
         val fileHash = VaultFileStore.currentHash(noteFile)
         if (fileHash == link.fileHash || fileHash == VaultFileStore.HASH_MISSING) return
         reimportFromFile(appRepository, pageId, noteFile)
@@ -786,99 +552,6 @@ object FlipSideManager {
         releaseGuard(link.pageId)
         log.i("Deleted capture ink for $relativePath")
         return true
-    }
-
-    /**
-     * One-time vault-wide migration: merges `.flip.excalidraw.md` sidecars into their
-     * parent notes as unified Excalidraw markdown.
-     */
-    suspend fun runFlipSidesUnifiedMigration(
-        appRepository: AppRepository
-    ): UnifiedMigrationResult {
-        var notesUnified = 0
-        var sidecarsRemoved = 0
-        var failed = 0
-
-        for (vault in GlobalAppSettings.current.normalizedVaults().vaults) {
-            val root = vaultRootDir(vault) ?: continue
-            try {
-                root.walkTopDown()
-                    .filter { it.isFile && it.name.endsWith(".md", ignoreCase = true) }
-                    .filter { !it.name.endsWith(FLIP_SIDE_SUFFIX, ignoreCase = true) }
-                    .forEach { noteFile ->
-                        try {
-                            val sidecar = flipSideFileFor(noteFile)
-                            val hasSidecar = sidecar.exists()
-                            val read = VaultFileStore.read(noteFile)
-                            val hasFlipFrontmatter = read?.content?.let { content ->
-                                Regex("^flip-side:", RegexOption.MULTILINE).containsMatchIn(content)
-                            } == true
-                            if (!hasSidecar && !hasFlipFrontmatter) return@forEach
-
-                            if (mergeLegacySidecarIfNeeded(noteFile, root)) {
-                                notesUnified++
-                                sidecarsRemoved++
-                            } else if (hasFlipFrontmatter && read != null) {
-                                val strokes = ExcalidrawSerializer.parse(read.content, "unify")
-                                    ?: if (sidecar.exists()) {
-                                        VaultFileStore.read(sidecar)?.content?.let {
-                                            ExcalidrawSerializer.parse(it, "unify")
-                                        }
-                                    } else null
-                                val textBody = ExcalidrawSerializer.extractMarkdownBody(read.content)
-                                val unified = ExcalidrawSerializer.rewriteUnified(
-                                    read.content,
-                                    textBody,
-                                    strokes.orEmpty()
-                                )
-                                when (VaultFileStore.write(noteFile, unified, expectedHash = read.hash)) {
-                                    is VaultFileStore.WriteResult.Success -> {
-                                        notesUnified++
-                                        if (sidecar.exists() && sidecar.delete()) sidecarsRemoved++
-                                    }
-                                    else -> failed++
-                                }
-                            }
-                        } catch (e: OutOfMemoryError) {
-                            log.e("OOM unifying ${noteFile.name}", e)
-                            failed++
-                        } catch (e: Exception) {
-                            log.e("Failed unifying ${noteFile.name}: ${e.message}", e)
-                            failed++
-                        }
-                    }
-            } catch (e: Exception) {
-                log.e("Failed vault walk for ${vault.id}: ${e.message}", e)
-            }
-        }
-
-        log.i("Unified flip-side migration: $notesUnified notes, $sidecarsRemoved sidecars, $failed failed")
-        return UnifiedMigrationResult(notesUnified, sidecarsRemoved, failed)
-    }
-
-    /** Merges a legacy sidecar into [noteFile] when present. Returns true when merged. */
-    internal fun mergeLegacySidecarIfNeeded(noteFile: File, root: File): Boolean {
-        val sidecar = resolveFlipSideFile(noteFile, root)
-        if (!sidecar.isFile || sidecar.absolutePath == noteFile.absolutePath) return false
-
-        val noteRead = VaultFileStore.read(noteFile)
-        val noteContent = noteRead?.content.orEmpty()
-        if (ExcalidrawSerializer.hasEmbeddedDrawing(noteContent)) {
-            if (sidecar.delete()) return false
-            return false
-        }
-
-        val sidecarRead = VaultFileStore.read(sidecar) ?: return false
-        val strokes = ExcalidrawSerializer.parse(sidecarRead.content, "merge") ?: emptyList()
-        val textBody = ExcalidrawSerializer.extractMarkdownBody(noteContent)
-        val unified = ExcalidrawSerializer.rewriteUnified(noteContent, textBody, strokes)
-        return when (VaultFileStore.write(noteFile, unified, expectedHash = noteRead?.hash)) {
-            is VaultFileStore.WriteResult.Success -> {
-                sidecar.delete()
-                true
-            }
-            else -> false
-        }
     }
 
     /** Replaces the page's strokes with the unified note file contents. */

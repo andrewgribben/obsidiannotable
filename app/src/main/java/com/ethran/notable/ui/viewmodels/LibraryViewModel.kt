@@ -10,7 +10,6 @@ import com.ethran.notable.data.PageDataManager
 import com.ethran.notable.data.datastore.GlobalAppSettings
 import com.ethran.notable.data.db.Folder
 import com.ethran.notable.data.db.Notebook
-import com.ethran.notable.data.db.Page
 import com.ethran.notable.data.model.BackgroundType
 import com.ethran.notable.io.ExportEngine
 import com.ethran.notable.io.ImportEngine
@@ -19,7 +18,6 @@ import com.ethran.notable.io.flipside.FlipSideManager
 import com.ethran.notable.io.vault.listInboxNotesWithInkForVaults
 import com.ethran.notable.ui.SnackConf
 import com.ethran.notable.ui.SnackState
-import com.ethran.notable.ui.viewmodels.HomeCaptureKeys
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -28,8 +26,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -65,15 +64,9 @@ class LibraryViewModel @Inject constructor(
         _folderId.flatMapLatest { id -> folderRepository.getAllInFolder(id).asFlow() }
     private val _booksFlow =
         _folderId.flatMapLatest { id -> bookRepository.getAllInFolder(id).asFlow() }
-    private val _singlePagesFlow =
-        _folderId.flatMapLatest { id -> pageRepository.getSinglePagesInFolder(id).asFlow() }
 
-    private val _homeCapturesFlow = combine(_singlePagesFlow, _homeCapturesRefresh) { pages, _ ->
-        pages
-    }.flatMapLatest { legacyPages ->
-        flow {
-            emit(buildHomeCaptures(legacyPages))
-        }
+    private val _homeCapturesFlow = _homeCapturesRefresh.flatMapLatest {
+        flow { emit(buildHomeCaptures()) }.flowOn(Dispatchers.IO)
     }
 
     private val _dbDataFlow = combine(
@@ -103,12 +96,16 @@ class LibraryViewModel @Inject constructor(
         _homeCapturesRefresh.value++
     }
 
-    private suspend fun buildHomeCaptures(legacyPages: List<Page>): List<HomeCaptureItem> {
+    private suspend fun buildHomeCaptures(): List<HomeCaptureItem> {
         if (_folderId.value != null) return emptyList()
 
         val settings = GlobalAppSettings.current.normalizedVaults()
-        val vaultItems = listInboxNotesWithInkForVaults(settings.vaults).map { (vault, note) ->
-            HomeCaptureItem.VaultCapture(
+        val vaultsToScan = settings.vaults.let { all ->
+            if (settings.homeVaultFilterIds.isEmpty()) all
+            else all.filter { it.id in settings.homeVaultFilterIds }
+        }
+        val vaultItems = listInboxNotesWithInkForVaults(vaultsToScan).map { (vault, note) ->
+            HomeCaptureItem(
                 vaultId = vault.id,
                 vaultName = vault.displayName,
                 note = note,
@@ -117,22 +114,18 @@ class LibraryViewModel @Inject constructor(
                 )
             )
         }
-        val legacyItems = legacyPages.map { HomeCaptureItem.LegacyQuickPage(it) }
-        val allItems = vaultItems + legacyItems
-        val validKeys = allItems.map { it.captureKey }.toSet()
+        val validKeys = vaultItems.map { it.captureKey }.toSet()
         val prunedPins = settings.homePinnedCaptureKeys.filter { it in validKeys }
         if (prunedPins != settings.homePinnedCaptureKeys) {
             appRepository.kvProxy.setAppSettings(
                 settings.copy(homePinnedCaptureKeys = prunedPins)
             )
         }
-        val showLegacy = true
         return orderHomeCaptures(
-            items = allItems,
+            items = vaultItems,
             sortMode = settings.homeSortMode,
             pinnedKeys = prunedPins,
-            vaultFilterIds = settings.homeVaultFilterIds,
-            showLegacy = showLegacy
+            vaultFilterIds = settings.homeVaultFilterIds
         )
     }
 
@@ -260,7 +253,6 @@ class LibraryViewModel @Inject constructor(
             SnackState.globalSnackFlow.tryEmit(SnackConf(text = snackText, duration = 2000))
 
             try {
-                // Ideally, ImportEngine should be injected via Hilt rather than instantiated here
                 importEngine.import(
                     uri, ImportOptions(folderId = _folderId.value, linkToExternalFile = !copy)
                 )

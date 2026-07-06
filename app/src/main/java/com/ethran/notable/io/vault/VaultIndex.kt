@@ -40,20 +40,41 @@ fun inboxDirRelativeToVault(vault: VaultConfig): String? {
 
 /** Notes under the vault inbox that use unified Excalidraw format with a drawing block. */
 fun listInboxNotesWithInk(vault: VaultConfig): List<VaultNote> {
-    val index = VaultIndexRegistry.forVault(vault) ?: return emptyList()
-    val inboxRel = inboxDirRelativeToVault(vault) ?: return emptyList()
-    val prefix = if (inboxRel.isEmpty()) "" else "$inboxRel/"
-    return index.refresh()
-        .filter { note ->
-            (inboxRel.isEmpty() || note.relativePath.startsWith(prefix)) &&
-                isUnifiedInboxCapture(note)
+    if (vault.inboxPath.isBlank()) return emptyList()
+    val inboxDir = resolveExternalStoragePath(vault.inboxPath)
+    if (!inboxDir.isDirectory) return emptyList()
+    val root = vaultRootDir(vault) ?: return emptyList()
+
+    return inboxDir.listFiles().orEmpty()
+        .asSequence()
+        .filter { file ->
+            file.isFile &&
+                file.name.endsWith(".md", ignoreCase = true) &&
+                !file.name.endsWith(FLIP_SIDE_SUFFIX, ignoreCase = true)
         }
+        .mapNotNull { file -> inboxCaptureNote(file, root) }
+        .sortedByDescending { it.lastModified }
+        .toList()
 }
 
-private fun isUnifiedInboxCapture(note: VaultNote): Boolean {
-    val content = runCatching { note.file.readText() }.getOrNull() ?: return note.hasInk
-    return ExcalidrawSerializer.isExcalidrawNote(content) &&
-        ExcalidrawSerializer.hasEmbeddedDrawing(content)
+private fun inboxCaptureNote(file: File, vaultRoot: File): VaultNote? {
+    val content = runCatching { file.readText() }.getOrNull() ?: return null
+    if (!ExcalidrawSerializer.isExcalidrawNote(content)) return null
+    if (!ExcalidrawSerializer.hasDrawingSection(content)) return null
+    val relative = file.relativeTo(vaultRoot).path.replace('\\', '/')
+    return VaultNote(
+        file = file,
+        relativePath = relative,
+        name = file.name.removeSuffix(".md"),
+        hasInk = hasInkInNoteContent(content),
+        lastModified = file.lastModified()
+    )
+}
+
+private fun hasInkInNoteContent(content: String): Boolean {
+    if (!ExcalidrawSerializer.hasDrawingSection(content)) return false
+    val strokes = ExcalidrawSerializer.parse(content, "index")
+    return strokes != null && strokes.isNotEmpty()
 }
 
 /** Inbox captures with ink across [vaults]. */
@@ -118,14 +139,8 @@ class VaultIndex(val vaultRoot: File) {
     }
 
     private fun hasInkInFile(file: File): Boolean {
-        val content = runCatching { file.readText() }.getOrNull()
-        if (content != null) {
-            if (ExcalidrawSerializer.hasEmbeddedDrawing(content)) {
-                val strokes = ExcalidrawSerializer.parse(content, "index")
-                if (strokes != null && strokes.isNotEmpty()) return true
-            }
-        }
-        return flipSideFileFor(file).exists()
+        val content = runCatching { file.readText() }.getOrNull() ?: return false
+        return hasInkInNoteContent(content)
     }
 
     /** Direct children (folders + notes) of [relativeDir] for the tree browser. */

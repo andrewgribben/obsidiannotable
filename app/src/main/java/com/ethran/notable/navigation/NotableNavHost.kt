@@ -67,9 +67,6 @@ fun NotableNavHost(
                     },
                     onOpenFlipSide = { vaultId, path ->
                         appNavigator.goToFlipSide(appRepository, vaultId, path)
-                    },
-                    onOpenLegacyCapture = { pageId ->
-                        appNavigator.onOpenLegacyCapture(appRepository, pageId)
                     }
                 )
                 appNavigator.cleanCurrentPageId()
