@@ -17,6 +17,8 @@ import com.ethran.notable.io.excalidraw.ExcalidrawUnifiedTemplate
 import com.ethran.notable.io.resolveExternalStoragePath
 import com.ethran.notable.io.vault.FLIP_SIDE_SUFFIX
 import com.ethran.notable.io.vault.NoteEditGuard
+import com.ethran.notable.io.vault.inboxDirRelativeToVault
+import com.ethran.notable.io.vault.resolveVaultNoteFile
 import com.ethran.notable.io.vault.vaultRootDir
 import com.ethran.notable.ui.SnackConf
 import com.ethran.notable.ui.SnackState
@@ -72,6 +74,8 @@ object FlipSideManager {
     private val CAPTURE_TIMESTAMP_FORMAT =
         SimpleDateFormat("yyyy-MM-dd-HH-mm-ss", Locale.US)
     private val CAPTURE_CREATED_DATE_FORMAT =
+        SimpleDateFormat("yyyy-MM-dd", Locale.US)
+    private val DAILY_NOTE_DATE_FORMAT =
         SimpleDateFormat("yyyy-MM-dd", Locale.US)
 
     enum class HwrApplyMode { REPLACE, APPEND }
@@ -132,7 +136,7 @@ object FlipSideManager {
     ): String? {
         val vault = vaultById(vaultId) ?: return null
         val root = vaultRootDir(vault) ?: return null
-        val noteFile = File(root, noteRelativePath.replace('/', File.separatorChar))
+        val noteFile = resolveVaultNoteFile(vault, noteRelativePath) ?: return null
 
         val existingLink = appRepository.kvProxy.get(
             noteKey(vault.id, noteRelativePath), FlipSideLink.serializer()
@@ -194,18 +198,24 @@ object FlipSideManager {
     /**
      * Creates a new timestamped vault note in [vaultId]'s inbox and opens its flip-side editor.
      */
-    suspend fun createNewCapture(appRepository: AppRepository, vaultId: String): String? {
+    suspend fun createNewCapture(
+        appRepository: AppRepository,
+        vaultId: String,
+        targetRelativeDir: String? = null
+    ): String? {
         val vault = vaultById(vaultId) ?: return missingVaultSnack()
         if (vault.inboxPath.isBlank()) {
             return missingVaultSnack()
         }
         val root = vaultRootDir(vault) ?: return null
-        val inboxDir = resolveExternalStoragePath(vault.inboxPath)
-        inboxDir.mkdirs()
+        val parentDir = targetRelativeDir?.trim()?.trim('/')?.takeIf { it.isNotEmpty() }
+            ?.let { File(root, it.replace('/', File.separatorChar)) }
+            ?: resolveExternalStoragePath(vault.inboxPath)
+        parentDir.mkdirs()
 
         val createdAt = Date()
         val timestamp = CAPTURE_TIMESTAMP_FORMAT.format(createdAt)
-        val noteFile = File(inboxDir, "$timestamp.md")
+        val noteFile = File(parentDir, "$timestamp.md")
         if (noteFile.exists()) {
             SnackState.globalSnackFlow.tryEmit(
                 SnackConf(text = "Capture file already exists: $timestamp", duration = 4000)
@@ -227,6 +237,68 @@ object FlipSideManager {
 
         val relativePath = noteFile.relativeTo(root).path.replace('\\', '/')
         return openFlipSide(appRepository, vaultId, relativePath)
+    }
+
+    /** Vault-relative path for today's daily note (`YYYY-MM-DD.md`). */
+    fun dailyNoteRelativePath(
+        vault: VaultConfig,
+        date: Date = Date(),
+        dailyNoteFolder: String = GlobalAppSettings.current.dailyNoteFolder
+    ): String? {
+        if (vault.inboxPath.isBlank()) return null
+        return dailyNoteRelativePath(
+            inboxRelativeToVault = inboxDirRelativeToVault(vault),
+            date = date,
+            dailyNoteFolder = dailyNoteFolder
+        )
+    }
+
+    /** Pure path builder for tests and callers that already know the inbox-relative folder. */
+    fun dailyNoteRelativePath(
+        inboxRelativeToVault: String?,
+        date: Date,
+        dailyNoteFolder: String
+    ): String? {
+        val fileName = "${DAILY_NOTE_DATE_FORMAT.format(date)}.md"
+        val folder = dailyNoteFolder.trim().trim('/')
+        return if (folder.isBlank()) {
+            val inboxRel = inboxRelativeToVault ?: return null
+            if (inboxRel.isBlank()) fileName else "$inboxRel/$fileName"
+        } else {
+            "$folder/$fileName"
+        }
+    }
+
+    /**
+     * Opens today's daily note in the flip-side editor, creating a unified Excalidraw stub
+     * when the file does not exist yet.
+     */
+    suspend fun openOrCreateDailyNote(appRepository: AppRepository, vaultId: String): String? {
+        val vault = vaultById(vaultId) ?: return missingVaultSnack()
+        val relativePath = dailyNoteRelativePath(vault) ?: return missingVaultSnack()
+        val root = vaultRootDir(vault) ?: return null
+        val noteFile = File(root, relativePath.replace('/', File.separatorChar))
+
+        if (!noteFile.exists()) {
+            noteFile.parentFile?.mkdirs()
+            val markdown = buildCaptureUnifiedStub(Date())
+            when (val result = VaultFileStore.write(noteFile, markdown)) {
+                is VaultFileStore.WriteResult.Success -> { /* ok */ }
+                else -> {
+                    log.e("Failed to create daily note ${noteFile.name}: $result")
+                    SnackState.globalSnackFlow.tryEmit(
+                        SnackConf(text = "Could not create daily note", duration = 4000)
+                    )
+                    return null
+                }
+            }
+        }
+        return openFlipSide(appRepository, vaultId, relativePath)
+    }
+
+    suspend fun openOrCreateDailyNote(appRepository: AppRepository): String? {
+        val vault = GlobalAppSettings.current.activeVault ?: return missingVaultSnack()
+        return openOrCreateDailyNote(appRepository, vault.id)
     }
 
     private fun missingVaultSnack(): String? {
@@ -322,18 +394,22 @@ object FlipSideManager {
         appRepository.kvProxy.get(pageKey(pageId), FlipSideLink.serializer())
 
     /** Re-imports the unified note when it changed on disk (e.g. edited in Obsidian). */
-    suspend fun syncFlipSideFromVaultIfChanged(appRepository: AppRepository, pageId: String) {
-        val link = linkForPage(appRepository, pageId) ?: return
-        if (link.purpose != PURPOSE_FLIP) return
+    suspend fun syncFlipSideFromVaultIfChanged(
+        appRepository: AppRepository,
+        pageId: String
+    ): Boolean {
+        val link = linkForPage(appRepository, pageId) ?: return false
+        if (link.purpose != PURPOSE_FLIP) return false
         val vault = GlobalAppSettings.current.vaults.find { it.id == link.vaultId }
-            ?: GlobalAppSettings.current.activeVault ?: return
-        val root = vaultRootDir(vault) ?: return
+            ?: GlobalAppSettings.current.activeVault ?: return false
+        val root = vaultRootDir(vault) ?: return false
         val noteFile = File(root, link.relativePath.replace('/', File.separatorChar))
         val fileHash = VaultFileStore.currentHash(noteFile)
-        if (fileHash == link.fileHash || fileHash == VaultFileStore.HASH_MISSING) return
+        if (fileHash == link.fileHash || fileHash == VaultFileStore.HASH_MISSING) return false
         reimportFromFile(appRepository, pageId, noteFile)
         saveLink(appRepository, link.copy(fileHash = fileHash))
         updateHwrStrokeBaseline(appRepository, pageId)
+        return true
     }
 
     /** Stable fingerprint of a flip-side page's strokes for HWR change detection. */
@@ -616,6 +692,75 @@ object FlipSideManager {
             else -> return false
         }
 
+        detachFlipSideLink(appRepository, vaultId, relativePath)
+        log.i("Deleted capture ink for $relativePath")
+        return true
+    }
+
+    /**
+     * Permanently deletes a vault note or folder (and folder contents).
+     * Detaches flip-side DB pages but does not update bookshelf or app settings — callers handle that.
+     */
+    suspend fun deleteVaultEntry(
+        appRepository: AppRepository,
+        vaultId: String,
+        relativePath: String,
+        isFolder: Boolean
+    ): Boolean {
+        val vault = vaultById(vaultId) ?: return false
+        val root = vaultRootDir(vault) ?: return false
+        val target = File(root, relativePath.replace('/', File.separatorChar))
+        if (!target.exists()) return false
+        return if (isFolder) {
+            if (!target.isDirectory) return false
+            deleteDirectoryTree(appRepository, vaultId, vault, target)
+        } else {
+            deleteNoteFile(appRepository, vaultId, vault, target)
+        }
+    }
+
+    private suspend fun deleteNoteFile(
+        appRepository: AppRepository,
+        vaultId: String,
+        vault: VaultConfig,
+        file: File
+    ): Boolean {
+        val relativePath = noteRelativePath(file, vault) ?: return false
+        detachFlipSideLink(appRepository, vaultId, relativePath)
+        val sidecarName = file.name.removeSuffix(".md") + FLIP_SIDE_SUFFIX
+        val sidecar = File(file.parentFile, sidecarName)
+        if (sidecar.exists()) sidecar.delete()
+        return file.delete()
+    }
+
+    private suspend fun deleteDirectoryTree(
+        appRepository: AppRepository,
+        vaultId: String,
+        vault: VaultConfig,
+        dir: File
+    ): Boolean {
+        val files = dir.walkBottomUp().toList()
+        for (file in files) {
+            when {
+                file.isDirectory -> file.delete()
+                file.name.endsWith(".md", ignoreCase = true) &&
+                    !file.name.endsWith(FLIP_SIDE_SUFFIX, ignoreCase = true) -> {
+                    deleteNoteFile(appRepository, vaultId, vault, file)
+                }
+                else -> file.delete()
+            }
+        }
+        return !dir.exists()
+    }
+
+    private suspend fun detachFlipSideLink(
+        appRepository: AppRepository,
+        vaultId: String,
+        relativePath: String
+    ) {
+        val link = appRepository.kvProxy.get(
+            noteKey(vaultId, relativePath), FlipSideLink.serializer()
+        ) ?: return
         val strokes = appRepository.pageRepository.getWithStrokeById(link.pageId).strokes
         if (strokes.isNotEmpty()) {
             appRepository.strokeRepository.deleteAll(strokes.map { it.id })
@@ -629,8 +774,6 @@ object FlipSideManager {
         }
         PageDataManager.evictLoadedPageData(link.pageId)
         releaseGuard(link.pageId)
-        log.i("Deleted capture ink for $relativePath")
-        return true
     }
 
     /** Replaces the page's strokes with the unified note file contents. */

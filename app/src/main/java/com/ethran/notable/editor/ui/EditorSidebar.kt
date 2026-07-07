@@ -25,6 +25,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -32,6 +33,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
@@ -60,26 +62,27 @@ import com.ethran.notable.editor.ui.toolbar.presentlyUsedToolIcon
 import com.ethran.notable.editor.utils.Eraser
 import com.ethran.notable.editor.utils.Pen
 import com.ethran.notable.editor.utils.PenSetting
+import com.ethran.notable.editor.utils.markerColorArgb
 import com.ethran.notable.io.ExportEngine
 import com.ethran.notable.io.flipside.FlipSideLink
 import com.ethran.notable.io.flipside.FlipSideManager
 import com.ethran.notable.ui.SnackConf
 import com.ethran.notable.ui.SnackState
+import com.ethran.notable.ui.components.SingularityToggleIcon
 import com.ethran.notable.ui.convertDpToPixel
 import com.ethran.notable.ui.dialogs.BackgroundSelector
 import com.ethran.notable.ui.noRippleClickable
-import com.ethran.notable.ui.views.BugReportDestination
 import com.ethran.notable.ui.views.NoteReaderDestination
 import compose.icons.FeatherIcons
 import compose.icons.feathericons.ArrowLeft
 import compose.icons.feathericons.EyeOff
 import compose.icons.feathericons.RefreshCcw
-import compose.icons.feathericons.Type
 import compose.icons.feathericons.Clipboard
 import com.onyx.android.sdk.api.device.epd.EpdController
 import com.onyx.android.sdk.api.device.epd.UpdateMode
 import io.shipbook.shipbooksdk.ShipBook
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -100,7 +103,8 @@ fun EditorSidebar(
     state: EditorState,
     controlTower: EditorControlTower,
     topPadding: Int = 0,
-    flipSideLink: FlipSideLink? = null
+    flipSideLink: FlipSideLink? = null,
+    vaultPullSyncing: Boolean = false
 ) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -197,6 +201,17 @@ fun EditorSidebar(
     var isRecognizingFlip by remember { mutableStateOf(false) }
     var flipPreviewText by remember { mutableStateOf<String?>(null) }
     val isFlipDrawingPage = flipSideLink?.purpose == FlipSideManager.PURPOSE_FLIP
+    var syncRotation by remember { mutableFloatStateOf(0f) }
+    LaunchedEffect(vaultPullSyncing) {
+        if (!vaultPullSyncing) {
+            syncRotation = 0f
+            return@LaunchedEffect
+        }
+        while (true) {
+            delay(200)
+            syncRotation = (syncRotation + 45f) % 360f
+        }
+    }
 
     // Pause drawing when popups are open
     LaunchedEffect(isPenPickerOpen, isEraserMenuOpen) {
@@ -230,7 +245,17 @@ fun EditorSidebar(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Back to the previous screen (e.g. flip back from a flip side to its note)
+        if (isFlipDrawingPage && vaultPullSyncing) {
+            Icon(
+                imageVector = FeatherIcons.RefreshCcw,
+                contentDescription = "Syncing",
+                tint = Color.Black,
+                modifier = Modifier
+                    .size(28.dp)
+                    .graphicsLayer { rotationZ = syncRotation }
+            )
+        }
+
         SidebarIconButton(
             vectorIcon = FeatherIcons.ArrowLeft,
             contentDescription = "back",
@@ -331,7 +356,7 @@ fun EditorSidebar(
         // Line
         SidebarIconButton(
             iconId = R.drawable.line,
-            contentDescription = "line",
+            contentDescription = stringResource(R.string.shape_snap_tool),
             isSelected = state.mode == Mode.Line,
             onClick = {
                 if (state.mode == Mode.Line) state.mode = Mode.Draw
@@ -433,12 +458,11 @@ fun EditorSidebar(
         // Flip side: open text note; run HWR preview only when ink changed since last sync
         if (isFlipDrawingPage) {
             val notePath = flipSideLink.relativePath
-            SidebarIconButton(
-                vectorIcon = FeatherIcons.Type,
+            FlipSideTextToggleButton(
                 contentDescription = stringResource(R.string.flip_side_to_text),
                 isSelected = isRecognizingFlip,
                 onClick = {
-                    if (isRecognizingFlip || notePath.isBlank()) return@SidebarIconButton
+                    if (isRecognizingFlip || notePath.isBlank()) return@FlipSideTextToggleButton
                     isRecognizingFlip = true
                     scope.launch(Dispatchers.IO) {
                         val drawingChanged = FlipSideManager.hasFlipSideDrawingChanged(
@@ -447,7 +471,7 @@ fun EditorSidebar(
                         if (!drawingChanged) {
                             withContext(Dispatchers.Main) {
                                 isRecognizingFlip = false
-                                openFlipSideTextNote(navController, notePath)
+                                openFlipSideTextNote(navController, flipSideLink.vaultId, notePath)
                             }
                             return@launch
                         }
@@ -491,7 +515,6 @@ fun EditorSidebar(
             if (state.menuStates.isMenuOpen) {
                 ToolbarMenu(
                     exportEngine = exportEngine,
-                    goToBugReport = { navController.navigate(BugReportDestination.route) },
                     currentPageId = state.currentPageId,
                     currentBookId = state.bookId,
                     onClose = { state.menuStates.isMenuOpen = false },
@@ -504,15 +527,16 @@ fun EditorSidebar(
     }
 
     val previewText = flipPreviewText
-    val notePathForFlip = if (isFlipDrawingPage) flipSideLink.relativePath else null
-    if (previewText != null && notePathForFlip != null) {
+    val notePathForFlip = if (isFlipDrawingPage) flipSideLink?.relativePath else null
+    val vaultIdForFlip = flipSideLink?.vaultId
+    if (previewText != null && notePathForFlip != null && vaultIdForFlip != null) {
         FlipTextPreviewDialog(
             appRepository = appRepository,
             pageId = state.currentPageId,
             text = previewText,
             onApplied = {
                 flipPreviewText = null
-                openFlipSideTextNote(navController, notePathForFlip)
+                openFlipSideTextNote(navController, vaultIdForFlip, notePathForFlip)
             },
             onDismiss = { flipPreviewText = null }
         )
@@ -521,10 +545,11 @@ fun EditorSidebar(
 
 private fun openFlipSideTextNote(
     navController: NavController,
+    vaultId: String,
     relativePath: String
 ) {
     navController.popBackStack()
-    navController.navigate(NoteReaderDestination.createRoute(relativePath))
+    navController.navigate(NoteReaderDestination.createRoute(vaultId, relativePath))
 }
 
 // --- Pen Picker Flyout ---
@@ -562,10 +587,6 @@ private fun PenPickerFlyout(
                     add(Pen.REDBALLPEN to R.drawable.ballpenred)
                     add(Pen.BLUEBALLPEN to R.drawable.ballpenblue)
                     add(Pen.GREENBALLPEN to R.drawable.ballpengreen)
-                }
-                if (GlobalAppSettings.current.neoTools) {
-                    add(Pen.PENCIL to R.drawable.pencil)
-                    add(Pen.BRUSH to R.drawable.brush)
                 }
                 add(Pen.FOUNTAIN to R.drawable.fountain)
                 add(Pen.MARKER to R.drawable.marker)
@@ -651,16 +672,22 @@ private fun PenPickerFlyout(
                                         if (color == Color(penSetting.color)) Color.Black else Color.Transparent
                                     )
                                     .clickable {
+                                        val selectedColor = android.graphics.Color.argb(
+                                            (color.alpha * 255).toInt(),
+                                            (color.red * 255).toInt(),
+                                            (color.green * 255).toInt(),
+                                            (color.blue * 255).toInt()
+                                        )
+                                        val strokeColor = if (penForSize == Pen.MARKER) {
+                                            markerColorArgb(selectedColor)
+                                        } else {
+                                            selectedColor
+                                        }
                                         onChangeSetting(
                                             penForSize.penName,
                                             PenSetting(
                                                 strokeSize = penSetting.strokeSize,
-                                                color = android.graphics.Color.argb(
-                                                    (color.alpha * 255).toInt(),
-                                                    (color.red * 255).toInt(),
-                                                    (color.green * 255).toInt(),
-                                                    (color.blue * 255).toInt()
-                                                )
+                                                color = strokeColor
                                             )
                                         )
                                     }
@@ -746,6 +773,32 @@ private fun EraserFlyout(
 }
 
 // --- Reusable sidebar button components ---
+
+@Composable
+private fun FlipSideTextToggleButton(
+    contentDescription: String,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    val bgColor = if (isSelected) Color.Black else Color.White
+    val borderColor = if (isSelected) Color.Black else Color.Gray
+    val iconTint = if (isSelected) Color.White else Color.Black
+
+    Box(
+        modifier = Modifier
+            .size(BUTTON_SIZE.dp)
+            .border(1.dp, borderColor, RoundedCornerShape(6.dp))
+            .background(bgColor, RoundedCornerShape(6.dp))
+            .noRippleClickable { onClick() },
+        contentAlignment = Alignment.Center
+    ) {
+        SingularityToggleIcon(
+            contentDescription = contentDescription,
+            size = ICON_SIZE.dp,
+            tint = iconTint
+        )
+    }
+}
 
 @Composable
 private fun SidebarIconButton(

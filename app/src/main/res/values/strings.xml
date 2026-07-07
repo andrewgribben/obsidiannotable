@@ -13,6 +13,7 @@
     <string name="blank_page">Blank page</string>
     <string name="dot_grid">Dot grid</string>
     <string name="lines">Lines</string>
+    <string name="shape_snap_tool">Lines and shapes</string>
     <string name="small_squares_grid">Small squares grid</string>
     <string name="hexagon_grid">Hexagon grid</string>
     <string name="use_onyx_neotools_may_cause_crashes">Use Onyx NeoTools (may cause crashes)</string>
@@ -29,7 +30,7 @@
     <string name="gestures_swipe_right_action">Swipe Right Action</string>
     <string name="gestures_two_finger_swipe_left_action">Two Finger Swipe Left Action</string>
     <string name="gestures_two_finger_swipe_right_action">Two Finger Swipe Right Action</string>
-    <string name="enable_quick_nav">Touch with three fingers to open QuickNav</string>
+    <string name="enable_quick_nav">Touch with three fingers to open Quick Switcher</string>
     <string name="work_in_progress">(work in progress)</string>
     <string name="toolbar_position_top">Top</string>
     <string name="toolbar_position_bottom">Bottom</string>
@@ -113,5 +114,10 @@
     <string name="flip_side_nothing_recognized">Nothing recognized on this flip side</string>
     <string name="flip_side_recognizing">Recognizing…</string>
     <string name="flip_side_save_to_note">Save to note</string>
+
+    <string name="widget_description">Recent and pinned Singularity notes</string>
+    <string name="widget_new_note">New note</string>
+    <string name="widget_daily_note">Daily note</string>
+    <string name="widget_note_thumbnail">Note thumbnail</string>
 
 </resources>

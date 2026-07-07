@@ -5,6 +5,15 @@ import android.graphics.Color
 import com.onyx.android.sdk.pen.style.StrokeStyle
 import kotlinx.serialization.Serializable
 
+/** Marker/highlighter opacity (40%), matches Excalidraw export. */
+const val MARKER_OPACITY = 102
+
+fun markerColorArgb(rgb: Int): Int =
+    (MARKER_OPACITY shl 24) or (rgb and 0x00FFFFFF)
+
+/** Opaque RGB for Onyx raw-drawing preview; the SDK does not composite alpha live. */
+fun markerPreviewColorArgb(rgb: Int): Int =
+    (0xFF shl 24) or (rgb and 0x00FFFFFF)
 
 enum class Pen(val penName: String) {
     BALLPEN("BALLPEN"),
@@ -39,7 +48,7 @@ enum class Pen(val penName: String) {
             GREENBALLPEN.penName to PenSetting(5f, Color.GREEN),
             PENCIL.penName to PenSetting(5f, Color.BLACK),
             BRUSH.penName to PenSetting(5f, Color.BLACK),
-            MARKER.penName to PenSetting(40f, Color.LTGRAY),
+            MARKER.penName to PenSetting(40f, markerColorArgb(Color.YELLOW)),
             FOUNTAIN.penName to PenSetting(5f, Color.BLACK),
         )
 

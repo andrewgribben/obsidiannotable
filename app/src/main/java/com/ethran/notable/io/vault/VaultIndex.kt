@@ -30,12 +30,51 @@ fun vaultRootDir(vault: VaultConfig): File? {
     return resolveExternalStoragePath(vault.inboxPath).parentFile
 }
 
+/** Obsidian Sync vault root: the inbox folder (matches desktop Obsidian vault root). */
+fun obsidianSyncVaultRoot(vault: VaultConfig): File? {
+    if (vault.inboxPath.isBlank()) return null
+    return resolveExternalStoragePath(vault.inboxPath)
+}
+
 /** Inbox folder path relative to the vault root (forward slashes), or null when unconfigured. */
 fun inboxDirRelativeToVault(vault: VaultConfig): String? {
     val root = vaultRootDir(vault) ?: return null
     if (vault.inboxPath.isBlank()) return null
     val inboxDir = resolveExternalStoragePath(vault.inboxPath)
     return inboxDir.relativeTo(root).path.replace('\\', '/')
+}
+
+/** Vault-root-relative path → Obsidian Sync path (relative to inbox / sync root). */
+fun vaultRelativeToSyncPath(vault: VaultConfig, vaultRelativePath: String): String {
+    val prefix = inboxDirRelativeToVault(vault) ?: return vaultRelativePath
+    if (vaultRelativePath == prefix) return ""
+    if (vaultRelativePath.startsWith("$prefix/")) {
+        return vaultRelativePath.removePrefix("$prefix/")
+    }
+    return vaultRelativePath
+}
+
+/** Obsidian Sync path → vault-root-relative path for UI and [VaultIndex]. */
+fun syncPathToVaultRelative(vault: VaultConfig, syncRelativePath: String): String {
+    val prefix = inboxDirRelativeToVault(vault) ?: return syncRelativePath
+    if (syncRelativePath.isEmpty()) return prefix
+    return "$prefix/$syncRelativePath"
+}
+
+/**
+ * Resolves a note file from a vault-root-relative path.
+ * Checks the canonical vault-root location first, then the sync-root layout.
+ */
+fun resolveVaultNoteFile(vault: VaultConfig, vaultRelativePath: String): File? {
+    val root = vaultRootDir(vault) ?: return null
+    val normalized = vaultRelativePath.replace('/', File.separatorChar)
+    val direct = File(root, normalized)
+    if (direct.exists()) return direct
+    val syncRoot = obsidianSyncVaultRoot(vault) ?: return direct
+    val syncPath = vaultRelativeToSyncPath(vault, vaultRelativePath)
+    val viaSync = File(syncRoot, syncPath.replace('/', File.separatorChar))
+    if (viaSync.exists()) return viaSync
+    return direct
 }
 
 /** Notes under the vault inbox that use unified Excalidraw format with a drawing block. */

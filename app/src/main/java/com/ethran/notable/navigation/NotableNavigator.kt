@@ -17,6 +17,9 @@ import com.ethran.notable.editor.EditorDestination
 import com.ethran.notable.editor.canvas.CanvasEventBus
 import com.ethran.notable.editor.utils.refreshScreen
 import com.ethran.notable.io.flipside.FlipSideManager
+import com.ethran.notable.io.obsidiansync.ObsidianSyncManager
+import com.ethran.notable.ui.SnackConf
+import com.ethran.notable.ui.SnackState
 import com.ethran.notable.ui.views.LibraryDestination
 import com.ethran.notable.ui.views.NoteReaderDestination
 import com.ethran.notable.ui.views.SystemInformationDestination
@@ -34,11 +37,12 @@ private val log = ShipBook.getLogger("NotableAppState")
 @Composable
 fun rememberNotableAppState(
     navController: NavHostController = rememberNavController(),
-    coroutineScope: CoroutineScope = rememberCoroutineScope()
+    coroutineScope: CoroutineScope = rememberCoroutineScope(),
+    obsidianSyncManager: ObsidianSyncManager
 ): NotableNavigator {
     val context = LocalContext.current
-    return remember(navController, context, coroutineScope) {
-        NotableNavigator(navController, hasFilePermission(context), coroutineScope)
+    return remember(navController, context, coroutineScope, obsidianSyncManager) {
+        NotableNavigator(navController, hasFilePermission(context), coroutineScope, obsidianSyncManager)
     }
 }
 
@@ -46,9 +50,11 @@ fun rememberNotableAppState(
 class NotableNavigator(
     val navController: NavHostController,
     private val hasFilePermission: Boolean,
-    private val coroutineScope: CoroutineScope
+    private val coroutineScope: CoroutineScope,
+    private val obsidianSyncManager: ObsidianSyncManager
 ) {
     var isQuickNavOpen by mutableStateOf(false)
+    var isQuickSwitcherOpen by mutableStateOf(false)
     var currentPageId by mutableStateOf<String?>(null)
 
 
@@ -80,6 +86,23 @@ class NotableNavigator(
         refreshScreen()
     }
 
+    fun openQuickSwitcher() {
+        if (GlobalAppSettings.current.activeVault == null) {
+            SnackState.globalSnackFlow.tryEmit(
+                SnackConf(text = "No vault configured", duration = 3000)
+            )
+            return
+        }
+        isQuickSwitcherOpen = true
+        updateDrawingState()
+    }
+
+    fun closeQuickSwitcher() {
+        isQuickSwitcherOpen = false
+        updateDrawingState()
+        refreshScreen()
+    }
+
     fun goToAnchor(appRepository: AppRepository){
         val targetPageId = quickNavSourcePageId
         if (targetPageId == null) {
@@ -102,11 +125,12 @@ class NotableNavigator(
         return isQuickNavOpen && quickNavSourcePageId != currentPageId
     }
 
-    // Updates the drawing state based on whether QuickNav is open
+    // Updates the drawing state based on whether a global overlay is open
     fun updateDrawingState() {
         coroutineScope.launch {
-            log.d("Changing drawing state, isQuickNavOpen: $isQuickNavOpen")
-            CanvasEventBus.isDrawing.emit(!isQuickNavOpen)
+            val overlayOpen = isQuickNavOpen || isQuickSwitcherOpen
+            log.d("Changing drawing state, overlayOpen: $overlayOpen")
+            CanvasEventBus.isDrawing.emit(!overlayOpen)
         }
     }
 
@@ -149,25 +173,18 @@ class NotableNavigator(
         navController.navigate(VaultBrowserDestination.createRoute(dir))
     }
 
-    fun goToVaultNote(relativePath: String) {
-        navController.navigate(NoteReaderDestination.createRoute(relativePath))
+    fun goToVaultNote(vaultId: String, relativePath: String) {
+        navController.navigate(NoteReaderDestination.createRoute(vaultId, relativePath))
     }
 
-    /**
-     * Opens the flip side of a vault note: finds or creates the drawing page linked to
-     * the note's flip-side file and opens it in the editor.
-     */
+    fun goToVaultNote(relativePath: String) {
+        val vaultId = GlobalAppSettings.current.activeVault?.id ?: return
+        goToVaultNote(vaultId, relativePath)
+    }
+
     fun goToFlipSide(appRepository: AppRepository, noteRelativePath: String) {
-        coroutineScope.launch {
-            val pageId = withContext(Dispatchers.IO) {
-                FlipSideManager.openFlipSide(appRepository, noteRelativePath)
-            }
-            if (pageId != null) {
-                navController.navigate(EditorDestination.createRoute(pageId, null))
-            } else {
-                log.e("Could not open flip side for $noteRelativePath")
-            }
-        }
+        val vaultId = GlobalAppSettings.current.activeVault?.id ?: return
+        goToFlipSide(appRepository, vaultId, noteRelativePath)
     }
 
     fun goToFlipSide(
@@ -178,12 +195,8 @@ class NotableNavigator(
         coroutineScope.launch {
             val pageId = withContext(Dispatchers.IO) {
                 FlipSideManager.openFlipSide(appRepository, vaultId, noteRelativePath)
-            }
-            if (pageId != null) {
-                navController.navigate(EditorDestination.createRoute(pageId, null))
-            } else {
-                log.e("Could not open flip side for $noteRelativePath in vault $vaultId")
-            }
+            } ?: return@launch
+            navController.navigate(EditorDestination.createRoute(pageId, null))
         }
     }
 
@@ -203,8 +216,19 @@ class NotableNavigator(
 
     fun onCreateNewCapture(appRepository: AppRepository, vaultId: String) {
         coroutineScope.launch {
+            val targetDir = GlobalAppSettings.current.homeBookshelfDirByVault[vaultId]
+                ?.trim()?.trim('/')?.takeIf { it.isNotEmpty() }
             val pageId = withContext(Dispatchers.IO) {
-                FlipSideManager.createNewCapture(appRepository, vaultId)
+                FlipSideManager.createNewCapture(appRepository, vaultId, targetDir)
+            } ?: return@launch
+            navController.navigate(EditorDestination.createRoute(pageId, null))
+        }
+    }
+
+    fun onOpenDailyNote(appRepository: AppRepository, vaultId: String) {
+        coroutineScope.launch {
+            val pageId = withContext(Dispatchers.IO) {
+                FlipSideManager.openOrCreateDailyNote(appRepository, vaultId)
             } ?: return@launch
             navController.navigate(EditorDestination.createRoute(pageId, null))
         }

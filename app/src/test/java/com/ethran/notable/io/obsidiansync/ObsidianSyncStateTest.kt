@@ -175,4 +175,76 @@ class ObsidianSyncStateTest {
             )
         )
     }
+
+    @Test
+    fun hasStaleWrongRootState_detectsInboxPrefixMismatch() {
+        val container = createTempDirectory().toFile()
+        val inbox = File(container, "Notes").apply { mkdirs() }
+        File(inbox, "capture.md").writeText("hello")
+        val vault = com.ethran.notable.data.datastore.VaultConfig(
+            id = "notes",
+            name = "Notes",
+            inboxPath = inbox.absolutePath,
+            attachmentPath = ""
+        )
+        val state = ObsidianSyncState(
+            version = 100,
+            files = mutableMapOf(
+                "Notes/capture.md" to ObsidianSyncFileState(syncHash = "x")
+            )
+        )
+
+        assertTrue(ObsidianSyncStateStore.hasStaleWrongRootState(vault, inbox, state))
+    }
+
+    @Test
+    fun hasStaleWrongRootState_falseWhenPathsMatch() {
+        val inbox = createTempDirectory().toFile()
+        File(inbox, "capture.md").writeText("hello")
+        val vault = com.ethran.notable.data.datastore.VaultConfig(
+            id = "notes",
+            name = "Notes",
+            inboxPath = inbox.absolutePath,
+            attachmentPath = ""
+        )
+        val state = ObsidianSyncState(
+            version = 100,
+            files = mutableMapOf(
+                "capture.md" to ObsidianSyncFileState(syncHash = "x")
+            )
+        )
+
+        assertFalse(ObsidianSyncStateStore.hasStaleWrongRootState(vault, inbox, state))
+    }
+
+    @Test
+    fun prepareSyncRootState_resetsStaleState() {
+        val container = createTempDirectory().toFile()
+        val inbox = File(container, "Notes").apply { mkdirs() }
+        File(inbox, "capture.md").writeText("hello")
+        val vault = com.ethran.notable.data.datastore.VaultConfig(
+            id = "notes",
+            name = "Notes",
+            inboxPath = inbox.absolutePath,
+            attachmentPath = ""
+        )
+        ObsidianSyncStateStore.save(
+            inbox,
+            ObsidianSyncState(
+                vaultUid = "remote",
+                version = 500,
+                files = mutableMapOf(
+                    "Notes/capture.md" to ObsidianSyncFileState(syncHash = "old")
+                )
+            )
+        )
+
+        val prepared = ObsidianSyncStateStore.prepareSyncRootState(vault, inbox)
+
+        assertEquals(0, prepared.version)
+        assertTrue(prepared.files.isEmpty())
+        val reloaded = ObsidianSyncStateStore.load(inbox)
+        assertEquals(0, reloaded.version)
+        assertTrue(reloaded.files.isEmpty())
+    }
 }

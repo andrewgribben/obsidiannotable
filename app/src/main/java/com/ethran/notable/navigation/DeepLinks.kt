@@ -3,6 +3,7 @@ package com.ethran.notable.navigation
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import com.ethran.notable.data.datastore.GlobalAppSettings
 import com.ethran.notable.ui.views.NoteReaderDestination
 import com.ethran.notable.ui.views.VaultBrowserDestination
 import io.shipbook.shipbooksdk.ShipBook
@@ -14,23 +15,33 @@ private val log = ShipBook.getLogger("DeepLinks")
  * app window (Boox split screen) on a specific vault note.
  *
  * Supported URIs:
- * - `notable://vault/note?path=<encoded relative path>` — open a note in the reader
+ * - `notable://vault/note?path=<encoded relative path>&vaultId=<optional vault config id>`
  * - `notable://vault/browse` — open the vault browser
  */
 object DeepLinks {
     private const val SCHEME = "notable"
     private const val HOST_VAULT = "vault"
 
-    fun vaultNoteUri(relativePath: String): Uri =
-        Uri.parse("$SCHEME://$HOST_VAULT/note?path=${Uri.encode(relativePath)}")
+    fun vaultNoteUri(relativePath: String, vaultId: String? = null): Uri {
+        val builder = Uri.parse("$SCHEME://$HOST_VAULT/note").buildUpon()
+            .appendQueryParameter("path", relativePath)
+        if (!vaultId.isNullOrBlank()) {
+            builder.appendQueryParameter("vaultId", vaultId)
+        }
+        return builder.build()
+    }
 
     /** Maps a notable:// URI to an in-app navigation route, or null when unrecognized. */
     fun routeFor(uri: Uri): String? {
         if (uri.scheme != SCHEME || uri.host != HOST_VAULT) return null
         return when (uri.path) {
-            "/note" -> uri.getQueryParameter("path")
-                ?.takeIf { it.isNotBlank() }
-                ?.let { NoteReaderDestination.createRoute(it) }
+            "/note" -> {
+                val path = uri.getQueryParameter("path")?.takeIf { it.isNotBlank() } ?: return null
+                val vaultId = uri.getQueryParameter("vaultId")?.takeIf { it.isNotBlank() }
+                    ?: GlobalAppSettings.current.activeVault?.id
+                    ?: return null
+                NoteReaderDestination.createRoute(vaultId, path)
+            }
             "/browse" -> VaultBrowserDestination.createRoute(null)
             else -> null
         }

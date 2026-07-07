@@ -9,6 +9,7 @@ import androidx.ink.strokes.MutableStrokeInputBatch
 import androidx.ink.strokes.Stroke as InkStroke
 import com.ethran.notable.data.db.Stroke
 import com.ethran.notable.editor.utils.Pen
+import com.ethran.notable.editor.utils.markerColorArgb
 import com.ethran.notable.editor.utils.offsetStroke
 
 /**
@@ -40,9 +41,14 @@ fun brushForStroke(stroke: Stroke): Brush {
         Pen.DASHED ->
             dashedLineFamily
     }
+    val colorIntArgb = if (stroke.pen == Pen.MARKER) {
+        markerColorArgb(stroke.color)
+    } else {
+        stroke.color
+    }
     return Brush.createWithColorIntArgb(
         family = family,
-        colorIntArgb = stroke.color,
+        colorIntArgb = colorIntArgb,
         size = stroke.size,
         epsilon = 0.1f
     )

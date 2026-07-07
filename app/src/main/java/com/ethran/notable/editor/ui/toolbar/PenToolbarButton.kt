@@ -50,6 +50,7 @@ fun PenToolbarButton(
                 onChange = { onChangeSetting(it) },
                 onClose = { isStrokeMenuOpen = false },
                 sizeOptions = sizes,
+                pen = pen,
                 colorOptions = listOf(
                     Color.Red,
                     Color.Green,

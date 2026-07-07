@@ -76,22 +76,12 @@ fun GeneralSettings(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        SelectorRow(
-            label = stringResource(R.string.toolbar_position), options = listOf(
-                AppSettings.Position.Top to stringResource(R.string.toolbar_position_top),
-                AppSettings.Position.Bottom to stringResource(
-                    R.string.toolbar_position_bottom
-                )
-            ), value = settings.toolbarPosition, onValueChange = { newPosition ->
-                onSettingsChange(settings.copy(toolbarPosition = newPosition))
-            })
-
-        SettingToggleRow(
-            label = stringResource(R.string.use_onyx_neotools_may_cause_crashes),
-            value = settings.neoTools,
-            onToggle = { isChecked ->
-                onSettingsChange(settings.copy(neoTools = isChecked))
-            })
+        Text(
+            "Drawing",
+            style = MaterialTheme.typography.subtitle1,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.padding(bottom = 4.dp)
+        )
 
         SettingToggleRow(
             label = stringResource(R.string.enable_scribble_to_erase),
@@ -112,32 +102,6 @@ fun GeneralSettings(
             value = settings.continuousZoom,
             onToggle = { isChecked ->
                 onSettingsChange(settings.copy(continuousZoom = isChecked))
-            })
-        SettingToggleRow(
-            label = stringResource(R.string.continuous_stroke_slider),
-            value = settings.continuousStrokeSlider,
-            onToggle = { isChecked ->
-                onSettingsChange(settings.copy(continuousStrokeSlider = isChecked))
-            })
-        SettingToggleRow(
-            label = stringResource(R.string.monochrome_mode) + " " + stringResource(R.string.work_in_progress),
-            value = settings.monochromeMode,
-            onToggle = { isChecked ->
-                onSettingsChange(settings.copy(monochromeMode = isChecked))
-            })
-
-        SettingToggleRow(
-            label = stringResource(R.string.paginate_pdf),
-            value = settings.paginatePdf,
-            onToggle = { isChecked ->
-                onSettingsChange(settings.copy(paginatePdf = isChecked))
-            })
-
-        SettingToggleRow(
-            label = stringResource(R.string.preview_pdf_pagination),
-            value = settings.visualizePdfPagination,
-            onToggle = { isChecked ->
-                onSettingsChange(settings.copy(visualizePdfPagination = isChecked))
             })
 
         if (onClearAllPages != null) {

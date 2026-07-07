@@ -2,7 +2,8 @@ package com.ethran.notable.ui.views
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -44,15 +45,22 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.ethran.notable.data.AppRepository
 import com.ethran.notable.data.datastore.GlobalAppSettings
 import com.ethran.notable.data.datastore.VaultConfig
 import com.ethran.notable.io.VaultTagScanner
+import com.ethran.notable.io.vault.BookshelfKind
 import com.ethran.notable.io.vault.VaultIndexRegistry
 import com.ethran.notable.io.vault.VaultNote
 import com.ethran.notable.navigation.NavigationDestination
 import com.ethran.notable.ui.components.QuickSwitcher
+import com.ethran.notable.ui.components.VaultEntryMenuItem
+import com.ethran.notable.ui.components.VaultEntryPopupMenu
+import com.ethran.notable.ui.dialogs.CaptureRenameDialog
+import com.ethran.notable.ui.dialogs.ShowSimpleConfirmationDialog
 import com.ethran.notable.ui.noRippleClickable
+import com.ethran.notable.ui.viewmodels.LibraryViewModel
 import compose.icons.FeatherIcons
 import compose.icons.feathericons.ChevronDown
 import compose.icons.feathericons.Edit3
@@ -107,16 +115,28 @@ object VaultSort {
 fun VaultBrowserView(
     dir: String?,
     appRepository: AppRepository,
-    onOpenNote: (String) -> Unit,
-    onBack: () -> Unit
+    onOpenNote: (String, String) -> Unit,
+    onBack: () -> Unit,
+    onOpenFlipSide: ((String, String) -> Unit)? = null,
+    onAddToBookshelf: ((String, String, BookshelfKind) -> Unit)? = null,
+    onRenameCapture: ((String, String, String) -> Unit)? = null,
+    onDeleteEntry: ((String, String, Boolean) -> Unit)? = null,
+    viewModel: LibraryViewModel = hiltViewModel()
 ) {
+    val flipHandler = onOpenFlipSide
+    val renameHandler = onRenameCapture ?: viewModel::renameCapture
+    val deleteHandler = onDeleteEntry ?: viewModel::deleteVaultEntry
     Column(Modifier.fillMaxSize().background(Color.White)) {
         VaultBrowserContent(
             initialDir = dir.orEmpty(),
             appRepository = appRepository,
             onOpenNote = onOpenNote,
+            onOpenFlipSide = flipHandler,
+            onRenameCapture = renameHandler,
             onClose = onBack,
-            isModal = false
+            isModal = false,
+            onAddToBookshelf = onAddToBookshelf,
+            onDeleteEntry = deleteHandler
         )
     }
 }
@@ -128,8 +148,12 @@ fun VaultBrowserView(
 @Composable
 fun VaultBrowserModal(
     appRepository: AppRepository,
-    onOpenNote: (String) -> Unit,
-    onDismiss: () -> Unit
+    onOpenNote: (String, String) -> Unit,
+    onDismiss: () -> Unit,
+    onOpenFlipSide: ((String, String) -> Unit)? = null,
+    onRenameCapture: ((String, String, String) -> Unit)? = null,
+    onAddToBookshelf: (String, String, BookshelfKind) -> Unit = { _, _, _ -> },
+    onDeleteEntry: (String, String, Boolean) -> Unit = { _, _, _ -> }
 ) {
     Dialog(
         onDismissRequest = onDismiss,
@@ -146,8 +170,12 @@ fun VaultBrowserModal(
                 initialDir = "",
                 appRepository = appRepository,
                 onOpenNote = onOpenNote,
+                onOpenFlipSide = onOpenFlipSide,
+                onRenameCapture = onRenameCapture,
                 onClose = onDismiss,
-                isModal = true
+                isModal = true,
+                onAddToBookshelf = onAddToBookshelf,
+                onDeleteEntry = onDeleteEntry
             )
         }
     }
@@ -162,9 +190,13 @@ fun VaultBrowserModal(
 private fun VaultBrowserContent(
     initialDir: String,
     appRepository: AppRepository,
-    onOpenNote: (String) -> Unit,
+    onOpenNote: (String, String) -> Unit,
+    onOpenFlipSide: ((String, String) -> Unit)?,
+    onRenameCapture: ((String, String, String) -> Unit)?,
     onClose: () -> Unit,
-    isModal: Boolean
+    isModal: Boolean,
+    onAddToBookshelf: ((String, String, BookshelfKind) -> Unit)? = null,
+    onDeleteEntry: ((String, String, Boolean) -> Unit)? = null
 ) {
     val scope = rememberCoroutineScope()
     val settings = GlobalAppSettings.current
@@ -209,6 +241,9 @@ private fun VaultBrowserContent(
     var showSortMenu by remember { mutableStateOf(false) }
     var handwrittenOnly by remember { mutableStateOf(false) }
     var refreshTick by remember { mutableStateOf(0) }
+    var menuEntry by remember { mutableStateOf<VaultNote?>(null) }
+    var pendingDelete by remember { mutableStateOf<VaultNote?>(null) }
+    var renameTarget by remember { mutableStateOf<VaultNote?>(null) }
 
     fun switchVault(vault: VaultConfig) {
         currentDir = settings.vaultBrowserDirByVault[vault.id].orEmpty()
@@ -233,6 +268,23 @@ private fun VaultBrowserContent(
                 folders + VaultSort.apply(files, sortMode)
             }
         }
+    }
+
+    fun openEntryNote(path: String) {
+        val vaultId = activeVault?.id ?: return
+        onOpenNote(vaultId, path)
+    }
+
+    fun addEntryToBookshelf(entry: VaultNote) {
+        val vaultId = activeVault?.id ?: return
+        val kind = if (entry.isFolder) BookshelfKind.FOLDER else BookshelfKind.NOTE
+        onAddToBookshelf?.invoke(vaultId, entry.relativePath, kind)
+    }
+
+    fun requestDelete(entry: VaultNote) {
+        val vaultId = activeVault?.id ?: return
+        onDeleteEntry?.invoke(vaultId, entry.relativePath, entry.isFolder)
+        refreshTick++
     }
 
     Column(Modifier.fillMaxSize()) {
@@ -335,10 +387,92 @@ private fun VaultBrowserContent(
                     )
                 }
             }
-            handwrittenOnly -> HandwrittenGrid(entries, onOpenNote)
-            gridView -> NoteGrid(entries, onOpenNote, onOpenDir = { currentDir = it })
-            else -> NoteList(entries, onOpenNote, onOpenDir = { currentDir = it })
+            handwrittenOnly -> HandwrittenGrid(
+                entries,
+                onOpenNote = { openEntryNote(it) },
+                onShowMenu = { menuEntry = it }
+            )
+            gridView -> NoteGrid(
+                entries,
+                { openEntryNote(it) },
+                onOpenDir = { currentDir = it },
+                onShowMenu = { menuEntry = it }
+            )
+            else -> NoteList(
+                entries,
+                { openEntryNote(it) },
+                onOpenDir = { currentDir = it },
+                onShowMenu = { menuEntry = it }
+            )
         }
+    }
+
+    menuEntry?.let { entry ->
+        VaultBrowserEntryMenu(
+            isFolder = entry.isFolder,
+            showAddToBookshelf = onAddToBookshelf != null,
+            showRename = onRenameCapture != null,
+            showOpenText = true,
+            showOpenDrawing = onOpenFlipSide != null,
+            showDelete = onDeleteEntry != null,
+            onAddToBookshelf = {
+                addEntryToBookshelf(entry)
+                menuEntry = null
+            },
+            onRename = {
+                menuEntry = null
+                renameTarget = entry
+            },
+            onOpenText = {
+                openEntryNote(entry.relativePath)
+                menuEntry = null
+                onClose()
+            },
+            onOpenDrawing = {
+                val vaultId = activeVault?.id ?: return@VaultBrowserEntryMenu
+                onOpenFlipSide?.invoke(vaultId, entry.relativePath)
+                menuEntry = null
+                onClose()
+            },
+            onDelete = {
+                menuEntry = null
+                pendingDelete = entry
+            },
+            onDismiss = { menuEntry = null }
+        )
+    }
+
+    renameTarget?.let { entry ->
+        val vaultId = activeVault?.id
+        if (vaultId != null && onRenameCapture != null) {
+            CaptureRenameDialog(
+                currentName = entry.name,
+                onConfirm = { newName ->
+                    renameTarget = null
+                    onRenameCapture(vaultId, entry.relativePath, newName)
+                    refreshTick++
+                },
+                onDismiss = { renameTarget = null }
+            )
+        }
+    }
+
+    pendingDelete?.let { entry ->
+        val message = if (entry.isFolder) {
+            "Delete folder \"${entry.name}\" and everything inside? This cannot be undone."
+        } else {
+            "Delete \"${entry.name}\"? This cannot be undone."
+        }
+        ShowSimpleConfirmationDialog(
+            title = "Delete",
+            message = message,
+            confirmButtonText = "Delete",
+            onConfirm = {
+                requestDelete(entry)
+                pendingDelete = null
+            },
+            onCancel = { pendingDelete = null }
+        )
     }
 
     if (showVaultPicker) {
@@ -370,7 +504,10 @@ private fun VaultBrowserContent(
             recentPaths = settings.recentNotesByVault[activeVault.id].orEmpty(),
             onSelect = { note ->
                 showQuickSwitcher = false
-                onOpenNote(note.relativePath)
+                openEntryNote(note.relativePath)
+            },
+            onAddToBookshelf = { path ->
+                onAddToBookshelf?.invoke(activeVault.id, path, BookshelfKind.NOTE)
             },
             onDismiss = { showQuickSwitcher = false }
         )
@@ -419,10 +556,48 @@ fun SortMenuDialog(
 }
 
 @Composable
+private fun VaultBrowserEntryMenu(
+    isFolder: Boolean,
+    showAddToBookshelf: Boolean,
+    showRename: Boolean,
+    showOpenText: Boolean,
+    showOpenDrawing: Boolean,
+    showDelete: Boolean,
+    onAddToBookshelf: () -> Unit,
+    onRename: () -> Unit,
+    onOpenText: () -> Unit,
+    onOpenDrawing: () -> Unit,
+    onDelete: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    VaultEntryPopupMenu(onDismiss = onDismiss) {
+        if (showAddToBookshelf) {
+            VaultEntryMenuItem("Add to bookshelf", onAddToBookshelf)
+        }
+        if (!isFolder) {
+            if (showRename) {
+                VaultEntryMenuItem("Rename", onRename)
+            }
+            if (showOpenText) {
+                VaultEntryMenuItem("Open text", onOpenText)
+            }
+            if (showOpenDrawing) {
+                VaultEntryMenuItem("Open drawing", onOpenDrawing)
+            }
+        }
+        if (showDelete) {
+            VaultEntryMenuItem("Delete", onDelete)
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
 private fun NoteList(
     entries: List<VaultNote>,
     onOpenNote: (String) -> Unit,
-    onOpenDir: (String) -> Unit
+    onOpenDir: (String) -> Unit,
+    onShowMenu: (VaultNote) -> Unit
 ) {
     val dateFormat = remember { SimpleDateFormat("d MMM yyyy", Locale.US) }
     LazyColumn(Modifier.fillMaxSize()) {
@@ -431,10 +606,13 @@ private fun NoteList(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable {
-                        if (entry.isFolder) onOpenDir(entry.relativePath)
-                        else onOpenNote(entry.relativePath)
-                    }
+                    .combinedClickable(
+                        onClick = {
+                            if (entry.isFolder) onOpenDir(entry.relativePath)
+                            else onOpenNote(entry.relativePath)
+                        },
+                        onLongClick = { onShowMenu(entry) }
+                    )
                     .padding(horizontal = 16.dp, vertical = 12.dp)
             ) {
                 Icon(
@@ -485,11 +663,13 @@ private fun NoteList(
 }
 
 /** Multi-column compact card view of folders and notes. */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun NoteGrid(
     entries: List<VaultNote>,
     onOpenNote: (String) -> Unit,
-    onOpenDir: (String) -> Unit
+    onOpenDir: (String) -> Unit,
+    onShowMenu: (VaultNote) -> Unit
 ) {
     val dateFormat = remember { SimpleDateFormat("d MMM yyyy", Locale.US) }
     LazyVerticalGrid(
@@ -505,10 +685,13 @@ private fun NoteGrid(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .border(1.dp, Color(0xFFCCCCCC), RoundedCornerShape(8.dp))
-                    .clickable {
-                        if (entry.isFolder) onOpenDir(entry.relativePath)
-                        else onOpenNote(entry.relativePath)
-                    }
+                    .combinedClickable(
+                        onClick = {
+                            if (entry.isFolder) onOpenDir(entry.relativePath)
+                            else onOpenNote(entry.relativePath)
+                        },
+                        onLongClick = { onShowMenu(entry) }
+                    )
                     .padding(horizontal = 12.dp, vertical = 12.dp)
             ) {
                 Icon(
@@ -554,10 +737,12 @@ private fun NoteGrid(
 }
 
 /** Grid of ink-bearing notes (notes with a flip side). */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun HandwrittenGrid(
     entries: List<VaultNote>,
-    onOpenNote: (String) -> Unit
+    onOpenNote: (String) -> Unit,
+    onShowMenu: (VaultNote) -> Unit
 ) {
     LazyVerticalGrid(
         columns = GridCells.Adaptive(140.dp),
@@ -575,7 +760,10 @@ private fun HandwrittenGrid(
                         .fillMaxWidth()
                         .aspectRatio(3f / 4f)
                         .border(1.dp, Color.Black, RectangleShape)
-                        .noRippleClickable { onOpenNote(note.relativePath) }
+                        .combinedClickable(
+                            onClick = { onOpenNote(note.relativePath) },
+                            onLongClick = { onShowMenu(note) }
+                        )
                 ) {
                     Icon(
                         imageVector = FeatherIcons.Edit3,

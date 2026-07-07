@@ -17,7 +17,10 @@ import com.ethran.notable.io.ImportEngine
 import com.ethran.notable.io.ImportOptions
 import com.ethran.notable.io.flipside.FlipSideManager
 import com.ethran.notable.io.obsidiansync.ObsidianSyncManager
-import com.ethran.notable.io.vault.listInboxNotesWithInkForVaults
+import com.ethran.notable.io.vault.BookshelfIndexStore
+import com.ethran.notable.io.vault.BookshelfKind
+import com.ethran.notable.io.vault.VaultIndexRegistry
+import com.ethran.notable.widget.HomeWidgetRefresher
 import com.ethran.notable.ui.SnackConf
 import com.ethran.notable.ui.SnackState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -97,6 +100,7 @@ class LibraryViewModel @Inject constructor(
 
     fun refreshHomeCaptures() {
         _homeCapturesRefresh.value++
+        HomeWidgetRefresher.refresh(context)
     }
 
     val obsidianSyncState = obsidianSyncManager.uiState
@@ -148,56 +152,125 @@ class LibraryViewModel @Inject constructor(
             if (settings.homeVaultFilterIds.isEmpty()) all
             else all.filter { it.id in settings.homeVaultFilterIds }
         }
-        val vaultItems = listInboxNotesWithInkForVaults(vaultsToScan).map { (vault, note) ->
-            val captureKey = HomeCaptureKeys.vault(vault.id, note.relativePath)
-            HomeCaptureItem(
-                vaultId = vault.id,
-                vaultName = vault.displayName,
-                note = note,
-                previewPageId = FlipSideManager.pageIdForNote(
-                    appRepository, vault.id, note.relativePath
-                ),
-                coverImagePath = settings.homeCaptureCoverImages[captureKey]
+        val inputs = vaultsToScan.map { vault ->
+            val index = BookshelfIndexStore.loadWithPinMigration(vault, settings)
+            HomeBookshelfBuilder.BuildInput(
+                vault = vault,
+                index = index,
+                bookshelfDir = settings.homeBookshelfDirByVault[vault.id].orEmpty(),
+                coverImages = settings.homeCaptureCoverImages,
+                previewPageIds = emptyMap()
             )
         }
-        val validKeys = vaultItems.map { it.captureKey }.toSet()
-        val prunedPins = settings.homePinnedCaptureKeys.filter { it in validKeys }
-        val prunedCovers = settings.homeCaptureCoverImages.filterKeys { it in validKeys }
-        if (prunedPins != settings.homePinnedCaptureKeys ||
-            prunedCovers != settings.homeCaptureCoverImages
-        ) {
-            appRepository.kvProxy.setAppSettings(
-                settings.copy(
-                    homePinnedCaptureKeys = prunedPins,
-                    homeCaptureCoverImages = prunedCovers
+        val raw = HomeBookshelfBuilder.buildRootItems(inputs)
+        val items = raw.map { item ->
+            if (item.previewPageId != null || item.isFolder) item
+            else item.copy(
+                previewPageId = FlipSideManager.pageIdForNote(
+                    appRepository, item.vaultId, item.note.relativePath
                 )
             )
         }
-        return orderHomeCaptures(
-            items = vaultItems,
+        val validKeys = items.map { it.captureKey }.toSet()
+        val prunedCovers = settings.homeCaptureCoverImages.filterKeys { it in validKeys }
+        if (prunedCovers != settings.homeCaptureCoverImages) {
+            appRepository.kvProxy.setAppSettings(
+                settings.copy(homeCaptureCoverImages = prunedCovers)
+            )
+        }
+        return orderHomeBookshelfItems(
+            items = items,
             sortMode = settings.homeSortMode,
-            pinnedKeys = prunedPins,
             vaultFilterIds = settings.homeVaultFilterIds
         )
     }
 
-    fun togglePin(captureKey: String) {
+    fun addToBookshelf(vaultId: String, relativePath: String, kind: BookshelfKind) {
         viewModelScope.launch(Dispatchers.IO) {
             val settings = GlobalAppSettings.current
-            val pins = settings.homePinnedCaptureKeys.toMutableList()
-            if (captureKey in pins) {
-                pins.remove(captureKey)
+            val vault = settings.vaults.find { it.id == vaultId } ?: return@launch
+            val index = BookshelfIndexStore.load(vault)
+            if (index.entries.any { it.path == relativePath }) {
                 SnackState.globalSnackFlow.tryEmit(
-                    SnackConf(text = "Unpinned", duration = 2000)
+                    SnackConf(text = "Already on bookshelf", duration = 2500)
                 )
-            } else {
-                pins.add(captureKey)
-                SnackState.globalSnackFlow.tryEmit(
-                    SnackConf(text = "Pinned", duration = 2000)
+                return@launch
+            }
+            BookshelfIndexStore.addEntry(vault, relativePath, kind)
+            SnackState.globalSnackFlow.tryEmit(
+                SnackConf(text = "Added to bookshelf", duration = 2500)
+            )
+            refreshHomeCaptures()
+        }
+    }
+
+    fun archiveFromHome(vaultId: String, relativePath: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val settings = GlobalAppSettings.current
+            val vault = settings.vaults.find { it.id == vaultId } ?: return@launch
+            BookshelfIndexStore.archivePath(vault, relativePath)
+            val captureKey = HomeCaptureKeys.vault(vaultId, relativePath)
+            val pins = settings.homePinnedCaptureKeys.filter { it != captureKey }
+            val covers = settings.homeCaptureCoverImages - captureKey
+            if (pins != settings.homePinnedCaptureKeys ||
+                covers != settings.homeCaptureCoverImages
+            ) {
+                appRepository.kvProxy.setAppSettings(
+                    settings.copy(
+                        homePinnedCaptureKeys = pins,
+                        homeCaptureCoverImages = covers
+                    )
                 )
             }
+            SnackState.globalSnackFlow.tryEmit(
+                SnackConf(text = "Removed from bookshelf", duration = 3000)
+            )
+            refreshHomeCaptures()
+        }
+    }
+
+    fun openBookshelfFolder(vaultId: String, relativePath: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val settings = GlobalAppSettings.current
             appRepository.kvProxy.setAppSettings(
-                settings.copy(homePinnedCaptureKeys = pins)
+                settings.copy(
+                    homeBookshelfDirByVault = settings.homeBookshelfDirByVault + (vaultId to relativePath)
+                )
+            )
+            refreshHomeCaptures()
+        }
+    }
+
+    fun closeBookshelfFolder() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val settings = GlobalAppSettings.current
+            if (settings.homeBookshelfDirByVault.isEmpty()) return@launch
+            appRepository.kvProxy.setAppSettings(
+                settings.copy(homeBookshelfDirByVault = emptyMap())
+            )
+            refreshHomeCaptures()
+        }
+    }
+
+    fun bookshelfTargetDir(vaultId: String): String? {
+        val dir = GlobalAppSettings.current.homeBookshelfDirByVault[vaultId].orEmpty()
+            .trim().trim('/')
+        return dir.takeIf { it.isNotEmpty() }
+    }
+
+    fun togglePin(captureKey: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val (vaultId, relativePath) = HomeCaptureKeys.parseVaultKey(captureKey) ?: return@launch
+            val settings = GlobalAppSettings.current
+            val vault = settings.vaults.find { it.id == vaultId } ?: return@launch
+            val index = BookshelfIndexStore.load(vault)
+            val currentlyPinned = index.entries.any { it.path == relativePath && it.pinned }
+            BookshelfIndexStore.setPinned(vault, relativePath, !currentlyPinned)
+            SnackState.globalSnackFlow.tryEmit(
+                SnackConf(
+                    text = if (currentlyPinned) "Unpinned" else "Pinned",
+                    duration = 2000
+                )
             )
             refreshHomeCaptures()
         }
@@ -233,6 +306,36 @@ class LibraryViewModel @Inject constructor(
         }
     }
 
+    fun deleteVaultEntry(vaultId: String, relativePath: String, isFolder: Boolean) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val ok = FlipSideManager.deleteVaultEntry(
+                appRepository, vaultId, relativePath, isFolder
+            )
+            if (ok) {
+                val settings = GlobalAppSettings.current
+                val vault = settings.vaults.find { it.id == vaultId }
+                if (vault != null) {
+                    BookshelfIndexStore.removePathAndDescendants(vault, relativePath)
+                    BookshelfIndexStore.invalidate(vaultId)
+                }
+                appRepository.kvProxy.setAppSettings(
+                    HomeCaptureKeys.clearCaptureKeys(
+                        settings, vaultId, relativePath, includeDescendants = isFolder
+                    )
+                )
+                VaultIndexRegistry.invalidateAll()
+                SnackState.globalSnackFlow.tryEmit(
+                    SnackConf(text = "Deleted", duration = 3000)
+                )
+                refreshHomeCaptures()
+            } else {
+                SnackState.globalSnackFlow.tryEmit(
+                    SnackConf(text = "Could not delete", duration = 4000)
+                )
+            }
+        }
+    }
+
     fun renameCapture(vaultId: String, relativePath: String, newBaseName: String) {
         viewModelScope.launch(Dispatchers.IO) {
             val oldKey = HomeCaptureKeys.vault(vaultId, relativePath)
@@ -242,12 +345,17 @@ class LibraryViewModel @Inject constructor(
             result.onSuccess { newRelativePath ->
                 val settings = GlobalAppSettings.current
                 val newKey = HomeCaptureKeys.vault(vaultId, newRelativePath)
+                val vault = settings.vaults.find { it.id == vaultId }
+                if (vault != null) {
+                    BookshelfIndexStore.renamePath(vault, relativePath, newRelativePath)
+                }
                 appRepository.kvProxy.setAppSettings(
                     HomeCaptureKeys.migrateCaptureKey(settings, oldKey, newKey)
                 )
                 SnackState.globalSnackFlow.tryEmit(
                     SnackConf(text = "Renamed", duration = 2000)
                 )
+                VaultIndexRegistry.invalidateAll()
                 refreshHomeCaptures()
             }.onFailure { error ->
                 SnackState.globalSnackFlow.tryEmit(

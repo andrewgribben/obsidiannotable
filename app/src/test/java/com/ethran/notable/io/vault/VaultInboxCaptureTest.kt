@@ -56,6 +56,38 @@ class VaultInboxCaptureTest {
     }
 
     @Test
+    fun `obsidianSyncVaultRoot is inbox folder and vaultRootDir is parent`() {
+        val container = Files.createTempDirectory("vault-container").toFile()
+        val inbox = File(container, "Notes").apply { mkdirs() }
+        val vault = VaultConfig(
+            id = "notes",
+            name = "Notes",
+            inboxPath = inbox.absolutePath,
+            attachmentPath = ""
+        )
+        assertEquals(container, vaultRootDir(vault))
+        assertEquals(inbox, obsidianSyncVaultRoot(vault))
+    }
+
+    @Test
+    fun `sync relative path omits inbox folder prefix`() {
+        val container = Files.createTempDirectory("vault-sync-path").toFile()
+        val inbox = File(container, "Notes").apply { mkdirs() }
+        val capture = File(inbox, "2026-07-06.md").apply { writeText("# note") }
+        val vault = VaultConfig(
+            id = "notes",
+            name = "Notes",
+            inboxPath = inbox.absolutePath,
+            attachmentPath = ""
+        )
+        val syncRoot = obsidianSyncVaultRoot(vault)!!
+        val appRoot = vaultRootDir(vault)!!
+
+        assertEquals("Notes/2026-07-06.md", capture.relativeTo(appRoot).path.replace('\\', '/'))
+        assertEquals("2026-07-06.md", capture.relativeTo(syncRoot).path.replace('\\', '/'))
+    }
+
+    @Test
     fun `listInboxNotesWithInkForVaults aggregates multiple vaults`() {
         fun vaultWithInk(id: String, dirName: String): VaultConfig {
             val root = Files.createTempDirectory("vault-$id").toFile()

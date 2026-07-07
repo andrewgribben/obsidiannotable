@@ -6,6 +6,14 @@ import com.ethran.notable.data.datastore.AppSettings
 object HomeCaptureKeys {
     fun vault(vaultId: String, relativePath: String) = "v:$vaultId:$relativePath"
 
+    fun parseVaultKey(key: String): Pair<String, String>? {
+        if (!key.startsWith("v:")) return null
+        val rest = key.removePrefix("v:")
+        val colon = rest.indexOf(':')
+        if (colon < 0) return null
+        return rest.substring(0, colon) to rest.substring(colon + 1)
+    }
+
     /** Moves pin and cover entries when a capture file is renamed. */
     fun migrateCaptureKey(
         settings: AppSettings,
@@ -18,6 +26,26 @@ object HomeCaptureKeys {
         return settings.copy(
             homePinnedCaptureKeys = pins,
             homeCaptureCoverImages = covers
+        )
+    }
+
+    /** Clears pin and cover metadata for a deleted vault path (and optional descendants). */
+    fun clearCaptureKeys(
+        settings: AppSettings,
+        vaultId: String,
+        relativePath: String,
+        includeDescendants: Boolean
+    ): AppSettings {
+        fun matches(key: String): Boolean {
+            val parsed = parseVaultKey(key) ?: return false
+            if (parsed.first != vaultId) return false
+            val path = parsed.second
+            return path == relativePath ||
+                (includeDescendants && path.startsWith("$relativePath/"))
+        }
+        return settings.copy(
+            homePinnedCaptureKeys = settings.homePinnedCaptureKeys.filterNot { matches(it) },
+            homeCaptureCoverImages = settings.homeCaptureCoverImages.filterKeys { !matches(it) }
         )
     }
 }
@@ -42,6 +70,27 @@ fun orderHomeCaptures(
     val unpinned = filtered.filter { it.captureKey !in pinnedSet }
     return pinned + sortHomeCaptures(unpinned, sortMode)
 }
+
+/**
+ * Applies vault filter, pin-first ordering (by [HomeCaptureItem.pinnedAt]), and sort mode.
+ */
+fun orderHomeBookshelfItems(
+    items: List<HomeCaptureItem>,
+    sortMode: String,
+    vaultFilterIds: Set<String>
+): List<HomeCaptureItem> {
+    val filtered = items.filter { item ->
+        vaultFilterIds.isEmpty() || item.vaultId in vaultFilterIds
+    }
+    val pinned = filtered.filter { it.isPinned }.sortedBy { it.pinnedAt }
+    val unpinned = filtered.filter { !it.isPinned }
+    return pinned + sortHomeBookshelfUnpinned(unpinned, sortMode)
+}
+
+private fun sortHomeBookshelfUnpinned(
+    items: List<HomeCaptureItem>,
+    sortMode: String
+): List<HomeCaptureItem> = sortHomeCaptures(items, sortMode)
 
 private fun sortHomeCaptures(items: List<HomeCaptureItem>, sortMode: String): List<HomeCaptureItem> =
     when (sortMode) {

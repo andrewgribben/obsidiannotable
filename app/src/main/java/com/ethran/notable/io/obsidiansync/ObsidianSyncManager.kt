@@ -7,6 +7,7 @@ import com.ethran.notable.data.datastore.VaultConfig
 import com.ethran.notable.io.ObsidianLauncher
 import com.ethran.notable.io.VaultFileStore
 import com.ethran.notable.io.vault.VaultIndexRegistry
+import com.ethran.notable.io.vault.obsidianSyncVaultRoot
 import com.ethran.notable.io.vault.vaultRootDir
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.shipbook.shipbooksdk.ShipBook
@@ -40,6 +41,9 @@ class ObsidianSyncManager @Inject constructor(
     private val vaultMutexes = ConcurrentHashMap<String, Mutex>()
     private val debouncedPushJobs = ConcurrentHashMap<String, Job>()
     private val activeSyncOperations = AtomicInteger(0)
+    @Volatile
+    private var lastBackgroundPullAt = 0L
+    private var periodicPullJob: Job? = null
 
     private val _uiState = MutableStateFlow(ObsidianSyncUiState())
     val uiState: StateFlow<ObsidianSyncUiState> = _uiState.asStateFlow()
@@ -48,6 +52,7 @@ class ObsidianSyncManager @Inject constructor(
         VaultFileStore.addWriteListener(::onVaultFileWritten)
         if (credentials.hasAccount()) {
             ObsidianSyncSafety.mode = ObsidianSyncSafety.Mode.FullSync
+            ensurePeriodicPullRunning()
         }
     }
 
@@ -91,6 +96,7 @@ class ObsidianSyncManager @Inject constructor(
                 )
                 credentials.saveAccount(email, password, mfa)
                 ObsidianSyncSafety.mode = ObsidianSyncSafety.Mode.FullSync
+                ensurePeriodicPullRunning()
                 onComplete(Result.success(result))
             } catch (e: Exception) {
                 log.e("Obsidian sign-in failed: ${e.message}")
@@ -101,6 +107,8 @@ class ObsidianSyncManager @Inject constructor(
 
     fun signOut(onComplete: (() -> Unit)? = null) {
         scope.launch {
+            periodicPullJob?.cancel()
+            periodicPullJob = null
             credentials.clearAccount()
             onComplete?.invoke()
         }
@@ -139,7 +147,7 @@ class ObsidianSyncManager @Inject constructor(
             vault.syncEnabled &&
                 vault.obsidianVaultId.isNotBlank() &&
                 vault.inboxPath.isNotBlank() &&
-                vaultRootDir(vault)?.isDirectory == true
+                obsidianSyncVaultRoot(vault)?.isDirectory == true
         }
 
     fun syncAll(
@@ -182,6 +190,63 @@ class ObsidianSyncManager @Inject constructor(
         }
     }
 
+    /** Pull-only sync for one vault (no push). Used before opening notes and background refresh. */
+    suspend fun pullVault(vault: VaultConfig, showIndicator: Boolean = false): VaultSyncResult {
+        if (!GlobalAppSettings.current.obsidianSyncSignedIn) {
+            return skippedPullResult(vault)
+        }
+        if (!vault.syncEnabled || vault.obsidianVaultId.isBlank()) {
+            return skippedPullResult(vault)
+        }
+        if (!credentials.hasAccount()) {
+            return skippedPullResult(vault, error = "Missing Obsidian credentials")
+        }
+        val mutex = vaultMutexes.getOrPut(vault.id) { Mutex() }
+        return mutex.withLock { executePullVault(vault, showIndicator) }
+    }
+
+    /** Pull when vault has sync enabled; returns null when sync is not configured. */
+    suspend fun pullVaultIfEnabled(vault: VaultConfig): VaultSyncResult? {
+        if (!GlobalAppSettings.current.obsidianSyncSignedIn || !vault.syncEnabled) return null
+        return pullVault(vault, showIndicator = false)
+    }
+
+    /** Pull all sync-enabled vaults (no push). */
+    suspend fun pullAllEnabledVaults(showIndicator: Boolean = false) {
+        if (!GlobalAppSettings.current.obsidianSyncSignedIn || !credentials.hasAccount()) return
+        val targets = syncEnabledVaults(GlobalAppSettings.current)
+        for (vault in targets) {
+            pullVault(vault, showIndicator = showIndicator)
+        }
+        VaultIndexRegistry.invalidateAll()
+    }
+
+    /** Called on app foreground; debounced to avoid hammering the server. */
+    fun onAppForeground() {
+        if (!credentials.hasAccount() || !GlobalAppSettings.current.obsidianSyncSignedIn) return
+        val now = System.currentTimeMillis()
+        if (now - lastBackgroundPullAt < RESUME_PULL_DEBOUNCE_MS) return
+        scope.launch {
+            pullAllEnabledVaults(showIndicator = false)
+            lastBackgroundPullAt = System.currentTimeMillis()
+        }
+    }
+
+    fun ensurePeriodicPullRunning() {
+        if (periodicPullJob?.isActive == true) return
+        if (!credentials.hasAccount()) return
+        periodicPullJob = scope.launch {
+            while (true) {
+                delay(PERIODIC_PULL_MS)
+                if (!credentials.hasAccount() || !GlobalAppSettings.current.obsidianSyncSignedIn) {
+                    continue
+                }
+                pullAllEnabledVaults(showIndicator = false)
+                lastBackgroundPullAt = System.currentTimeMillis()
+            }
+        }
+    }
+
     fun schedulePushForVault(vaultConfigId: String, onlyPaths: Set<String>? = null) {
         if (!GlobalAppSettings.current.obsidianSyncSignedIn) return
         val vault = GlobalAppSettings.current.normalizedVaults().vaults
@@ -199,7 +264,7 @@ class ObsidianSyncManager @Inject constructor(
         val settings = GlobalAppSettings.current.normalizedVaults()
         val vaultId = vaultIdForFile(file, settings) ?: return
         val vault = settings.normalizedVaults().vaults.find { it.id == vaultId } ?: return
-        val root = vaultRootDir(vault) ?: return
+        val root = obsidianSyncVaultRoot(vault) ?: return
         val relativePath = runCatching {
             file.relativeTo(root).path.replace(File.separatorChar, '/')
         }.getOrNull() ?: return
@@ -211,8 +276,11 @@ class ObsidianSyncManager @Inject constructor(
         return mutex.withLock { syncVault(vault) }
     }
 
-    private suspend fun syncVault(vault: VaultConfig): VaultSyncResult {
-        val root = vaultRootDir(vault)
+    private suspend fun executePullVault(
+        vault: VaultConfig,
+        showIndicator: Boolean
+    ): VaultSyncResult {
+        val root = obsidianSyncVaultRoot(vault)
         if (root == null || !root.isDirectory) {
             return VaultSyncResult(
                 vaultId = vault.id,
@@ -221,7 +289,72 @@ class ObsidianSyncManager @Inject constructor(
                 pushed = 0,
                 deleted = 0,
                 version = 0,
-                error = "Vault root not configured"
+                error = "Vault sync root not configured"
+            )
+        }
+        val creds = orchestratorCredentials(vault)
+            ?: return VaultSyncResult(
+                vaultId = vault.id,
+                vaultName = vault.displayName,
+                pulled = 0,
+                pushed = 0,
+                deleted = 0,
+                version = 0,
+                error = "Missing Obsidian credentials"
+            )
+
+        if (showIndicator) {
+            _uiState.value = ObsidianSyncUiState(
+                syncing = true,
+                vaultId = vault.id,
+                statusMessage = "Syncing ${vault.displayName}…"
+            )
+        }
+
+        return try {
+            withFullSync {
+                ObsidianSyncStateStore.prepareSyncRootState(vault, root)
+                val pull = orchestrator.pull(root, creds)
+                log.i(
+                    "Pull ${vault.displayName}: synced=${pull.filesSynced} " +
+                        "deleted=${pull.filesDeleted} version=${pull.version}"
+                )
+                VaultIndexRegistry.invalidateAll()
+                VaultSyncResult(
+                    vaultId = vault.id,
+                    vaultName = vault.displayName,
+                    pulled = pull.filesSynced,
+                    pushed = 0,
+                    deleted = pull.filesDeleted,
+                    version = pull.version,
+                    error = null
+                )
+            }
+        } catch (e: Exception) {
+            log.e("Pull failed for ${vault.displayName}: ${e.message}")
+            VaultSyncResult(
+                vaultId = vault.id,
+                vaultName = vault.displayName,
+                pulled = 0,
+                pushed = 0,
+                deleted = 0,
+                version = 0,
+                error = e.message ?: "pull failed"
+            )
+        }
+    }
+
+    private suspend fun syncVault(vault: VaultConfig): VaultSyncResult {
+        val root = obsidianSyncVaultRoot(vault)
+        if (root == null || !root.isDirectory) {
+            return VaultSyncResult(
+                vaultId = vault.id,
+                vaultName = vault.displayName,
+                pulled = 0,
+                pushed = 0,
+                deleted = 0,
+                version = 0,
+                error = "Vault sync root not configured"
             )
         }
         val creds = orchestratorCredentials(vault)
@@ -243,6 +376,8 @@ class ObsidianSyncManager @Inject constructor(
 
         return try {
             withFullSync {
+                ObsidianSyncStateStore.prepareSyncRootState(vault, root)
+
                 var pulled = 0
                 var pullDeleted = 0
                 var version = 0L
@@ -317,7 +452,7 @@ class ObsidianSyncManager @Inject constructor(
     }
 
     private suspend fun pushVault(vault: VaultConfig, onlyPaths: Set<String>? = null) {
-        val root = vaultRootDir(vault) ?: return
+        val root = obsidianSyncVaultRoot(vault) ?: return
         val creds = orchestratorCredentials(vault) ?: return
         val state = ObsidianSyncStateStore.load(root)
         if (ObsidianSyncStateStore.needsBootstrap(state) && onlyPaths == null) {
@@ -405,8 +540,20 @@ class ObsidianSyncManager @Inject constructor(
         }
     }
 
+    private fun skippedPullResult(vault: VaultConfig, error: String? = null) = VaultSyncResult(
+        vaultId = vault.id,
+        vaultName = vault.displayName,
+        pulled = 0,
+        pushed = 0,
+        deleted = 0,
+        version = 0,
+        error = error
+    )
+
     companion object {
         private const val PUSH_DEBOUNCE_MS = 3_000L
+        private const val PERIODIC_PULL_MS = 180_000L
+        private const val RESUME_PULL_DEBOUNCE_MS = 30_000L
 
         fun vaultIdForFile(file: File, settings: AppSettings): String? {
             val canonical = runCatching { file.canonicalPath }.getOrNull() ?: file.absolutePath

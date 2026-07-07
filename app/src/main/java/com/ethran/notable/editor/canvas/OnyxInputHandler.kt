@@ -6,7 +6,6 @@ import android.graphics.RectF
 import android.util.Log
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.toRect
-import com.ethran.notable.data.datastore.AppSettings
 import com.ethran.notable.data.datastore.GlobalAppSettings
 import com.ethran.notable.editor.PageView
 import com.ethran.notable.editor.ui.INBOX_TOOLBAR_COLLAPSED_HEIGHT
@@ -18,10 +17,11 @@ import com.ethran.notable.editor.state.Operation
 import com.ethran.notable.editor.utils.DeviceCompat
 import com.ethran.notable.editor.utils.Eraser
 import com.ethran.notable.editor.utils.Pen
+import com.ethran.notable.editor.utils.markerPreviewColorArgb
 import com.ethran.notable.editor.utils.calculateBoundingBox
+import com.ethran.notable.editor.utils.DrawingShapeSnap
 import com.ethran.notable.editor.utils.copyInput
 import com.ethran.notable.editor.utils.copyInputToSimplePointF
-import com.ethran.notable.editor.utils.getModifiedStrokeEndpoints
 import com.ethran.notable.editor.state.AnnotationMode
 import com.ethran.notable.editor.utils.handleAnnotation
 import com.ethran.notable.editor.utils.handleDraw
@@ -35,7 +35,6 @@ import com.ethran.notable.editor.utils.refreshScreenRegion
 import com.ethran.notable.editor.utils.resetScreenFreeze
 import com.ethran.notable.editor.utils.restoreDefaults
 import com.ethran.notable.editor.utils.setupSurface
-import com.ethran.notable.editor.utils.transformToLine
 import com.ethran.notable.ui.convertDpToPixel
 import com.onyx.android.sdk.data.note.TouchPoint
 import com.onyx.android.sdk.device.Device
@@ -152,9 +151,14 @@ class OnyxInputHandler(
         when (state.mode) {
             Mode.Draw, Mode.Line -> {
                 val setting = state.penSettings[state.pen.penName] ?: return
+                val strokeColor = if (state.pen == Pen.MARKER) {
+                    markerPreviewColorArgb(setting.color)
+                } else {
+                    setting.color
+                }
                 touchHelper!!.setStrokeStyle(state.pen.strokeStyle)
                     ?.setStrokeWidth(setting.strokeSize * page.zoomLevel.value)
-                    ?.setStrokeColor(setting.color)
+                    ?.setStrokeColor(strokeColor)
             }
 
             Mode.Erase -> when (state.eraser) {
@@ -217,14 +221,7 @@ class OnyxInputHandler(
             return toolbarHeight to penToolbarHeight
         }
 
-        val toolbarHeight = if (state.isToolbarOpen) {
-            convertDpToPixel(40.dp, drawCanvas.context).toInt()
-        } else 0
-
-        return when (GlobalAppSettings.current.toolbarPosition) {
-            AppSettings.Position.Top -> toolbarHeight to 0
-            AppSettings.Position.Bottom -> 0 to toolbarHeight
-        }
+        return 0 to 0
     }
     private fun onRawDrawingList(plist: TouchPointList) {
         if (touchHelper == null) return
@@ -271,13 +268,15 @@ class OnyxInputHandler(
                         val lock = System.currentTimeMillis()
                         log.d("lock obtained in ${lock - startTime} ms")
 
-
-                        val (startPoint, endPoint) = getModifiedStrokeEndpoints(
+                        val rawPoints = copyInput(
                             plist.points,
                             page.scroll,
                             page.zoomLevel.value
                         )
-                        val linePoints = transformToLine(startPoint, endPoint)
+                        if (rawPoints.size < 2) return@withLock
+
+                        val snapped = DrawingShapeSnap.snap(rawPoints)
+                        val shapePoints = snapped.points
 
                         handleDraw(
                             drawCanvas.page,
@@ -285,22 +284,16 @@ class OnyxInputHandler(
                             drawCanvas.getActualState().penSettings[drawCanvas.getActualState().pen.penName]!!.strokeSize,
                             drawCanvas.getActualState().penSettings[drawCanvas.getActualState().pen.penName]!!.color,
                             drawCanvas.getActualState().pen,
-                            linePoints
+                            shapePoints
                         )
 
                         coroutineScope.launch(Dispatchers.Default) {
-                            val dirtyRect = Rect(
-                                min(startPoint.x, endPoint.x).toInt(),
-                                min(startPoint.y, endPoint.y).toInt(),
-                                max(startPoint.x, endPoint.x).toInt(),
-                                max(startPoint.y, endPoint.y).toInt()
-                            )
-//                                partialRefreshRegionOnce(this@DrawCanvas, dirtyRect)
+                            val bounds = calculateBoundingBox(shapePoints) { Pair(it.x, it.y) }
+                            val dirtyRect = bounds.toRect()
                             drawCanvas.refreshManager.refreshUi(dirtyRect)
                             CanvasEventBus.commitHistorySignal.emit(Unit)
                         }
                     }
-
                 }
             }
 

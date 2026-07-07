@@ -1,6 +1,7 @@
 package com.ethran.notable.ui.views
 
 import android.net.Uri
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -34,10 +35,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.foundation.layout.IntrinsicSize
-import androidx.compose.foundation.layout.width
-import androidx.compose.ui.window.Popup
-import androidx.compose.ui.window.PopupProperties
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -62,6 +59,7 @@ import com.ethran.notable.editor.EditorDestination
 import com.ethran.notable.editor.ui.toolbar.Topbar
 import com.ethran.notable.editor.utils.autoEInkAnimationOnScroll
 import com.ethran.notable.io.ExportEngine
+import com.ethran.notable.io.vault.BookshelfKind
 import com.ethran.notable.io.vault.VaultIndexRegistry
 import com.ethran.notable.navigation.NavigationDestination
 import com.ethran.notable.ui.SnackConf
@@ -73,16 +71,20 @@ import com.ethran.notable.ui.components.ObsidianSyncIndicator
 import com.ethran.notable.ui.components.PagePreview
 import com.ethran.notable.ui.components.QuickSwitcher
 import com.ethran.notable.ui.components.ShowPagesRow
+import com.ethran.notable.ui.components.VaultEntryMenuItem
+import com.ethran.notable.ui.components.VaultEntryPopupMenu
 import com.ethran.notable.ui.dialogs.CaptureRenameDialog
 import com.ethran.notable.ui.dialogs.EmptyBookWarningHandler
 import com.ethran.notable.ui.dialogs.FolderConfigDialog
 import com.ethran.notable.ui.dialogs.NotebookConfigDialog
 import com.ethran.notable.ui.dialogs.PdfImportChoiceDialog
+import com.ethran.notable.ui.dialogs.ShowSimpleConfirmationDialog
 import com.ethran.notable.ui.noRippleClickable
 import com.ethran.notable.ui.viewmodels.HomeCaptureItem
 import com.ethran.notable.ui.viewmodels.LibraryUiState
 import com.ethran.notable.ui.viewmodels.LibraryViewModel
 import compose.icons.FeatherIcons
+import compose.icons.feathericons.ArrowUp
 import compose.icons.feathericons.BookOpen
 import compose.icons.feathericons.Edit3
 import compose.icons.feathericons.FilePlus
@@ -115,6 +117,7 @@ fun Library(
     goToPage: (String) -> Unit = {},
     onCreateNewCapture: (String) -> Unit = {},
     onOpenFlipSide: (String, String) -> Unit = { _, _ -> },
+    onOpenVaultNote: (String, String) -> Unit = { _, _ -> },
     viewModel: LibraryViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -130,7 +133,7 @@ fun Library(
         uiState = uiState,
         onNavigateToFolder = { id -> navController.navigate(LibraryDestination.createRoute(id)) },
         onNavigateToSettings = { navController.navigate("settings") },
-        onOpenVaultNote = { path -> navController.navigate(NoteReaderDestination.createRoute(path)) },
+        onOpenVaultNote = onOpenVaultNote,
         onNavigateToEditor = { pageId, bookId ->
             navController.navigate(EditorDestination.createRoute(pageId, bookId))
         },
@@ -138,10 +141,14 @@ fun Library(
         onCreateNewCapture = onCreateNewCapture,
         onOpenFlipSide = onOpenFlipSide,
         onTogglePin = viewModel::togglePin,
-        onDeleteCaptureInk = viewModel::deleteCaptureInk,
+        onArchiveFromHome = viewModel::archiveFromHome,
+        onOpenBookshelfFolder = viewModel::openBookshelfFolder,
+        onCloseBookshelfFolder = viewModel::closeBookshelfFolder,
+        onAddToBookshelf = viewModel::addToBookshelf,
         onRenameCapture = viewModel::renameCapture,
         onSetCaptureCover = viewModel::setCaptureCover,
         onRemoveCaptureCover = viewModel::removeCaptureCover,
+        onDeleteVaultEntry = viewModel::deleteVaultEntry,
         onSetHomeGridOptions = viewModel::setHomeGridOptions,
         onCreateNewFolder = viewModel::createNewFolder,
         onDeleteEmptyBook = viewModel::deleteEmptyBook,
@@ -162,16 +169,20 @@ fun LibraryContent(
     uiState: LibraryUiState,
     onNavigateToFolder: (String?) -> Unit,
     onNavigateToSettings: () -> Unit,
-    onOpenVaultNote: (String) -> Unit = {},
+    onOpenVaultNote: (String, String) -> Unit = { _, _ -> },
     onNavigateToEditor: (String, String) -> Unit,
     goToPage: (String) -> Unit,
     onCreateNewCapture: (String) -> Unit,
     onOpenFlipSide: (String, String) -> Unit,
     onTogglePin: (String) -> Unit,
-    onDeleteCaptureInk: (String, String) -> Unit,
+    onArchiveFromHome: (String, String) -> Unit,
+    onOpenBookshelfFolder: (String, String) -> Unit,
+    onCloseBookshelfFolder: () -> Unit,
+    onAddToBookshelf: (String, String, BookshelfKind) -> Unit,
     onRenameCapture: (String, String, String) -> Unit,
     onSetCaptureCover: (String, String, Uri) -> Unit,
     onRemoveCaptureCover: (String, String) -> Unit,
+    onDeleteVaultEntry: (String, String, Boolean) -> Unit,
     onSetHomeGridOptions: (String, Set<String>) -> Unit,
     onCreateNewFolder: () -> Unit,
     onDeleteEmptyBook: (String) -> Unit,
@@ -186,7 +197,8 @@ fun LibraryContent(
     val activeVault = settings.activeVault
     val vaults = settings.normalizedVaults().vaults
     val multipleVaults = vaults.size > 1
-    val pinnedKeys = settings.homePinnedCaptureKeys.toSet()
+    val bookshelfDirs = settings.homeBookshelfDirByVault
+    val inBookshelfFolder = bookshelfDirs.values.any { it.isNotBlank() }
     val index = activeVault?.let { VaultIndexRegistry.forVault(it) }
     var showVaultBrowser by remember { mutableStateOf(false) }
     var showQuickSwitcher by remember { mutableStateOf(false) }
@@ -194,6 +206,7 @@ fun LibraryContent(
     var showCreateVaultPicker by remember { mutableStateOf(false) }
     var renameTarget by remember { mutableStateOf<HomeCaptureItem?>(null) }
     var coverPickTarget by remember { mutableStateOf<HomeCaptureItem?>(null) }
+    var pendingDelete by remember { mutableStateOf<HomeCaptureItem?>(null) }
     val coverPicker = rememberLauncherForActivityResult(
         contract = PickVisualMedia()
     ) { uri ->
@@ -207,11 +220,16 @@ fun LibraryContent(
     val vaultFilterIds = settings.homeVaultFilterIds
 
     fun onNewCaptureClick() {
+        if (vaults.isEmpty()) return
         if (vaults.size == 1) {
             onCreateNewCapture(vaults.first().id)
-        } else if (vaults.isNotEmpty()) {
+        } else {
             showCreateVaultPicker = true
         }
+    }
+
+    BackHandler(enabled = inBookshelfFolder) {
+        onCloseBookshelfFolder()
     }
 
     Column(Modifier.fillMaxSize()) {
@@ -295,16 +313,46 @@ fun LibraryContent(
                 }
             }
 
+            if (inBookshelfFolder) {
+                item {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .aspectRatio(3f / 4f)
+                            .border(2.dp, Color.Gray, RectangleShape)
+                            .noRippleClickable(onClick = onCloseBookshelfFolder)
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = FeatherIcons.ArrowUp,
+                                contentDescription = "Close folder",
+                                tint = Color.Black,
+                                modifier = Modifier.size(40.dp)
+                            )
+                            Text(
+                                "Close folder",
+                                style = androidx.compose.material.MaterialTheme.typography.body2,
+                                color = Color.DarkGray
+                            )
+                        }
+                    }
+                }
+            }
+
             items(captures, key = { item -> "vault:${item.vaultId}:${item.note.relativePath}" }) { item ->
                 VaultCaptureCard(
                     item = item,
-                    isPinned = item.captureKey in pinnedKeys,
+                    isPinned = item.isPinned,
                     hasCover = item.coverImagePath != null,
                     showVaultName = multipleVaults,
                     onOpenFlipSide = onOpenFlipSide,
-                    onOpenText = onOpenVaultNote,
+                    onOpenBookshelfFolder = onOpenBookshelfFolder,
+                    onOpenText = { vaultId, path -> onOpenVaultNote(vaultId, path) },
                     onTogglePin = onTogglePin,
-                    onDeleteInk = onDeleteCaptureInk,
+                    onArchive = onArchiveFromHome,
                     onRename = { renameTarget = item },
                     onSetCover = {
                         coverPickTarget = item
@@ -312,10 +360,29 @@ fun LibraryContent(
                     },
                     onRemoveCover = {
                         onRemoveCaptureCover(item.vaultId, item.note.relativePath)
-                    }
+                    },
+                    onDelete = { pendingDelete = item }
                 )
             }
         }
+    }
+
+    pendingDelete?.let { item ->
+        val message = if (item.isFolder) {
+            "Delete folder \"${item.note.name}\" and everything inside? This cannot be undone."
+        } else {
+            "Delete \"${item.note.name}\"? This cannot be undone."
+        }
+        ShowSimpleConfirmationDialog(
+            title = "Delete",
+            message = message,
+            confirmButtonText = "Delete",
+            onConfirm = {
+                onDeleteVaultEntry(item.vaultId, item.note.relativePath, item.isFolder)
+                pendingDelete = null
+            },
+            onCancel = { pendingDelete = null }
+        )
     }
 
     renameTarget?.let { item ->
@@ -357,10 +424,19 @@ fun LibraryContent(
     if (showVaultBrowser) {
         VaultBrowserModal(
             appRepository = appRepository,
-            onOpenNote = { path ->
+            onOpenNote = { vaultId, path ->
                 showVaultBrowser = false
-                onOpenVaultNote(path)
+                onOpenVaultNote(vaultId, path)
             },
+            onOpenFlipSide = { vaultId, path ->
+                showVaultBrowser = false
+                onOpenFlipSide(vaultId, path)
+            },
+            onRenameCapture = onRenameCapture,
+            onAddToBookshelf = { vaultId, path, kind ->
+                onAddToBookshelf(vaultId, path, kind)
+            },
+            onDeleteEntry = onDeleteVaultEntry,
             onDismiss = { showVaultBrowser = false }
         )
     }
@@ -372,7 +448,10 @@ fun LibraryContent(
             recentPaths = settings.recentNotesByVault[vaultForSwitcher.id].orEmpty(),
             onSelect = { note ->
                 showQuickSwitcher = false
-                onOpenVaultNote(note.relativePath)
+                onOpenVaultNote(vaultForSwitcher.id, note.relativePath)
+            },
+            onAddToBookshelf = { path ->
+                onAddToBookshelf(vaultForSwitcher.id, path, BookshelfKind.NOTE)
             },
             onDismiss = { showQuickSwitcher = false }
         )
@@ -387,12 +466,14 @@ private fun VaultCaptureCard(
     hasCover: Boolean,
     showVaultName: Boolean,
     onOpenFlipSide: (String, String) -> Unit,
-    onOpenText: (String) -> Unit,
+    onOpenBookshelfFolder: (String, String) -> Unit,
+    onOpenText: (String, String) -> Unit,
     onTogglePin: (String) -> Unit,
-    onDeleteInk: (String, String) -> Unit,
+    onArchive: (String, String) -> Unit,
     onRename: () -> Unit,
     onSetCover: () -> Unit,
-    onRemoveCover: () -> Unit
+    onRemoveCover: () -> Unit,
+    onDelete: () -> Unit
 ) {
     var showMenu by remember { mutableStateOf(false) }
 
@@ -402,12 +483,32 @@ private fun VaultCaptureCard(
             val coverPath = item.coverImagePath
             val clickModifier = Modifier
                 .combinedClickable(
-                    onClick = { onOpenFlipSide(item.vaultId, item.note.relativePath) },
+                    onClick = {
+                        if (item.isFolder) {
+                            onOpenBookshelfFolder(item.vaultId, item.note.relativePath)
+                        } else {
+                            onOpenFlipSide(item.vaultId, item.note.relativePath)
+                        }
+                    },
                     onLongClick = { showMenu = true }
                 )
                 .aspectRatio(3f / 4f)
                 .border(1.dp, Color.Gray, RectangleShape)
             when {
+                item.isFolder -> {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = clickModifier
+                            .background(Color.LightGray.copy(alpha = 0.25f))
+                    ) {
+                        Icon(
+                            imageVector = FeatherIcons.Folder,
+                            contentDescription = "Folder",
+                            tint = Color.DarkGray,
+                            modifier = Modifier.size(48.dp)
+                        )
+                    }
+                }
                 coverPath != null -> {
                     CaptureCoverPreview(
                         modifier = clickModifier,
@@ -446,6 +547,7 @@ private fun VaultCaptureCard(
             }
             if (showMenu) {
                 CaptureCardMenu(
+                    isFolder = item.isFolder,
                     isPinned = isPinned,
                     hasCover = hasCover,
                     onPin = {
@@ -464,12 +566,16 @@ private fun VaultCaptureCard(
                         onRemoveCover()
                         showMenu = false
                     },
-                    onDelete = {
-                        onDeleteInk(item.vaultId, item.note.relativePath)
+                    onArchive = {
+                        onArchive(item.vaultId, item.note.relativePath)
                         showMenu = false
                     },
                     onOpenText = {
-                        onOpenText(item.note.relativePath)
+                        onOpenText(item.vaultId, item.note.relativePath)
+                        showMenu = false
+                    },
+                    onDelete = {
+                        onDelete()
                         showMenu = false
                     },
                     onDismiss = { showMenu = false }
@@ -500,47 +606,30 @@ private fun VaultCaptureCard(
 
 @Composable
 private fun CaptureCardMenu(
+    isFolder: Boolean,
     isPinned: Boolean,
     hasCover: Boolean,
     onPin: () -> Unit,
     onRename: () -> Unit,
     onSetCover: () -> Unit,
     onRemoveCover: () -> Unit,
-    onDelete: () -> Unit,
+    onArchive: () -> Unit,
     onOpenText: () -> Unit,
+    onDelete: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    Popup(
-        alignment = Alignment.TopStart,
-        onDismissRequest = onDismiss,
-        properties = PopupProperties(focusable = true)
-    ) {
-        Column(
-            Modifier
-                .border(1.dp, Color.Black, RectangleShape)
-                .background(Color.White)
-                .width(IntrinsicSize.Max)
-        ) {
-            MenuItem(if (isPinned) "Unpin" else "Pin", onPin)
-            MenuItem("Rename", onRename)
-            MenuItem("Set cover image", onSetCover)
+    VaultEntryPopupMenu(onDismiss = onDismiss) {
+        VaultEntryMenuItem(if (isPinned) "Unpin" else "Pin", onPin)
+        if (!isFolder) {
+            VaultEntryMenuItem("Rename", onRename)
+            VaultEntryMenuItem("Set cover image", onSetCover)
             if (hasCover) {
-                MenuItem("Remove cover", onRemoveCover)
+                VaultEntryMenuItem("Remove cover", onRemoveCover)
             }
-            MenuItem("Open text", onOpenText)
-            MenuItem("Delete", onDelete)
+            VaultEntryMenuItem("Open text", onOpenText)
         }
-    }
-}
-
-@Composable
-private fun MenuItem(label: String, onClick: () -> Unit) {
-    Box(
-        Modifier
-            .padding(10.dp)
-            .noRippleClickable(onClick = onClick)
-    ) {
-        Text(label)
+        VaultEntryMenuItem("Remove from bookshelf", onArchive)
+        VaultEntryMenuItem("Delete", onDelete)
     }
 }
 

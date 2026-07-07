@@ -497,7 +497,6 @@ fun Toolbar(
                     if (state.menuStates.isMenuOpen)
                         ToolbarMenu(
                             exportEngine = exportEngine,
-                            goToBugReport = { navController.navigate(BugReportDestination.route) },
                             currentPageId = state.currentPageId,
                             currentBookId = state.bookId,
                             onClose = { state.menuStates.isMenuOpen = false },

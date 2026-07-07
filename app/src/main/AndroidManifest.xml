@@ -46,6 +46,18 @@
             </intent-filter>
         </activity>
 
+        <receiver
+            android:name=".widget.HomeWidgetProvider"
+            android:exported="true"
+            android:label="@string/app_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/home_widget_info" />
+        </receiver>
+
         <provider
             android:name="com.ethran.notable.editor.utils.Provider"
             android:authorities="${applicationId}.provider"

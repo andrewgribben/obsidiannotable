@@ -5,7 +5,9 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import com.ethran.notable.data.datastore.VaultConfig
 import com.ethran.notable.io.VaultFileStore
+import com.ethran.notable.io.vault.inboxDirRelativeToVault
 import java.io.File
 
 /**
@@ -46,6 +48,49 @@ object ObsidianSyncStateStore {
 
     /** True when no pull has populated the per-file sync map yet. */
     fun needsBootstrap(state: ObsidianSyncState): Boolean = state.files.isEmpty()
+
+    /**
+     * Detects sync state from the old wrong vault root (paths prefixed with the inbox
+     * folder name, e.g. `Notes/foo.md` while files on disk are `foo.md`).
+     */
+    fun hasStaleWrongRootState(
+        vault: VaultConfig,
+        syncRoot: File,
+        state: ObsidianSyncState
+    ): Boolean {
+        if (state.files.isEmpty()) return false
+        val prefix = inboxDirRelativeToVault(vault) ?: return false
+        val stateUsesPrefix = state.files.keys.any {
+            it == prefix || it.startsWith("$prefix/")
+        }
+        if (!stateUsesPrefix) return false
+        val localPaths = ObsidianVaultScanner.scan(syncRoot).keys
+        if (localPaths.isEmpty()) return false
+        val localUsesPrefix = localPaths.any {
+            it == prefix || it.startsWith("$prefix/")
+        }
+        return !localUsesPrefix
+    }
+
+    /**
+     * Loads sync state for [syncRoot], resetting when paths came from the old wrong root.
+     * A reset forces pull-first and avoids pushing mass deletes to the server.
+     */
+    fun prepareSyncRootState(vault: VaultConfig, syncRoot: File): ObsidianSyncState {
+        val state = load(syncRoot)
+        if (!hasStaleWrongRootState(vault, syncRoot, state)) return state
+        log.w(
+            "Resetting stale sync state at ${syncRoot.absolutePath}: " +
+                "tracked paths used inbox-folder prefix; pull before push"
+        )
+        val reset = ObsidianSyncState(
+            vaultUid = state.vaultUid,
+            version = 0,
+            files = mutableMapOf()
+        )
+        save(syncRoot, reset)
+        return reset
+    }
 
     /**
      * Refreshes [syncHash] from on-disk content for every tracked file.

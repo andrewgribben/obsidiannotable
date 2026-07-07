@@ -128,8 +128,14 @@ data class AppSettings(
     // App-local cover images for home capture cards: captureKey -> absolute file path.
     val homeCaptureCoverImages: Map<String, String> = emptyMap(),
 
+    // Folder for daily notes, relative to the vault root (e.g. "Daily"). Blank = inbox folder.
+    val dailyNoteFolder: String = "",
+
     // Last browsed folder per vault in the in-app vault browser (relative path, "" = root).
     val vaultBrowserDirByVault: Map<String, String> = emptyMap(),
+
+    // Home bookshelf drill-down: vault id → vault-root-relative folder path.
+    val homeBookshelfDirByVault: Map<String, String> = emptyMap(),
 
     // Which vault row is expanded in Settings → Vaults (empty = all collapsed).
     val settingsExpandedVaultId: String = "",

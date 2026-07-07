@@ -41,7 +41,6 @@ import kotlinx.coroutines.launch
 @Composable
 fun ToolbarMenu(
     exportEngine: ExportEngine,
-    goToBugReport: () -> Unit,
     currentPageId: String,
     currentBookId: String?,
     onClose: () -> Unit,
@@ -59,7 +58,6 @@ fun ToolbarMenu(
     ) {
         ToolbarMenuContent(
             exportEngine = exportEngine,
-            goToBugReport = goToBugReport,
             currentPageId = currentPageId,
             currentBookId = currentBookId,
             onClose = onClose,
@@ -71,7 +69,6 @@ fun ToolbarMenu(
 @Composable
 private fun ToolbarMenuContent(
     exportEngine: ExportEngine,
-    goToBugReport: () -> Unit,
     currentPageId: String,
     currentBookId: String?,
     onClose: () -> Unit,
@@ -154,12 +151,6 @@ private fun ToolbarMenuContent(
 
         MenuItem(stringResource(R.string.change_background)) {
             onBackgroundSelectorModalOpen()
-            onClose()
-        }
-
-        MenuItem(stringResource(R.string.bug_report)) {
-//                navController.navigate("bugReport")
-            goToBugReport()
             onClose()
         }
     }
