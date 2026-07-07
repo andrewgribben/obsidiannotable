@@ -18,12 +18,12 @@
 - Scribble-to-delete annotation gesture is removed (misclassified circles deleted words); scribbles map to strikethrough. Annotation gestures: circle → highlight, line through letters → strikethrough, line below → bold. Last annotation save is undoable via ↺ in the reader header (hash-guarded).
 - Home screen aggregates inbox captures from all configured vaults; new-note creation prompts for vault; sort/filter dialog includes vault filter (default all). Home card long-press menu: Pin, Rename, Set cover image, Remove cover, Open text view, Delete ink; pinned captures stay first in pin order regardless of sort mode. Cover images are app-local only (not vault frontmatter).
 - Avoid requiring the Obsidian app open for cloud sync; prefer native in-app Obsidian Sync with vault login (Kotlin port of the obsync protocol, not obsidian-headless).
-- Commit completed work after each user request unless asked not to; user wants git checkpoints between requests.
+- Commit and push after each completed logical chunk unless asked not to; user wants git checkpoints between requests (see ## Always).
 
 ## Learned Workspace Facts
 
 - Project is a fork of Notable (Onyx Boox) with Obsidian vault sync; `applicationId` is `com.grib.singularity` (display name Singularity). Build with Java 17 (`JAVA_HOME`), `./gradlew assembleDebug` or `installDebug`.
-- Vault root = parent of inbox path; attachment path is always relative to vault root; use `resolveExternalStoragePath` for inbox/attachment and `resolveVaultAttachmentDir(inboxPath, attachmentPath)` for the export directory.
+- Vault root = parent of inbox path (directory containing `.obsidian/`); attachment path is always relative to vault root; native sync `.obsync-state.json` and `OBSIDIAN_SYNC_TEST_VAULT_ROOT` use vault root, not the inbox subfolder. Use `resolveExternalStoragePath` for inbox/attachment and `resolveVaultAttachmentDir(inboxPath, attachmentPath)` for the export directory.
 - For "Documents/..." paths use `getExternalStoragePublicDirectory(DIRECTORY_DOCUMENTS)` on Android 10+ so writes succeed.
 - Boox device: enable USB Debug Mode and allow USB debugging when prompted for `installDebug`.
 - Text recognition (MyScript/InboxSyncEngine): line proximity grouping must run before bullet/list prefix detection; only the first line of a multi-line bullet has a dash — continuation lines do not.
@@ -32,4 +32,5 @@
 - KvProxy JSON decode uses `ignoreUnknownKeys = true` so stored settings survive AppSettings field removals.
 - Native page backgrounds (`blank`, `lined`, `dotted`, etc.) are drawn in `editor/drawing/backgrounds.kt` — no bundled background image folder in the repo; user-imported images live on device under `{dbDir}/backgrounds/{images|covers|pdfs}/`. New flip-side pages honor `GlobalAppSettings.defaultNativeTemplate`.
 - Home capture cover images copy to `backgrounds/covers/`; paths keyed in `AppSettings.homeCaptureCoverImages`.
-- Cloud sync today only launches the Obsidian app (`ObsidianLauncher`); native in-app sync work targets a Kotlin obsync port in `io/obsidiansync/` on branch `feature/obsidian-sync-native` (no official Android Sync SDK).
+- Native Obsidian Sync in `io/obsidiansync/` on `feature/obsidian-sync-native` (Kotlin obsync port, not obsidian-headless): crypto, REST, WebSocket, orchestrator; `ObsidianSyncSafety` defaults to `ProbeOnly` until `FullSync`. App still uses `ObsidianLauncher` until Phase 3 UI wiring.
+- Live obsidiansync JVM tests skip unless `OBSIDIAN_SYNC_TEST_*` env vars are on the same `./gradlew` command line (not inherited from a prior shell); BUILD SUCCESSFUL with ~0ms means skipped, not passed.
