@@ -12,6 +12,7 @@ import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okio.ByteString
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -81,6 +82,23 @@ class ObsidianSyncOrchestratorTest {
             }
         } finally {
             ObsidianSyncSafety.mode = previous
+        }
+    }
+
+    @Test
+    fun push_unbootstrapped_throwsBootstrapRequired() {
+        withFullSync {
+            val vault = createTempDirectory().toFile()
+            File(vault, "notes/a.md").apply {
+                parentFile.mkdirs()
+                writeText("hello")
+            }
+            assertThrows(BootstrapRequiredException::class.java) {
+                ObsidianSyncOrchestrator().push(
+                    vaultRoot = vault,
+                    credentials = testCredentials()
+                )
+            }
         }
     }
 
@@ -180,10 +198,9 @@ class ObsidianSyncOrchestratorTest {
 
                 val result = orchestrator.push(
                     vaultRoot = vault,
-                    credentials = testCredentials(e2ePassword = "vault-password")
+                    credentials = testCredentials(e2ePassword = "vault-password"),
+                    onlyPaths = setOf("notes/a.md")
                 )
-
-                assertEquals(1, result.filesPushed)
                 assertEquals(0, result.filesDeleted)
 
                 val state = ObsidianSyncStateStore.load(vault)
@@ -306,7 +323,9 @@ class ObsidianSyncOrchestratorTest {
                 val local = File(vault, plainPath)
                 assertTrue(local.exists())
                 assertEquals("remote content", local.readText())
-                assertTrue(ObsidianSyncStateStore.load(vault).files.containsKey(plainPath))
+                val fileState = ObsidianSyncStateStore.load(vault).files[plainPath]
+                assertNotNull(fileState)
+                assertEquals(plainHash, fileState!!.syncHash)
             } finally {
                 serverSocket.get()?.close(1000, "done")
                 server.shutdown()

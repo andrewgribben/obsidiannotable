@@ -46,6 +46,9 @@ class ObsidianSyncManager @Inject constructor(
 
     init {
         VaultFileStore.addWriteListener(::onVaultFileWritten)
+        if (credentials.hasAccount()) {
+            ObsidianSyncSafety.mode = ObsidianSyncSafety.Mode.FullSync
+        }
     }
 
     data class ObsidianSyncUiState(
@@ -87,6 +90,7 @@ class ObsidianSyncManager @Inject constructor(
                     )
                 )
                 credentials.saveAccount(email, password, mfa)
+                ObsidianSyncSafety.mode = ObsidianSyncSafety.Mode.FullSync
                 onComplete(Result.success(result))
             } catch (e: Exception) {
                 log.e("Obsidian sign-in failed: ${e.message}")
@@ -178,7 +182,7 @@ class ObsidianSyncManager @Inject constructor(
         }
     }
 
-    fun schedulePushForVault(vaultConfigId: String) {
+    fun schedulePushForVault(vaultConfigId: String, onlyPaths: Set<String>? = null) {
         if (!GlobalAppSettings.current.obsidianSyncSignedIn) return
         val vault = GlobalAppSettings.current.normalizedVaults().vaults
             .find { it.id == vaultConfigId } ?: return
@@ -187,14 +191,19 @@ class ObsidianSyncManager @Inject constructor(
         debouncedPushJobs.remove(vaultConfigId)?.cancel()
         debouncedPushJobs[vaultConfigId] = scope.launch {
             delay(PUSH_DEBOUNCE_MS)
-            pushVault(vault)
+            pushVault(vault, onlyPaths)
         }
     }
 
     private fun onVaultFileWritten(file: File) {
         val settings = GlobalAppSettings.current.normalizedVaults()
         val vaultId = vaultIdForFile(file, settings) ?: return
-        schedulePushForVault(vaultId)
+        val vault = settings.normalizedVaults().vaults.find { it.id == vaultId } ?: return
+        val root = vaultRootDir(vault) ?: return
+        val relativePath = runCatching {
+            file.relativeTo(root).path.replace(File.separatorChar, '/')
+        }.getOrNull() ?: return
+        schedulePushForVault(vaultId, setOf(relativePath))
     }
 
     private suspend fun syncVaultLocked(vault: VaultConfig): VaultSyncResult {
@@ -234,15 +243,63 @@ class ObsidianSyncManager @Inject constructor(
 
         return try {
             withFullSync {
-                val pull = orchestrator.pull(root, creds)
-                val push = orchestrator.push(root, creds)
+                var pulled = 0
+                var pullDeleted = 0
+                var version = 0L
+                var pullError: String? = null
+                try {
+                    val pull = orchestrator.pull(root, creds)
+                    pulled = pull.filesSynced
+                    pullDeleted = pull.filesDeleted
+                    version = pull.version
+                    log.i(
+                        "Pull ${vault.displayName}: synced=$pulled " +
+                            "deleted=$pullDeleted version=$version"
+                    )
+                } catch (e: Exception) {
+                    pullError = e.message ?: "pull failed"
+                    log.e("Pull failed for ${vault.displayName}: $pullError")
+                }
+
+                var pushed = 0
+                var pushDeleted = 0
+                var pushError: String? = null
+                try {
+                    val push = orchestrator.push(root, creds)
+                    pushed = push.filesPushed
+                    pushDeleted = push.filesDeleted
+                    log.i(
+                        "Push ${vault.displayName}: pushed=$pushed deleted=$pushDeleted"
+                    )
+                } catch (e: BootstrapRequiredException) {
+                    val state = ObsidianSyncStateStore.load(root)
+                    val localFiles = ObsidianVaultScanner.scan(root)
+                    val newPaths = localFiles.keys.filter { it !in state.files }.toSet()
+                    if (newPaths.isEmpty()) {
+                        pushError = e.message
+                    } else {
+                        log.w(
+                            "Full push blocked for ${vault.displayName}; " +
+                                "uploading ${newPaths.size} new file(s) only"
+                        )
+                        val push = orchestrator.push(root, creds, newPaths)
+                        pushed = push.filesPushed
+                        pushDeleted = push.filesDeleted
+                    }
+                } catch (e: Exception) {
+                    pushError = e.message ?: "push failed"
+                    log.e("Push failed for ${vault.displayName}: $pushError")
+                }
+
+                val error = listOfNotNull(pullError, pushError).joinToString("; ").ifBlank { null }
                 VaultSyncResult(
                     vaultId = vault.id,
                     vaultName = vault.displayName,
-                    pulled = pull.filesSynced,
-                    pushed = push.filesPushed,
-                    deleted = pull.filesDeleted + push.filesDeleted,
-                    version = pull.version
+                    pulled = pulled,
+                    pushed = pushed,
+                    deleted = pullDeleted + pushDeleted,
+                    version = version,
+                    error = error
                 )
             }
         } catch (e: Exception) {
@@ -259,12 +316,26 @@ class ObsidianSyncManager @Inject constructor(
         }
     }
 
-    private suspend fun pushVault(vault: VaultConfig) {
+    private suspend fun pushVault(vault: VaultConfig, onlyPaths: Set<String>? = null) {
         val root = vaultRootDir(vault) ?: return
         val creds = orchestratorCredentials(vault) ?: return
+        val state = ObsidianSyncStateStore.load(root)
+        if (ObsidianSyncStateStore.needsBootstrap(state) && onlyPaths == null) {
+            log.w(
+                "Skipping background push for ${vault.displayName}: " +
+                    "vault not bootstrapped (run manual sync first)"
+            )
+            return
+        }
         beginSyncIndicator("Uploading ${vault.displayName}…", vault.id)
         try {
-            withFullSync { orchestrator.push(root, creds) }
+            withFullSync {
+                val result = orchestrator.push(root, creds, onlyPaths)
+                log.i(
+                    "Background push ${vault.displayName}: pushed=${result.filesPushed} " +
+                        "paths=${onlyPaths?.size ?: "all"}"
+                )
+            }
         } catch (e: Exception) {
             log.e("Background push failed for ${vault.displayName}: ${e.message}")
         } finally {

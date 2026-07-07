@@ -1,5 +1,6 @@
 package com.ethran.notable.io.obsidiansync
 
+import com.ethran.notable.io.VaultFileStore
 import java.io.File
 
 /**
@@ -39,22 +40,39 @@ class ObsidianSyncOrchestrator(
         val syncHost: String
     )
 
-    fun push(vaultRoot: File, credentials: Credentials): PushResult {
+    fun push(
+        vaultRoot: File,
+        credentials: Credentials,
+        onlyPaths: Set<String>? = null
+    ): PushResult {
         ObsidianSyncSafety.requireMutatingSyncAllowed("push")
         require(vaultRoot.isDirectory) { "vault root must be a directory" }
 
-        val session = openSession(credentials)
         val state = ObsidianSyncStateStore.load(vaultRoot)
-        state.vaultUid = session.vault.id
-
         val localFiles = ObsidianVaultScanner.scan(vaultRoot)
-        val pushPaths = localFiles.filter { (path, hash) ->
+        if (onlyPaths == null && ObsidianSyncStateStore.needsBootstrap(state) && localFiles.isNotEmpty()) {
+            throw BootstrapRequiredException(
+                "Vault has ${localFiles.size} local files but no sync state; pull before push"
+            )
+        }
+
+        val session = openSession(credentials)
+        state.vaultUid = session.vault.id
+        var pushPaths = localFiles.filter { (path, hash) ->
             val existing = state.files[path]
             existing == null || existing.syncHash != hash
-        }.keys.sorted()
-        val deletePaths = state.files.keys.filter { it !in localFiles }.sorted()
+        }.keys
+        if (onlyPaths != null) {
+            pushPaths = pushPaths.intersect(onlyPaths)
+        }
+        val sortedPushPaths = pushPaths.sorted()
+        val deletePaths = if (onlyPaths == null) {
+            state.files.keys.filter { it !in localFiles }.sorted()
+        } else {
+            emptyList()
+        }
 
-        if (pushPaths.isEmpty() && deletePaths.isEmpty()) {
+        if (sortedPushPaths.isEmpty() && deletePaths.isEmpty()) {
             if (state.version == 0L) {
                 refreshServerVersion(vaultRoot, session, state, credentials)
             }
@@ -66,7 +84,7 @@ class ObsidianSyncOrchestrator(
             val version = drainUntilReady(client)
 
             var pushed = 0
-            for (path in pushPaths) {
+            for (path in sortedPushPaths) {
                 val file = File(vaultRoot, path)
                 val data = file.readBytes()
                 val hash = localFiles.getValue(path)
@@ -89,6 +107,7 @@ class ObsidianSyncOrchestrator(
                     size = data.size.toLong()
                 )
                 pushed++
+                ObsidianSyncStateStore.saveIfNeeded(vaultRoot, state, pushed)
             }
 
             var deleted = 0
@@ -96,11 +115,17 @@ class ObsidianSyncOrchestrator(
                 client.pushDelete(path)
                 state.files.remove(path)
                 deleted++
+                ObsidianSyncStateStore.saveIfNeeded(vaultRoot, state, pushed + deleted)
             }
 
             state.version = version
             ObsidianSyncStateStore.save(vaultRoot, state)
             return PushResult(filesPushed = pushed, filesDeleted = deleted)
+        } catch (e: Exception) {
+            if (state.files.isNotEmpty()) {
+                runCatching { ObsidianSyncStateStore.save(vaultRoot, state) }
+            }
+            throw e
         } finally {
             client.close()
         }
@@ -115,6 +140,9 @@ class ObsidianSyncOrchestrator(
         state.vaultUid = session.vault.id
 
         val initial = state.version == 0L
+        if (initial) {
+            state.files.clear()
+        }
         val client = openSyncClient(session, state, credentials, initial = initial)
         try {
             val pushes = mutableListOf<SyncPushMessage>()
@@ -163,26 +191,27 @@ class ObsidianSyncOrchestrator(
                     local.setLastModified(msg.mtime)
                 }
 
-                val plainHash = if (msg.hash.isNotBlank()) {
-                    runCatching {
-                        ObsidianCrypto.decodePathLenient(session.key, msg.hash, encVer)
-                    }.getOrDefault("")
-                } else {
-                    ""
-                }
+                val contentHash = VaultFileStore.hashOf(content)
 
                 state.files[plainPath] = ObsidianSyncFileState(
-                    hash = plainHash,
-                    syncHash = plainHash,
+                    hash = contentHash,
+                    syncHash = contentHash,
                     mtime = msg.mtime,
                     ctime = msg.ctime,
                     size = msg.size
                 )
                 synced++
+                ObsidianSyncStateStore.saveIfNeeded(vaultRoot, state, synced + deleted)
             }
 
+            ObsidianSyncStateStore.reconcileHashesFromDisk(vaultRoot, state)
             ObsidianSyncStateStore.save(vaultRoot, state)
             return PullResult(filesSynced = synced, filesDeleted = deleted, version = state.version)
+        } catch (e: Exception) {
+            if (state.files.isNotEmpty() || state.version > 0L) {
+                runCatching { ObsidianSyncStateStore.save(vaultRoot, state) }
+            }
+            throw e
         } finally {
             client.close()
         }
