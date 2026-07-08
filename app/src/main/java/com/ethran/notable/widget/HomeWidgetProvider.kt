@@ -58,11 +58,15 @@ class HomeWidgetProvider : AppWidgetProvider() {
         private const val GAP_DP = 4
         private const val ACTION_ROW_DP = 36
         private const val ACTIONS_ONLY_THRESHOLD_DP = 56
-        /** Minimum 3:4 cover height before we accept a second note row. */
-        private const val MIN_DECENT_PREVIEW_HEIGHT_DP = 72
+        /**
+         * Prefer covers at least this tall. Below this, shrink column count (reflow)
+         * rather than packing many tiny tiles.
+         */
+        private const val MIN_DECENT_PREVIEW_HEIGHT_DP = 80
         /** Space for 12sp title (+ optional 11sp vault) so bottom labels are not clipped. */
         private const val TITLE_RESERVE_DP = 20
         private const val VAULT_RESERVE_DP = 14
+        private const val COMPACT_TITLE_RESERVE_DP = 16
 
         private val noteContainerIds = intArrayOf(
             R.id.widget_note_0,
@@ -119,7 +123,8 @@ class HomeWidgetProvider : AppWidgetProvider() {
             val rows: Int,
             val slotCount: Int,
             val previewWidthPx: Int,
-            val previewHeightPx: Int
+            val previewHeightPx: Int,
+            val compactTitles: Boolean = false
         )
 
         fun updateWidgets(
@@ -142,9 +147,8 @@ class HomeWidgetProvider : AppWidgetProvider() {
             for (appWidgetId in appWidgetIds) {
                 val options = appWidgetManager.getAppWidgetOptions(appWidgetId)
                 val widthDp = widgetWidthDp(context, options)
-                val heightDp = layoutHeightDp(context, options)
-                val rows = rowCountForHeight(heightDp)
-                val grid = gridSpec(widthDp, heightDp, rows, density)
+                val heightDp = layoutHeightDp(context, options, widthDp)
+                val grid = gridSpec(widthDp, heightDp, density)
                 android.util.Log.i(
                     "HomeWidget",
                     "id=$appWidgetId size=${widthDp}x${heightDp}dp " +
@@ -186,32 +190,63 @@ class HomeWidgetProvider : AppWidgetProvider() {
             return (screenDp * 0.90f).toInt().coerceAtLeast(280)
         }
 
-        private fun layoutHeightDp(context: Context, options: Bundle): Int {
+        private fun layoutHeightDp(context: Context, options: Bundle, widthDp: Int): Int {
             val minH = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0)
             val maxH = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 0)
-            if (maxH > 0) return maxH
-            if (minH > 0) return minH
-            val metrics = context.resources.displayMetrics
-            val screenDp = metrics.heightPixels / metrics.density
-            // Roughly a third of the home screen — enough for 2 rows of 3:4 covers.
-            return (screenDp * 0.30f).toInt().coerceIn(160, 340)
+            val reported = when {
+                maxH > 0 -> maxH
+                minH > 0 -> minH
+                else -> {
+                    val metrics = context.resources.displayMetrics
+                    val screenDp = metrics.heightPixels / metrics.density
+                    // Roughly a third of the home screen — enough for 2 rows of 3:4 covers.
+                    return (screenDp * 0.30f).toInt().coerceIn(160, 340)
+                }
+            }
+            return inflateUnderreportedHeight(context, widthDp, reported)
         }
 
         /**
-         * Prefer 2 note rows when the cell is tall enough for two decent 3:4 covers.
-         * Android formula: minHeight ≈ 70*n − 30 → 2 cells≈110, 3 cells≈180.
+         * Boox sometimes reports a 1-cell height (e.g. 75dp) while the host frame is still
+         * visually tall enough for usable covers. When the reported height cannot fit even
+         * one decent 3:4 cover, inflate to a 1-row layout height derived from width.
          */
-        private fun rowCountForHeight(heightDp: Int): Int {
-            if (heightDp < ACTIONS_ONLY_THRESHOLD_DP) return 1
-            val availableNotesDp =
-                (heightDp - PAD_DP - ACTION_ROW_DP - GAP_DP - 8).coerceAtLeast(40)
-            val titleReserveDp = TITLE_RESERVE_DP + VAULT_RESERVE_DP
-            val previewHForTwo =
-                (availableNotesDp - GAP_DP) / 2 - titleReserveDp
-            return if (previewHForTwo >= MIN_DECENT_PREVIEW_HEIGHT_DP) MAX_ROWS else 1
+        private fun inflateUnderreportedHeight(
+            context: Context,
+            widthDp: Int,
+            reportedHeightDp: Int
+        ): Int {
+            val chromeDp = PAD_DP + ACTION_ROW_DP + GAP_DP + 8
+            val titleReserveDp = COMPACT_TITLE_RESERVE_DP
+            val minUsable =
+                chromeDp + titleReserveDp + MIN_DECENT_PREVIEW_HEIGHT_DP
+            if (reportedHeightDp >= minUsable) return reportedHeightDp
+
+            val preferCols = widthColumnsCap(widthDp).coerceIn(1, 4)
+            val innerWidth = (widthDp - PAD_DP).coerceAtLeast(48)
+            val colW = ((innerWidth - GAP_DP * (preferCols - 1)).toFloat() / preferCols)
+                .toInt()
+                .coerceAtLeast(48)
+            val idealOneRow =
+                chromeDp + titleReserveDp + (colW * 4f / 3f).toInt()
+            val metrics = context.resources.displayMetrics
+            val screenCap = ((metrics.heightPixels / metrics.density) * 0.35f).toInt()
+            return maxOf(reportedHeightDp, idealOneRow.coerceAtMost(screenCap))
         }
 
-        private fun gridSpec(widthDp: Int, heightDp: Int, rows: Int, density: Float): WidgetGridSpec {
+        private fun widthColumnsCap(widthDp: Int): Int = when {
+            widthDp < 130 -> 1
+            widthDp < 200 -> 2
+            widthDp < 280 -> 3
+            widthDp < 360 -> 4
+            else -> MAX_PER_ROW
+        }
+
+        /**
+         * Reflow covers to fill available height at 3:4, then take as many columns as fit
+         * at that size. Short widgets get fewer, larger tiles; tall ones get a second row.
+         */
+        private fun gridSpec(widthDp: Int, heightDp: Int, density: Float): WidgetGridSpec {
             if (heightDp < ACTIONS_ONLY_THRESHOLD_DP) {
                 return WidgetGridSpec(
                     layoutId = R.layout.widget_home_actions_only,
@@ -223,34 +258,53 @@ class HomeWidgetProvider : AppWidgetProvider() {
                 )
             }
 
-            // Column count follows width only. Sizing covers from height must not collapse
-            // the grid to 1–2 oversized tiles (tall Boox maxHeight made that happen).
-            val columns = when {
-                widthDp < 130 -> 1
-                widthDp < 200 -> 2
-                widthDp < 280 -> 3
-                widthDp < 360 -> 4
-                else -> MAX_PER_ROW
-            }
+            val chromeDp = PAD_DP + ACTION_ROW_DP + GAP_DP + 8
+            val availableNotesDp = (heightDp - chromeDp).coerceAtLeast(40)
+            val innerWidth = (widthDp - PAD_DP).coerceAtLeast(48)
+            val maxCols = widthColumnsCap(widthDp)
 
-            val rowsClamped = rows.coerceIn(1, MAX_ROWS)
-            val innerWidth = (widthDp - PAD_DP).coerceAtLeast(columns * 48)
-            val availableNotesDp =
-                (heightDp - PAD_DP - ACTION_ROW_DP - GAP_DP - 8).coerceAtLeast(40)
-            val titleReserveDp = TITLE_RESERVE_DP + VAULT_RESERVE_DP
-            val perRowHeightDp = (availableNotesDp - GAP_DP * (rowsClamped - 1)) / rowsClamped
+            // Prefer 2 rows only when each row can still hold a decent 3:4 cover.
+            val titleReserveTwo = TITLE_RESERVE_DP + VAULT_RESERVE_DP
+            val previewHForTwo =
+                (availableNotesDp - GAP_DP) / 2 - titleReserveTwo
+            val rows = if (previewHForTwo >= MIN_DECENT_PREVIEW_HEIGHT_DP) MAX_ROWS else 1
+
+            val titleReserveDp = if (rows == 1) {
+                COMPACT_TITLE_RESERVE_DP
+            } else {
+                TITLE_RESERVE_DP + VAULT_RESERVE_DP
+            }
+            val perRowHeightDp = (availableNotesDp - GAP_DP * (rows - 1)) / rows
             val maxPreviewHeightDp = (perRowHeightDp - titleReserveDp).coerceAtLeast(36)
+
+            // Fill the row height with 3:4 covers, then see how many such tiles fit in width.
+            val heightFillWidthDp =
+                (maxPreviewHeightDp * 3f / 4f).toInt().coerceAtLeast(1)
+            val columnsFromHeight = ((innerWidth + GAP_DP) / (heightFillWidthDp + GAP_DP))
+                .coerceIn(1, maxCols)
+
+            // Also allow packing more columns if full column-width 3:4 still clears min size
+            // (wide + short enough for one row of width-equal tiles).
+            var columns = columnsFromHeight
+            for (c in (columnsFromHeight + 1)..maxCols) {
+                val colW = ((innerWidth - GAP_DP * (c - 1)).toFloat() / c).toInt()
+                val natH = colW * 4f / 3f
+                if (natH <= maxPreviewHeightDp && natH >= MIN_DECENT_PREVIEW_HEIGHT_DP) {
+                    columns = c
+                } else {
+                    break
+                }
+            }
 
             val columnWidthDp = ((innerWidth - GAP_DP * (columns - 1)).toFloat() / columns)
                 .toInt()
                 .coerceAtLeast(48)
 
-            // In-app cover ratio aspectRatio(3f/4f). Grow to column width when height allows;
-            // if the row is shorter, shrink width+height together (never squash).
             val naturalHeightDp = columnWidthDp * 4f / 3f
             val previewWidthDp: Int
             val previewHeightDp: Int
             if (naturalHeightDp > maxPreviewHeightDp) {
+                // Height-fill: use full row height and the matching 3:4 width.
                 previewHeightDp = maxPreviewHeightDp.coerceAtLeast(1)
                 previewWidthDp = (previewHeightDp * 3f / 4f).toInt().coerceAtLeast(1)
             } else {
@@ -261,10 +315,11 @@ class HomeWidgetProvider : AppWidgetProvider() {
             return WidgetGridSpec(
                 layoutId = R.layout.widget_home,
                 columns = columns,
-                rows = rowsClamped,
-                slotCount = min(MAX_SLOTS, columns * rowsClamped),
+                rows = rows,
+                slotCount = min(MAX_SLOTS, columns * rows),
                 previewWidthPx = (previewWidthDp * density).toInt().coerceAtLeast(1),
-                previewHeightPx = (previewHeightDp * density).toInt().coerceAtLeast(1)
+                previewHeightPx = (previewHeightDp * density).toInt().coerceAtLeast(1),
+                compactTitles = rows == 1
             )
         }
 
@@ -340,7 +395,7 @@ class HomeWidgetProvider : AppWidgetProvider() {
                 if (capture != null) {
                     views.setTextViewText(titleId, capture.title)
                     views.setViewVisibility(titleId, View.VISIBLE)
-                    if (data.showVaultName && capture.vaultName != null) {
+                    if (!grid.compactTitles && data.showVaultName && capture.vaultName != null) {
                         views.setTextViewText(vaultId, capture.vaultName)
                         views.setViewVisibility(vaultId, View.VISIBLE)
                     } else {
