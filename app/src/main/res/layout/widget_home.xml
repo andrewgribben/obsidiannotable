@@ -11,7 +11,7 @@
     <LinearLayout
         android:id="@+id/widget_actions_row"
         android:layout_width="match_parent"
-        android:layout_height="28dp"
+        android:layout_height="36dp"
         android:orientation="horizontal">
 
         <FrameLayout
@@ -22,8 +22,8 @@
             android:background="@drawable/widget_action_background">
 
             <ImageView
-                android:layout_width="18dp"
-                android:layout_height="18dp"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
                 android:layout_gravity="center"
                 android:contentDescription="@string/widget_new_note"
                 android:src="@drawable/plus" />
@@ -38,8 +38,8 @@
             android:background="@drawable/widget_action_background">
 
             <ImageView
-                android:layout_width="18dp"
-                android:layout_height="18dp"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
                 android:layout_gravity="center"
                 android:contentDescription="@string/widget_daily_note"
                 android:src="@drawable/widget_daily" />

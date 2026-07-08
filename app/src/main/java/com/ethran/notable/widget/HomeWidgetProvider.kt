@@ -56,11 +56,10 @@ class HomeWidgetProvider : AppWidgetProvider() {
         private const val MAX_SLOTS = MAX_PER_ROW * MAX_ROWS
         private const val PAD_DP = 8
         private const val GAP_DP = 4
-        private const val ACTION_ROW_DP = 28
+        private const val ACTION_ROW_DP = 36
         private const val ACTIONS_ONLY_THRESHOLD_DP = 56
-        // Android formula: minHeight ≈ 70*n − 30 → 2 cells≈110, 3 cells≈180.
-        // Use max cell height for row count so height-3 widgets get 2 note rows.
-        private const val TWO_ROW_HEIGHT_DP = 150
+        /** Minimum 3:4 cover height before we accept a second note row. */
+        private const val MIN_DECENT_PREVIEW_HEIGHT_DP = 72
         /** Space for 12sp title (+ optional 11sp vault) so bottom labels are not clipped. */
         private const val TITLE_RESERVE_DP = 20
         private const val VAULT_RESERVE_DP = 14
@@ -144,7 +143,7 @@ class HomeWidgetProvider : AppWidgetProvider() {
                 val options = appWidgetManager.getAppWidgetOptions(appWidgetId)
                 val widthDp = widgetWidthDp(options)
                 val heightDp = layoutHeightDp(options)
-                val rows = rowCountForHeight(options)
+                val rows = rowCountForHeight(options, widthDp)
                 val grid = gridSpec(widthDp, heightDp, rows, density)
                 val data = if (grid.slotCount == 0) {
                     WidgetData(emptyList(), showVaultName = false)
@@ -168,23 +167,30 @@ class HomeWidgetProvider : AppWidgetProvider() {
             return if (max > 0) max else minW
         }
 
-        /** Width/height used for tile pixel sizes (avoid inflating from Boox's tall max cell). */
+        /**
+         * Boox reports a short minHeight and a tall maxHeight for the same cell.
+         * Size covers from the max so thumbnails fill the widget instead of sitting
+         * tiny under a large empty border.
+         */
         private fun layoutHeightDp(options: Bundle): Int {
             val minH = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 110)
             val maxH = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 0)
-            return if (maxH > 0) ((minH + maxH) / 2).coerceAtLeast(minH) else minH
+            return if (maxH > 0) maxH else minH
         }
 
         /**
-         * Row count uses the cell's max height so a height-3 Boox widget (≈180dp+)
-         * reliably gets 2 note rows instead of one short row + empty space.
+         * Prefer 2 note rows when the cell is tall enough for two decent 3:4 covers.
          * Android formula: minHeight ≈ 70*n − 30 → 2 cells≈110, 3 cells≈180.
          */
-        private fun rowCountForHeight(options: Bundle): Int {
-            val maxH = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 0)
-            val minH = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 110)
-            val span = if (maxH > 0) maxH else minH
-            return if (span >= TWO_ROW_HEIGHT_DP) MAX_ROWS else 1
+        private fun rowCountForHeight(options: Bundle, widthDp: Int): Int {
+            val heightDp = layoutHeightDp(options)
+            if (heightDp < ACTIONS_ONLY_THRESHOLD_DP) return 1
+            val availableNotesDp =
+                (heightDp - PAD_DP - ACTION_ROW_DP - GAP_DP - 8).coerceAtLeast(40)
+            val titleReserveDp = TITLE_RESERVE_DP + VAULT_RESERVE_DP
+            val previewHForTwo =
+                (availableNotesDp - GAP_DP) / 2 - titleReserveDp
+            return if (previewHForTwo >= MIN_DECENT_PREVIEW_HEIGHT_DP) MAX_ROWS else 1
         }
 
         private fun gridSpec(widthDp: Int, heightDp: Int, rows: Int, density: Float): WidgetGridSpec {
@@ -199,33 +205,35 @@ class HomeWidgetProvider : AppWidgetProvider() {
                 )
             }
 
-            // Width breakpoints — not "how many 140dp cards fit" (that floors a ~180dp
-            // default Boox widget to a single column).
-            val columns = when {
-                widthDp < 130 -> 1
-                widthDp < 200 -> 2
-                widthDp < 280 -> 3
-                widthDp < 360 -> 4
-                else -> MAX_PER_ROW
-            }
-
             val rowsClamped = rows.coerceIn(1, MAX_ROWS)
-            val innerWidth = (widthDp - PAD_DP).coerceAtLeast(columns * 48)
-            // Size from the layout height; taller widgets get a second row instead of
-            // stretched covers with empty space under a short single row.
+            val innerWidth = (widthDp - PAD_DP).coerceAtLeast(48)
             val availableNotesDp =
                 (heightDp - PAD_DP - ACTION_ROW_DP - GAP_DP - 8).coerceAtLeast(40)
-
             val titleReserveDp = TITLE_RESERVE_DP + VAULT_RESERVE_DP
             val perRowHeightDp = (availableNotesDp - GAP_DP * (rowsClamped - 1)) / rowsClamped
             val maxPreviewHeightDp = (perRowHeightDp - titleReserveDp).coerceAtLeast(36)
+
+            // Fill vertical space first: cover height → 3:4 width → how many columns fit.
+            // This matches in-app VaultCaptureCard aspectRatio(3f/4f) and avoids the old
+            // path that width-packed many tiny covers then height-squashed them.
+            val heightBasedWidthDp =
+                (maxPreviewHeightDp * 3f / 4f).toInt().coerceAtLeast(48)
+            val columnsFromHeight = ((innerWidth + GAP_DP) / (heightBasedWidthDp + GAP_DP))
+                .coerceIn(1, MAX_PER_ROW)
+            val columnsFromWidth = when {
+                widthDp < 130 -> 1
+                widthDp < 220 -> 2
+                widthDp < 320 -> 3
+                widthDp < 420 -> 4
+                else -> MAX_PER_ROW
+            }
+            val columns = min(columnsFromHeight, columnsFromWidth)
 
             val columnWidthDp = ((innerWidth - GAP_DP * (columns - 1)).toFloat() / columns)
                 .toInt()
                 .coerceAtLeast(48)
 
-            // Always keep in-app cover ratio aspectRatio(3f/4f) → height = width * 4/3.
-            // If the row is too short, shrink width and height together (never squash).
+            // Largest 3:4 that fits in both the column slot and the row height budget.
             val naturalHeightDp = columnWidthDp * 4f / 3f
             val previewWidthDp: Int
             val previewHeightDp: Int
