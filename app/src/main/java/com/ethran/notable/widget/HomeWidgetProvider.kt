@@ -141,10 +141,19 @@ class HomeWidgetProvider : AppWidgetProvider() {
             val activeVaultId = WidgetDataLoader.activeVaultId(context)
             for (appWidgetId in appWidgetIds) {
                 val options = appWidgetManager.getAppWidgetOptions(appWidgetId)
-                val widthDp = widgetWidthDp(options)
-                val heightDp = layoutHeightDp(options)
-                val rows = rowCountForHeight(options, widthDp)
+                val widthDp = widgetWidthDp(context, options)
+                val heightDp = layoutHeightDp(context, options)
+                val rows = rowCountForHeight(heightDp)
                 val grid = gridSpec(widthDp, heightDp, rows, density)
+                android.util.Log.i(
+                    "HomeWidget",
+                    "id=$appWidgetId size=${widthDp}x${heightDp}dp " +
+                        "grid=${grid.columns}x${grid.rows} " +
+                        "preview=${grid.previewWidthPx}x${grid.previewHeightPx}px " +
+                        "opts=${options.keySet().joinToString { k ->
+                            "$k=${options.get(k)}"
+                        }}"
+                )
                 val data = if (grid.slotCount == 0) {
                     WidgetData(emptyList(), showVaultName = false)
                 } else {
@@ -161,29 +170,38 @@ class HomeWidgetProvider : AppWidgetProvider() {
             }
         }
 
-        private fun widgetWidthDp(options: Bundle): Int {
+        /**
+         * Boox's AppWidgetHost often returns 0 for all OPTION_APPWIDGET_* sizes even when
+         * the widget spans most of the home screen. Fall back to a screen-based estimate
+         * so we don't collapse to the 180×110dp provider minimum (2 tiny columns).
+         */
+        private fun widgetWidthDp(context: Context, options: Bundle): Int {
             val max = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, 0)
-            val minW = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 180)
-            return if (max > 0) max else minW
+            val minW = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 0)
+            if (max > 0) return max
+            if (minW > 0) return minW
+            val metrics = context.resources.displayMetrics
+            val screenDp = metrics.widthPixels / metrics.density
+            // Typical Boox large home widget ≈ full content width minus launcher margins.
+            return (screenDp * 0.90f).toInt().coerceAtLeast(280)
         }
 
-        /**
-         * Boox reports a short minHeight and a tall maxHeight for the same cell.
-         * Size covers from the max so thumbnails fill the widget instead of sitting
-         * tiny under a large empty border.
-         */
-        private fun layoutHeightDp(options: Bundle): Int {
-            val minH = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 110)
+        private fun layoutHeightDp(context: Context, options: Bundle): Int {
+            val minH = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0)
             val maxH = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 0)
-            return if (maxH > 0) maxH else minH
+            if (maxH > 0) return maxH
+            if (minH > 0) return minH
+            val metrics = context.resources.displayMetrics
+            val screenDp = metrics.heightPixels / metrics.density
+            // Roughly a third of the home screen — enough for 2 rows of 3:4 covers.
+            return (screenDp * 0.30f).toInt().coerceIn(160, 340)
         }
 
         /**
          * Prefer 2 note rows when the cell is tall enough for two decent 3:4 covers.
          * Android formula: minHeight ≈ 70*n − 30 → 2 cells≈110, 3 cells≈180.
          */
-        private fun rowCountForHeight(options: Bundle, widthDp: Int): Int {
-            val heightDp = layoutHeightDp(options)
+        private fun rowCountForHeight(heightDp: Int): Int {
             if (heightDp < ACTIONS_ONLY_THRESHOLD_DP) return 1
             val availableNotesDp =
                 (heightDp - PAD_DP - ACTION_ROW_DP - GAP_DP - 8).coerceAtLeast(40)
@@ -205,35 +223,30 @@ class HomeWidgetProvider : AppWidgetProvider() {
                 )
             }
 
+            // Column count follows width only. Sizing covers from height must not collapse
+            // the grid to 1–2 oversized tiles (tall Boox maxHeight made that happen).
+            val columns = when {
+                widthDp < 130 -> 1
+                widthDp < 200 -> 2
+                widthDp < 280 -> 3
+                widthDp < 360 -> 4
+                else -> MAX_PER_ROW
+            }
+
             val rowsClamped = rows.coerceIn(1, MAX_ROWS)
-            val innerWidth = (widthDp - PAD_DP).coerceAtLeast(48)
+            val innerWidth = (widthDp - PAD_DP).coerceAtLeast(columns * 48)
             val availableNotesDp =
                 (heightDp - PAD_DP - ACTION_ROW_DP - GAP_DP - 8).coerceAtLeast(40)
             val titleReserveDp = TITLE_RESERVE_DP + VAULT_RESERVE_DP
             val perRowHeightDp = (availableNotesDp - GAP_DP * (rowsClamped - 1)) / rowsClamped
             val maxPreviewHeightDp = (perRowHeightDp - titleReserveDp).coerceAtLeast(36)
 
-            // Fill vertical space first: cover height → 3:4 width → how many columns fit.
-            // This matches in-app VaultCaptureCard aspectRatio(3f/4f) and avoids the old
-            // path that width-packed many tiny covers then height-squashed them.
-            val heightBasedWidthDp =
-                (maxPreviewHeightDp * 3f / 4f).toInt().coerceAtLeast(48)
-            val columnsFromHeight = ((innerWidth + GAP_DP) / (heightBasedWidthDp + GAP_DP))
-                .coerceIn(1, MAX_PER_ROW)
-            val columnsFromWidth = when {
-                widthDp < 130 -> 1
-                widthDp < 220 -> 2
-                widthDp < 320 -> 3
-                widthDp < 420 -> 4
-                else -> MAX_PER_ROW
-            }
-            val columns = min(columnsFromHeight, columnsFromWidth)
-
             val columnWidthDp = ((innerWidth - GAP_DP * (columns - 1)).toFloat() / columns)
                 .toInt()
                 .coerceAtLeast(48)
 
-            // Largest 3:4 that fits in both the column slot and the row height budget.
+            // In-app cover ratio aspectRatio(3f/4f). Grow to column width when height allows;
+            // if the row is shorter, shrink width+height together (never squash).
             val naturalHeightDp = columnWidthDp * 4f / 3f
             val previewWidthDp: Int
             val previewHeightDp: Int
