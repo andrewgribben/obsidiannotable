@@ -3,226 +3,443 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/widget_background"
+    android:gravity="top"
     android:orientation="vertical"
-    android:padding="6dp">
+    android:padding="4dp"
+    android:paddingBottom="8dp">
 
     <LinearLayout
+        android:id="@+id/widget_actions_row"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center_vertical"
+        android:layout_height="28dp"
         android:orientation="horizontal">
 
-        <LinearLayout
+        <FrameLayout
             android:id="@+id/widget_btn_new"
             android:layout_width="0dp"
-            android:layout_height="40dp"
+            android:layout_height="match_parent"
             android:layout_weight="1"
-            android:background="@drawable/widget_action_background"
-            android:gravity="center"
-            android:orientation="horizontal"
-            android:paddingHorizontal="8dp">
+            android:background="@drawable/widget_action_background">
 
             <ImageView
                 android:layout_width="18dp"
                 android:layout_height="18dp"
+                android:layout_gravity="center"
                 android:contentDescription="@string/widget_new_note"
                 android:src="@drawable/plus" />
+        </FrameLayout>
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="6dp"
-                android:ellipsize="end"
-                android:maxLines="1"
-                android:text="@string/widget_new_note"
-                android:textColor="#000000"
-                android:textSize="12sp" />
-        </LinearLayout>
-
-        <LinearLayout
+        <FrameLayout
             android:id="@+id/widget_btn_daily"
             android:layout_width="0dp"
-            android:layout_height="40dp"
-            android:layout_marginStart="6dp"
+            android:layout_height="match_parent"
+            android:layout_marginStart="4dp"
             android:layout_weight="1"
-            android:background="@drawable/widget_action_background"
-            android:gravity="center"
-            android:orientation="horizontal"
-            android:paddingHorizontal="8dp">
+            android:background="@drawable/widget_action_background">
 
             <ImageView
                 android:layout_width="18dp"
                 android:layout_height="18dp"
+                android:layout_gravity="center"
                 android:contentDescription="@string/widget_daily_note"
                 android:src="@drawable/widget_daily" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="6dp"
-                android:ellipsize="end"
-                android:maxLines="1"
-                android:text="@string/widget_daily_note"
-                android:textColor="#000000"
-                android:textSize="12sp" />
-        </LinearLayout>
+        </FrameLayout>
     </LinearLayout>
 
     <LinearLayout
-        android:id="@+id/widget_notes_row"
+        android:id="@+id/widget_row_1"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_marginTop="6dp"
-        android:layout_weight="1"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:gravity="top"
         android:orientation="horizontal">
 
         <LinearLayout
             android:id="@+id/widget_note_0"
             android:layout_width="0dp"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="4dp"
             android:layout_weight="1"
             android:orientation="vertical">
 
             <ImageView
                 android:id="@+id/widget_note_0_image"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="1"
-                android:background="@drawable/widget_note_background"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:adjustViewBounds="true"
                 android:contentDescription="@string/widget_note_thumbnail"
-                android:scaleType="centerCrop"
-                android:src="@drawable/pencil" />
+                android:scaleType="fitCenter" />
 
             <TextView
                 android:id="@+id/widget_note_0_title"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:ellipsize="end"
-                android:gravity="center"
                 android:maxLines="1"
                 android:paddingTop="2dp"
-                android:textColor="#000000"
-                android:textSize="10sp" />
+                android:textColor="#444444"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/widget_note_0_vault"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textColor="#888888"
+                android:textSize="11sp"
+                android:visibility="gone" />
         </LinearLayout>
 
         <LinearLayout
             android:id="@+id/widget_note_1"
             android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_marginStart="4dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="4dp"
             android:layout_weight="1"
             android:orientation="vertical">
 
             <ImageView
                 android:id="@+id/widget_note_1_image"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="1"
-                android:background="@drawable/widget_note_background"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:adjustViewBounds="true"
                 android:contentDescription="@string/widget_note_thumbnail"
-                android:scaleType="centerCrop"
-                android:src="@drawable/pencil" />
+                android:scaleType="fitCenter" />
 
             <TextView
                 android:id="@+id/widget_note_1_title"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:ellipsize="end"
-                android:gravity="center"
                 android:maxLines="1"
                 android:paddingTop="2dp"
-                android:textColor="#000000"
-                android:textSize="10sp" />
+                android:textColor="#444444"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/widget_note_1_vault"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textColor="#888888"
+                android:textSize="11sp"
+                android:visibility="gone" />
         </LinearLayout>
 
         <LinearLayout
             android:id="@+id/widget_note_2"
             android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_marginStart="4dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="4dp"
             android:layout_weight="1"
             android:orientation="vertical">
 
             <ImageView
                 android:id="@+id/widget_note_2_image"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="1"
-                android:background="@drawable/widget_note_background"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:adjustViewBounds="true"
                 android:contentDescription="@string/widget_note_thumbnail"
-                android:scaleType="centerCrop"
-                android:src="@drawable/pencil" />
+                android:scaleType="fitCenter" />
 
             <TextView
                 android:id="@+id/widget_note_2_title"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:ellipsize="end"
-                android:gravity="center"
                 android:maxLines="1"
                 android:paddingTop="2dp"
-                android:textColor="#000000"
-                android:textSize="10sp" />
+                android:textColor="#444444"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/widget_note_2_vault"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textColor="#888888"
+                android:textSize="11sp"
+                android:visibility="gone" />
         </LinearLayout>
 
         <LinearLayout
             android:id="@+id/widget_note_3"
             android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_marginStart="4dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="4dp"
             android:layout_weight="1"
             android:orientation="vertical">
 
             <ImageView
                 android:id="@+id/widget_note_3_image"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="1"
-                android:background="@drawable/widget_note_background"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:adjustViewBounds="true"
                 android:contentDescription="@string/widget_note_thumbnail"
-                android:scaleType="centerCrop"
-                android:src="@drawable/pencil" />
+                android:scaleType="fitCenter" />
 
             <TextView
                 android:id="@+id/widget_note_3_title"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:ellipsize="end"
-                android:gravity="center"
                 android:maxLines="1"
                 android:paddingTop="2dp"
-                android:textColor="#000000"
-                android:textSize="10sp" />
+                android:textColor="#444444"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/widget_note_3_vault"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textColor="#888888"
+                android:textSize="11sp"
+                android:visibility="gone" />
         </LinearLayout>
 
         <LinearLayout
             android:id="@+id/widget_note_4"
             android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_marginStart="4dp"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
             android:orientation="vertical">
 
             <ImageView
                 android:id="@+id/widget_note_4_image"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="1"
-                android:background="@drawable/widget_note_background"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:adjustViewBounds="true"
                 android:contentDescription="@string/widget_note_thumbnail"
-                android:scaleType="centerCrop"
-                android:src="@drawable/pencil" />
+                android:scaleType="fitCenter" />
 
             <TextView
                 android:id="@+id/widget_note_4_title"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:ellipsize="end"
-                android:gravity="center"
                 android:maxLines="1"
                 android:paddingTop="2dp"
-                android:textColor="#000000"
-                android:textSize="10sp" />
+                android:textColor="#444444"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/widget_note_4_vault"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textColor="#888888"
+                android:textSize="11sp"
+                android:visibility="gone" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/widget_row_2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:gravity="top"
+        android:orientation="horizontal"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:id="@+id/widget_note_5"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="4dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <ImageView
+                android:id="@+id/widget_note_5_image"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:adjustViewBounds="true"
+                android:contentDescription="@string/widget_note_thumbnail"
+                android:scaleType="fitCenter" />
+
+            <TextView
+                android:id="@+id/widget_note_5_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:paddingTop="2dp"
+                android:textColor="#444444"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/widget_note_5_vault"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textColor="#888888"
+                android:textSize="11sp"
+                android:visibility="gone" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/widget_note_6"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="4dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <ImageView
+                android:id="@+id/widget_note_6_image"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:adjustViewBounds="true"
+                android:contentDescription="@string/widget_note_thumbnail"
+                android:scaleType="fitCenter" />
+
+            <TextView
+                android:id="@+id/widget_note_6_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:paddingTop="2dp"
+                android:textColor="#444444"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/widget_note_6_vault"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textColor="#888888"
+                android:textSize="11sp"
+                android:visibility="gone" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/widget_note_7"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="4dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <ImageView
+                android:id="@+id/widget_note_7_image"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:adjustViewBounds="true"
+                android:contentDescription="@string/widget_note_thumbnail"
+                android:scaleType="fitCenter" />
+
+            <TextView
+                android:id="@+id/widget_note_7_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:paddingTop="2dp"
+                android:textColor="#444444"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/widget_note_7_vault"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textColor="#888888"
+                android:textSize="11sp"
+                android:visibility="gone" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/widget_note_8"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="4dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <ImageView
+                android:id="@+id/widget_note_8_image"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:adjustViewBounds="true"
+                android:contentDescription="@string/widget_note_thumbnail"
+                android:scaleType="fitCenter" />
+
+            <TextView
+                android:id="@+id/widget_note_8_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:paddingTop="2dp"
+                android:textColor="#444444"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/widget_note_8_vault"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textColor="#888888"
+                android:textSize="11sp"
+                android:visibility="gone" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/widget_note_9"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <ImageView
+                android:id="@+id/widget_note_9_image"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:adjustViewBounds="true"
+                android:contentDescription="@string/widget_note_thumbnail"
+                android:scaleType="fitCenter" />
+
+            <TextView
+                android:id="@+id/widget_note_9_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:paddingTop="2dp"
+                android:textColor="#444444"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/widget_note_9_vault"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textColor="#888888"
+                android:textSize="11sp"
+                android:visibility="gone" />
         </LinearLayout>
     </LinearLayout>
 </LinearLayout>

@@ -5,6 +5,7 @@ import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Intent
+import android.os.Bundle
 import android.view.View
 import android.widget.RemoteViews
 import com.ethran.notable.MainActivity
@@ -14,6 +15,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.math.min
 
 class HomeWidgetProvider : AppWidgetProvider() {
 
@@ -36,7 +38,7 @@ class HomeWidgetProvider : AppWidgetProvider() {
         context: Context,
         appWidgetManager: AppWidgetManager,
         appWidgetId: Int,
-        newOptions: android.os.Bundle
+        newOptions: Bundle
     ) {
         val pendingResult = goAsync()
         CoroutineScope(Dispatchers.IO).launch {
@@ -49,28 +51,76 @@ class HomeWidgetProvider : AppWidgetProvider() {
     }
 
     companion object {
-        private const val NOTE_SLOT_COUNT = 5
+        private const val MAX_PER_ROW = 5
+        private const val MAX_ROWS = 2
+        private const val MAX_SLOTS = MAX_PER_ROW * MAX_ROWS
+        private const val PAD_DP = 8
+        private const val GAP_DP = 4
+        private const val ACTION_ROW_DP = 28
+        private const val ACTIONS_ONLY_THRESHOLD_DP = 56
+        // Android formula: minHeight ≈ 70*n − 30 → 2 cells≈110, 3 cells≈180.
+        // Use max cell height for row count so height-3 widgets get 2 note rows.
+        private const val TWO_ROW_HEIGHT_DP = 150
+        /** Space for 12sp title (+ optional 11sp vault) so bottom labels are not clipped. */
+        private const val TITLE_RESERVE_DP = 20
+        private const val VAULT_RESERVE_DP = 14
 
         private val noteContainerIds = intArrayOf(
             R.id.widget_note_0,
             R.id.widget_note_1,
             R.id.widget_note_2,
             R.id.widget_note_3,
-            R.id.widget_note_4
+            R.id.widget_note_4,
+            R.id.widget_note_5,
+            R.id.widget_note_6,
+            R.id.widget_note_7,
+            R.id.widget_note_8,
+            R.id.widget_note_9
         )
         private val noteImageIds = intArrayOf(
             R.id.widget_note_0_image,
             R.id.widget_note_1_image,
             R.id.widget_note_2_image,
             R.id.widget_note_3_image,
-            R.id.widget_note_4_image
+            R.id.widget_note_4_image,
+            R.id.widget_note_5_image,
+            R.id.widget_note_6_image,
+            R.id.widget_note_7_image,
+            R.id.widget_note_8_image,
+            R.id.widget_note_9_image
         )
         private val noteTitleIds = intArrayOf(
             R.id.widget_note_0_title,
             R.id.widget_note_1_title,
             R.id.widget_note_2_title,
             R.id.widget_note_3_title,
-            R.id.widget_note_4_title
+            R.id.widget_note_4_title,
+            R.id.widget_note_5_title,
+            R.id.widget_note_6_title,
+            R.id.widget_note_7_title,
+            R.id.widget_note_8_title,
+            R.id.widget_note_9_title
+        )
+        private val noteVaultIds = intArrayOf(
+            R.id.widget_note_0_vault,
+            R.id.widget_note_1_vault,
+            R.id.widget_note_2_vault,
+            R.id.widget_note_3_vault,
+            R.id.widget_note_4_vault,
+            R.id.widget_note_5_vault,
+            R.id.widget_note_6_vault,
+            R.id.widget_note_7_vault,
+            R.id.widget_note_8_vault,
+            R.id.widget_note_9_vault
+        )
+
+        private data class WidgetGridSpec(
+            val layoutId: Int,
+            val columns: Int,
+            val rows: Int,
+            val slotCount: Int,
+            val previewWidthPx: Int,
+            val previewHeightPx: Int
         )
 
         fun updateWidgets(
@@ -88,91 +138,211 @@ class HomeWidgetProvider : AppWidgetProvider() {
             appWidgetManager: AppWidgetManager,
             appWidgetIds: IntArray
         ) = withContext(Dispatchers.IO) {
-            val captures = WidgetDataLoader.loadCaptures(context, NOTE_SLOT_COUNT)
+            val density = context.resources.displayMetrics.density
             val activeVaultId = WidgetDataLoader.activeVaultId(context)
             for (appWidgetId in appWidgetIds) {
-                val minWidth = appWidgetManager.getAppWidgetOptions(appWidgetId)
-                    .getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 250)
-                val visibleCount = visibleNoteCount(minWidth)
+                val options = appWidgetManager.getAppWidgetOptions(appWidgetId)
+                val widthDp = widgetWidthDp(options)
+                val heightDp = layoutHeightDp(options)
+                val rows = rowCountForHeight(options)
+                val grid = gridSpec(widthDp, heightDp, rows, density)
+                val data = if (grid.slotCount == 0) {
+                    WidgetData(emptyList(), showVaultName = false)
+                } else {
+                    WidgetDataLoader.load(context, grid.slotCount)
+                }
                 val views = buildRemoteViews(
                     context = context,
-                    captures = captures,
-                    visibleCount = visibleCount,
+                    grid = grid,
+                    data = data,
+                    density = density,
                     activeVaultId = activeVaultId
                 )
                 appWidgetManager.updateAppWidget(appWidgetId, views)
             }
         }
 
-        private fun visibleNoteCount(minWidthDp: Int): Int = when {
-            minWidthDp < 180 -> 2
-            minWidthDp < 280 -> 3
-            minWidthDp < 380 -> 4
-            else -> NOTE_SLOT_COUNT
+        private fun widgetWidthDp(options: Bundle): Int {
+            val max = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, 0)
+            val minW = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 180)
+            return if (max > 0) max else minW
+        }
+
+        /** Width/height used for tile pixel sizes (avoid inflating from Boox's tall max cell). */
+        private fun layoutHeightDp(options: Bundle): Int {
+            val minH = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 110)
+            val maxH = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 0)
+            return if (maxH > 0) ((minH + maxH) / 2).coerceAtLeast(minH) else minH
+        }
+
+        /**
+         * Row count uses the cell's max height so a height-3 Boox widget (≈180dp+)
+         * reliably gets 2 note rows instead of one short row + empty space.
+         * Android formula: minHeight ≈ 70*n − 30 → 2 cells≈110, 3 cells≈180.
+         */
+        private fun rowCountForHeight(options: Bundle): Int {
+            val maxH = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 0)
+            val minH = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 110)
+            val span = if (maxH > 0) maxH else minH
+            return if (span >= TWO_ROW_HEIGHT_DP) MAX_ROWS else 1
+        }
+
+        private fun gridSpec(widthDp: Int, heightDp: Int, rows: Int, density: Float): WidgetGridSpec {
+            if (heightDp < ACTIONS_ONLY_THRESHOLD_DP) {
+                return WidgetGridSpec(
+                    layoutId = R.layout.widget_home_actions_only,
+                    columns = 0,
+                    rows = 0,
+                    slotCount = 0,
+                    previewWidthPx = 0,
+                    previewHeightPx = 0
+                )
+            }
+
+            // Width breakpoints — not "how many 140dp cards fit" (that floors a ~180dp
+            // default Boox widget to a single column).
+            val columns = when {
+                widthDp < 130 -> 1
+                widthDp < 200 -> 2
+                widthDp < 280 -> 3
+                widthDp < 360 -> 4
+                else -> MAX_PER_ROW
+            }
+
+            val rowsClamped = rows.coerceIn(1, MAX_ROWS)
+            val innerWidth = (widthDp - PAD_DP).coerceAtLeast(columns * 48)
+            // Size from the layout height; taller widgets get a second row instead of
+            // stretched covers with empty space under a short single row.
+            val availableNotesDp =
+                (heightDp - PAD_DP - ACTION_ROW_DP - GAP_DP - 8).coerceAtLeast(40)
+
+            val titleReserveDp = TITLE_RESERVE_DP + VAULT_RESERVE_DP
+            val perRowHeightDp = (availableNotesDp - GAP_DP * (rowsClamped - 1)) / rowsClamped
+            val maxPreviewHeightDp = (perRowHeightDp - titleReserveDp).coerceAtLeast(36)
+
+            val columnWidthDp = ((innerWidth - GAP_DP * (columns - 1)).toFloat() / columns)
+                .toInt()
+                .coerceAtLeast(48)
+
+            // Always keep in-app cover ratio aspectRatio(3f/4f) → height = width * 4/3.
+            // If the row is too short, shrink width and height together (never squash).
+            val naturalHeightDp = columnWidthDp * 4f / 3f
+            val previewWidthDp: Int
+            val previewHeightDp: Int
+            if (naturalHeightDp > maxPreviewHeightDp) {
+                previewHeightDp = maxPreviewHeightDp.coerceAtLeast(1)
+                previewWidthDp = (previewHeightDp * 3f / 4f).toInt().coerceAtLeast(1)
+            } else {
+                previewWidthDp = columnWidthDp
+                previewHeightDp = naturalHeightDp.toInt().coerceAtLeast(1)
+            }
+
+            return WidgetGridSpec(
+                layoutId = R.layout.widget_home,
+                columns = columns,
+                rows = rowsClamped,
+                slotCount = min(MAX_SLOTS, columns * rowsClamped),
+                previewWidthPx = (previewWidthDp * density).toInt().coerceAtLeast(1),
+                previewHeightPx = (previewHeightDp * density).toInt().coerceAtLeast(1)
+            )
         }
 
         private fun buildRemoteViews(
             context: Context,
-            captures: List<WidgetCapture>,
-            visibleCount: Int,
+            grid: WidgetGridSpec,
+            data: WidgetData,
+            density: Float,
             activeVaultId: String?
         ): RemoteViews {
-            val views = RemoteViews(context.packageName, R.layout.widget_home)
+            val views = RemoteViews(context.packageName, grid.layoutId)
 
             views.setOnClickPendingIntent(
                 R.id.widget_btn_new,
-                activityPendingIntent(
-                    context,
-                    requestCode = 100,
-                    uri = WidgetActions.newCaptureUri(activeVaultId)
-                )
+                activityPendingIntent(context, 100, WidgetActions.newCaptureUri(activeVaultId))
             )
             views.setOnClickPendingIntent(
                 R.id.widget_btn_daily,
-                activityPendingIntent(
-                    context,
-                    requestCode = 101,
-                    uri = WidgetActions.dailyNoteUri(activeVaultId)
-                )
+                activityPendingIntent(context, 101, WidgetActions.dailyNoteUri(activeVaultId))
             )
 
-            for (index in 0 until NOTE_SLOT_COUNT) {
-                val containerId = noteContainerIds[index]
-                if (index >= visibleCount) {
+            if (grid.layoutId == R.layout.widget_home_actions_only) {
+                return views
+            }
+
+            views.setViewVisibility(
+                R.id.widget_row_2,
+                if (grid.rows > 1) View.VISIBLE else View.GONE
+            )
+
+            for (viewIndex in 0 until MAX_SLOTS) {
+                val containerId = noteContainerIds[viewIndex]
+                val imageId = noteImageIds[viewIndex]
+                val titleId = noteTitleIds[viewIndex]
+                val vaultId = noteVaultIds[viewIndex]
+                val row = viewIndex / MAX_PER_ROW
+                val col = viewIndex % MAX_PER_ROW
+
+                if (row >= grid.rows || col >= grid.columns) {
                     views.setViewVisibility(containerId, View.GONE)
                     continue
                 }
-                views.setViewVisibility(containerId, View.VISIBLE)
-                val capture = captures.getOrNull(index)
-                if (capture == null) {
-                    views.setImageViewResource(noteImageIds[index], R.drawable.pencil)
-                    views.setTextViewText(noteTitleIds[index], "")
-                    views.setOnClickPendingIntent(containerId, openAppPendingIntent(context, 200 + index))
+
+                val captureIndex = row * grid.columns + col
+                if (captureIndex >= grid.slotCount) {
+                    views.setViewVisibility(containerId, View.GONE)
                     continue
                 }
-                val bitmap = WidgetDataLoader.decodeThumbnail(capture.thumbnailPath)
-                if (bitmap != null) {
-                    views.setImageViewBitmap(noteImageIds[index], bitmap)
-                } else {
-                    views.setImageViewResource(noteImageIds[index], R.drawable.pencil)
-                }
-                views.setTextViewText(noteTitleIds[index], truncateTitle(capture.title))
-                views.setOnClickPendingIntent(
-                    containerId,
-                    activityPendingIntent(
-                        context,
-                        requestCode = 300 + index,
-                        uri = WidgetActions.flipUri(capture.vaultId, capture.relativePath)
-                    )
+
+                views.setViewVisibility(containerId, View.VISIBLE)
+                val capture = data.captures.getOrNull(captureIndex)
+                val preview = WidgetCardRenderer.renderPreview(
+                    context = context,
+                    capture = capture,
+                    widthPx = grid.previewWidthPx,
+                    density = density,
+                    heightPx = grid.previewHeightPx
                 )
+                // Lock the ImageView to the computed 3:4 size so weight columns cannot
+                // stretch covers to a different aspect ratio than in-app VaultCaptureCard.
+                views.setViewLayoutWidth(
+                    imageId,
+                    grid.previewWidthPx.toFloat(),
+                    android.util.TypedValue.COMPLEX_UNIT_PX
+                )
+                views.setViewLayoutHeight(
+                    imageId,
+                    grid.previewHeightPx.toFloat(),
+                    android.util.TypedValue.COMPLEX_UNIT_PX
+                )
+                views.setImageViewBitmap(imageId, preview)
+
+                if (capture != null) {
+                    views.setTextViewText(titleId, capture.title)
+                    views.setViewVisibility(titleId, View.VISIBLE)
+                    if (data.showVaultName && capture.vaultName != null) {
+                        views.setTextViewText(vaultId, capture.vaultName)
+                        views.setViewVisibility(vaultId, View.VISIBLE)
+                    } else {
+                        views.setViewVisibility(vaultId, View.GONE)
+                    }
+                    views.setOnClickPendingIntent(
+                        containerId,
+                        activityPendingIntent(
+                            context,
+                            300 + captureIndex,
+                            WidgetActions.flipUri(capture.vaultId, capture.relativePath)
+                        )
+                    )
+                } else {
+                    views.setTextViewText(titleId, "")
+                    views.setViewVisibility(vaultId, View.GONE)
+                    views.setOnClickPendingIntent(
+                        containerId,
+                        openAppPendingIntent(context, 200 + captureIndex)
+                    )
+                }
             }
             return views
-        }
-
-        private fun truncateTitle(title: String, maxLen: Int = 14): String {
-            val trimmed = title.trim()
-            if (trimmed.length <= maxLen) return trimmed
-            return trimmed.take(maxLen - 1) + "…"
         }
 
         private fun activityPendingIntent(context: Context, requestCode: Int, uri: android.net.Uri): PendingIntent {

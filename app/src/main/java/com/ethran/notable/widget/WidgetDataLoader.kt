@@ -7,7 +7,6 @@ import androidx.room.Room
 import com.ethran.notable.APP_SETTINGS_KEY
 import com.ethran.notable.data.datastore.AppSettings
 import com.ethran.notable.data.datastore.GlobalAppSettings
-import com.ethran.notable.data.datastore.VaultConfig
 import com.ethran.notable.data.datastore.VaultPathBootstrap
 import com.ethran.notable.data.db.AppDatabase
 import com.ethran.notable.data.db.MIGRATION_16_17
@@ -17,7 +16,6 @@ import com.ethran.notable.data.db.MIGRATION_32_33
 import com.ethran.notable.data.getDbDir
 import com.ethran.notable.io.flipside.FlipSideLink
 import com.ethran.notable.io.vault.BookshelfIndexStore
-import com.ethran.notable.io.vault.listInboxNotesWithInkForVaults
 import com.ethran.notable.ui.viewmodels.HomeBookshelfBuilder
 import com.ethran.notable.ui.viewmodels.HomeCaptureItem
 import com.ethran.notable.ui.viewmodels.HomeCaptureKeys
@@ -31,102 +29,79 @@ data class WidgetCapture(
     val vaultId: String,
     val relativePath: String,
     val title: String,
-    val thumbnailPath: String?
+    val thumbnailPath: String?,
+    val isCover: Boolean,
+    val isPinned: Boolean,
+    val vaultName: String?
+)
+
+data class WidgetData(
+    val captures: List<WidgetCapture>,
+    val showVaultName: Boolean
 )
 
 object WidgetDataLoader {
-    private const val MAX_THUMB_PX = 220
     private val json = Json { ignoreUnknownKeys = true }
 
-    suspend fun loadCaptures(context: Context, limit: Int = 5): List<WidgetCapture> =
+    suspend fun load(context: Context, limit: Int = 5): WidgetData =
         withContext(Dispatchers.IO) {
-            val settings = loadSettings(context) ?: return@withContext emptyList()
-            val vaultsToScan = settings.vaults.let { all ->
-                if (settings.homeVaultFilterIds.isEmpty()) all
-                else all.filter { it.id in settings.homeVaultFilterIds }
-            }
-            if (vaultsToScan.isEmpty()) return@withContext emptyList()
-
-            val flipPageIds = loadFlipPageIds(context, vaultsToScan)
-            val inputs = vaultsToScan.map { vault ->
-                val index = BookshelfIndexStore.loadWithPinMigration(vault, settings)
-                HomeBookshelfBuilder.BuildInput(
-                    vault = vault,
-                    index = index,
-                    bookshelfDir = "",
-                    coverImages = settings.homeCaptureCoverImages,
-                    previewPageIds = flipPageIds
+            val bootstrap = VaultPathBootstrap.load(context)
+                ?: return@withContext WidgetData(emptyList(), showVaultName = false)
+            GlobalAppSettings.update(
+                GlobalAppSettings.current.copy(
+                    obsidianInboxPath = bootstrap.first,
+                    obsidianAttachmentPath = bootstrap.second
                 )
-            }
-            val raw = HomeBookshelfBuilder.buildRootItems(inputs)
-                .filter { !it.isFolder }
-                .map { item ->
-                    if (item.previewPageId != null) item
-                    else item.copy(previewPageId = flipPageIds[item.captureKey])
-                }
-            val ordered = orderHomeBookshelfItems(
-                items = raw,
-                sortMode = settings.homeSortMode,
-                vaultFilterIds = settings.homeVaultFilterIds
             )
-            ordered.take(limit).map { item ->
-                WidgetCapture(
-                    vaultId = item.vaultId,
-                    relativePath = item.note.relativePath,
-                    title = item.note.name,
-                    thumbnailPath = resolveThumbnailPath(context, item)
-                )
-            }
-        }
-
-    suspend fun activeVaultId(context: Context): String? =
-        loadSettings(context)?.activeVault?.id
-
-    fun decodeThumbnail(path: String?): Bitmap? {
-        if (path.isNullOrBlank()) return null
-        val file = File(path)
-        if (!file.isFile) return null
-        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        BitmapFactory.decodeFile(file.absolutePath, bounds)
-        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
-        val largest = maxOf(bounds.outWidth, bounds.outHeight)
-        val sampleSize = maxOf(1, largest / MAX_THUMB_PX)
-        return BitmapFactory.decodeFile(
-            file.absolutePath,
-            BitmapFactory.Options().apply { inSampleSize = sampleSize }
-        )
-    }
-
-    private fun resolveThumbnailPath(context: Context, item: HomeCaptureItem): String? {
-        item.coverImagePath?.takeIf { File(it).isFile }?.let { return it }
-        val pageId = item.previewPageId ?: return null
-        val thumb = File(context.filesDir, "pages/previews/thumbs/$pageId")
-        return thumb.takeIf { it.isFile }?.absolutePath
-    }
-
-    private suspend fun loadFlipPageIds(
-        context: Context,
-        vaults: List<VaultConfig>
-    ): Map<String, String> {
-        val db = openDatabase(context)
-        return try {
-            val kvDao = db.kvDao()
-            buildMap {
-                for ((vault, note) in listInboxNotesWithInkForVaults(vaults)) {
-                    val key = "FLIP_PAGE:${vault.id}:${note.relativePath}"
-                    val raw = kvDao.get(key)?.value ?: continue
-                    val link = runCatching {
-                        json.decodeFromString(FlipSideLink.serializer(), raw)
-                    }.getOrNull() ?: continue
-                    put(HomeCaptureKeys.vault(vault.id, note.relativePath), link.pageId)
+            val db = openDatabase(context)
+            try {
+                val settings = loadSettings(db)
+                    ?: return@withContext WidgetData(emptyList(), showVaultName = false)
+                val vaultsToScan = settings.vaults.let { all ->
+                    if (settings.homeVaultFilterIds.isEmpty()) all
+                    else all.filter { it.id in settings.homeVaultFilterIds }
                 }
-            }
-        } finally {
-            db.close()
-        }
-    }
+                if (vaultsToScan.isEmpty()) {
+                    return@withContext WidgetData(emptyList(), showVaultName = false)
+                }
 
-    private suspend fun loadSettings(context: Context): AppSettings? {
+                val flipPageIds = loadFlipPageIds(db)
+                val inputs = vaultsToScan.map { vault ->
+                    val index = BookshelfIndexStore.loadWithPinMigration(vault, settings)
+                    HomeBookshelfBuilder.BuildInput(
+                        vault = vault,
+                        index = index,
+                        bookshelfDir = "",
+                        coverImages = settings.homeCaptureCoverImages,
+                        previewPageIds = flipPageIds
+                    )
+                }
+                val raw = HomeBookshelfBuilder.buildRootItems(inputs)
+                    .filter { !it.isFolder }
+                    .map { item ->
+                        val pageId = item.previewPageId ?: flipPageIds[item.captureKey]
+                        if (pageId != null && item.previewPageId == null) {
+                            item.copy(previewPageId = pageId)
+                        } else {
+                            item
+                        }
+                    }
+                val ordered = orderHomeBookshelfItems(
+                    items = raw,
+                    sortMode = settings.homeSortMode,
+                    vaultFilterIds = settings.homeVaultFilterIds
+                )
+                val showVaultName = vaultsToScan.size > 1
+                val captures = ordered.take(limit).map { item ->
+                    toWidgetCapture(context, item, showVaultName)
+                }
+                WidgetData(captures, showVaultName)
+            } finally {
+                db.close()
+            }
+        }
+
+    suspend fun activeVaultId(context: Context): String? {
         val bootstrap = VaultPathBootstrap.load(context) ?: return null
         GlobalAppSettings.update(
             GlobalAppSettings.current.copy(
@@ -136,14 +111,61 @@ object WidgetDataLoader {
         )
         val db = openDatabase(context)
         return try {
+            loadSettings(db)?.activeVault?.id
+        } finally {
+            db.close()
+        }
+    }
+
+    private fun toWidgetCapture(
+        context: Context,
+        item: HomeCaptureItem,
+        showVaultName: Boolean
+    ): WidgetCapture {
+        val coverPath = item.coverImagePath?.takeIf { File(it).isFile }
+        return WidgetCapture(
+            vaultId = item.vaultId,
+            relativePath = item.note.relativePath,
+            title = item.note.name,
+            thumbnailPath = coverPath ?: resolveInkPreviewPath(context, item.previewPageId),
+            isCover = coverPath != null,
+            isPinned = item.isPinned,
+            vaultName = if (showVaultName) item.vaultName else null
+        )
+    }
+
+    private fun resolveInkPreviewPath(context: Context, pageId: String?): String? {
+        if (pageId.isNullOrBlank()) return null
+        val filesDir = context.filesDir
+        val thumb = File(filesDir, "pages/previews/thumbs/$pageId")
+        if (thumb.isFile) return thumb.absolutePath
+        val full = File(filesDir, "pages/previews/full/$pageId")
+        if (full.isFile) return full.absolutePath
+        return null
+    }
+
+    private suspend fun loadFlipPageIds(db: AppDatabase): Map<String, String> {
+        return buildMap {
+            for (kv in db.kvDao().getAllFlipPageLinks()) {
+                val link = runCatching {
+                    json.decodeFromString(FlipSideLink.serializer(), kv.value)
+                }.getOrNull() ?: continue
+                put(
+                    HomeCaptureKeys.vault(link.vaultId, link.relativePath),
+                    link.pageId
+                )
+            }
+        }
+    }
+
+    private suspend fun loadSettings(db: AppDatabase): AppSettings? {
+        return try {
             val raw = db.kvDao().get(APP_SETTINGS_KEY)?.value ?: return null
             val settings = json.decodeFromString(AppSettings.serializer(), raw).normalizedVaults()
             GlobalAppSettings.update(settings)
             settings
         } catch (_: Exception) {
             null
-        } finally {
-            db.close()
         }
     }
 

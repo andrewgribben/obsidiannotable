@@ -276,8 +276,7 @@ object FlipSideManager {
     suspend fun openOrCreateDailyNote(appRepository: AppRepository, vaultId: String): String? {
         val vault = vaultById(vaultId) ?: return missingVaultSnack()
         val relativePath = dailyNoteRelativePath(vault) ?: return missingVaultSnack()
-        val root = vaultRootDir(vault) ?: return null
-        val noteFile = File(root, relativePath.replace('/', File.separatorChar))
+        val noteFile = resolveVaultNoteFile(vault, relativePath) ?: return null
 
         if (!noteFile.exists()) {
             noteFile.parentFile?.mkdirs()
