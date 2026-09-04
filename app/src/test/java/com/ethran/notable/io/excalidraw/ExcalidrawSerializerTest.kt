@@ -67,7 +67,7 @@ class ExcalidrawSerializerTest {
         val stroke = sampleStroke()
         val content = ExcalidrawSerializer.serializeUnified("# Title\n\nBody text", listOf(stroke))
         assertTrue(content.contains("excalidraw-plugin: parsed"))
-        assertTrue(content.contains("excalidraw-open-md: true"))
+        assertTrue(content.contains("excalidraw-open-md: false"))
         assertTrue(content.contains("# Title"))
         assertTrue(content.contains("Body text"))
         assertTrue(content.contains("%%"))
@@ -104,6 +104,7 @@ class ExcalidrawSerializerTest {
         val note = """
             ---
             title: My Note
+            excalidraw-open-md: true
             pdf: "[[old.pdf]]"
             flip-side: "[[sidecar]]"
             ---
@@ -112,6 +113,8 @@ class ExcalidrawSerializerTest {
         """.trimIndent()
         val merged = ExcalidrawSerializer.ensureExcalidrawFrontmatter(note)
         assertTrue(merged.contains("excalidraw-plugin: parsed"))
+        assertTrue(merged.contains("excalidraw-open-md: false"))
+        assertFalse(merged.contains("excalidraw-open-md: true"))
         assertTrue(merged.contains("title: My Note"))
         assertFalse(merged.contains("pdf:"))
         assertFalse(merged.contains("flip-side:"))

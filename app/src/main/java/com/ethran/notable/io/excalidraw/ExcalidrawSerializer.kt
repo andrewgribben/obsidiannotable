@@ -171,8 +171,10 @@ object ExcalidrawSerializer {
         if (!fm.contains("excalidraw-plugin:")) {
             fm += "\n$EXCALIDRAW_PLUGIN_LINE"
         }
-        if (!fm.contains("excalidraw-open-md:")) {
-            fm += "\nexcalidraw-open-md: true"
+        fm = if (fm.contains("excalidraw-open-md:")) {
+            EXCALIDRAW_OPEN_MD_REGEX.replace(fm, "excalidraw-open-md: false")
+        } else {
+            "$fm\nexcalidraw-open-md: false"
         }
         if (!fm.contains("excalidraw")) {
             if (fm.contains("tags:")) {
@@ -191,7 +193,7 @@ object ExcalidrawSerializer {
         return buildString {
             appendLine("---")
             appendLine(EXCALIDRAW_PLUGIN_LINE)
-            appendLine("excalidraw-open-md: true")
+            appendLine("excalidraw-open-md: false")
             appendLine("tags: [excalidraw]")
             appendLine("---")
             if (body.isNotEmpty()) {

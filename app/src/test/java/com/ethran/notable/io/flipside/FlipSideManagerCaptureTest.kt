@@ -42,7 +42,7 @@ class FlipSideManagerCaptureTest {
     fun `buildCaptureUnifiedStub has excalidraw frontmatter`() {
         val stub = FlipSideManager.buildCaptureUnifiedStub(Date(1700000000000L))
         assertTrue(stub.contains("excalidraw-plugin: parsed"))
-        assertTrue(stub.contains("excalidraw-open-md: true"))
+        assertTrue(stub.contains("excalidraw-open-md: false"))
         assertTrue(stub.contains("created:"))
         assertFalse(stub.contains("flip-side:"))
         assertFalse(stub.contains("pdf:"))

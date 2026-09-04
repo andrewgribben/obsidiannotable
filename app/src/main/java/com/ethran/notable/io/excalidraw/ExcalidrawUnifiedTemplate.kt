@@ -38,7 +38,7 @@ object ExcalidrawUnifiedTemplate {
         return buildString {
             appendLine("---")
             appendLine("excalidraw-plugin: parsed")
-            appendLine("excalidraw-open-md: true")
+            appendLine("excalidraw-open-md: false")
             appendLine("tags: [excalidraw]")
             appendLine("created: \"[[$createdDate]]\"")
             appendLine("---")
