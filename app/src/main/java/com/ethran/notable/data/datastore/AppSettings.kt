@@ -32,6 +32,12 @@ data class VaultConfig(
     val name: String = "",
     val inboxPath: String = "",
     val attachmentPath: String = "",
+    /** Obsidian Sync remote vault UID (from listVaults). */
+    val obsidianVaultId: String = "",
+    /** Remote vault display name (for settings UI). */
+    val obsidianVaultName: String = "",
+    /** When true, this local vault participates in native Obsidian Sync. */
+    val syncEnabled: Boolean = false,
 ) {
     /** Display name falling back to the vault root folder name. */
     val displayName: String
@@ -49,6 +55,15 @@ data class VaultConfig(
         }
     }
 }
+
+
+/** Remote Obsidian Sync vault entry cached after account sign-in. */
+@Serializable
+data class ObsidianRemoteVaultRef(
+    val id: String,
+    val name: String,
+    val encryptionVersion: Int = 0,
+)
 
 
 @Serializable
@@ -101,8 +116,35 @@ data class AppSettings(
     val vaultSortMode: String = "name",
     val vaultBrowserGrid: Boolean = false,
 
-    // Home/library page-grid sort order (VaultSort modes; "newest" = modified desc).
+    // Home/library page-grid sort order (see HomeSort; "newest" = modified desc).
     val homeSortMode: String = "newest",
+
+    // Home grid vault filter: empty = all vaults; non-empty = only listed vault ids.
+    val homeVaultFilterIds: Set<String> = emptySet(),
+
+    // Ordered pin keys for home captures (see HomeCaptureKeys).
+    val homePinnedCaptureKeys: List<String> = emptyList(),
+
+    // App-local cover images for home capture cards: captureKey -> absolute file path.
+    val homeCaptureCoverImages: Map<String, String> = emptyMap(),
+
+    // Folder for daily notes, relative to the vault root (e.g. "Daily"). Blank = inbox folder.
+    val dailyNoteFolder: String = "",
+
+    // Last browsed folder per vault in the in-app vault browser (relative path, "" = root).
+    val vaultBrowserDirByVault: Map<String, String> = emptyMap(),
+
+    // Home bookshelf drill-down: vault id → vault-root-relative folder path.
+    val homeBookshelfDirByVault: Map<String, String> = emptyMap(),
+
+    // Which vault row is expanded in Settings → Vaults (empty = all collapsed).
+    val settingsExpandedVaultId: String = "",
+
+    // Obsidian Sync account (credentials live in EncryptedSharedPreferences).
+    val obsidianSyncEmail: String = "",
+    val obsidianSyncSignedIn: Boolean = false,
+    /** Cached remote vault list after sign-in; used to bind local vaults. */
+    val obsidianRemoteVaults: List<ObsidianRemoteVaultRef> = emptyList(),
 
     // Debug
     val showWelcome: Boolean = true,

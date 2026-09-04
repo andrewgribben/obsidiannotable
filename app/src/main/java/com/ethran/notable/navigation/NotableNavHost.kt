@@ -16,6 +16,7 @@ import com.ethran.notable.data.datastore.EditorSettingCacheManager
 import com.ethran.notable.editor.EditorDestination
 import com.ethran.notable.editor.EditorView
 import com.ethran.notable.io.ExportEngine
+import com.ethran.notable.io.obsidiansync.ObsidianSyncManager
 import com.ethran.notable.ui.views.BugReportDestination
 import com.ethran.notable.ui.views.BugReportScreen
 import com.ethran.notable.ui.views.Library
@@ -39,6 +40,7 @@ fun NotableNavHost(
     exportEngine: ExportEngine,
     appRepository: AppRepository,
     editorSettingCacheManager: EditorSettingCacheManager,
+    obsidianSyncManager: ObsidianSyncManager,
     modifier: Modifier = Modifier,
     appNavigator: NotableNavigator
 ) {
@@ -62,11 +64,14 @@ fun NotableNavHost(
                     navController = appNavigator.navController,
                     folderId = it.arguments?.getString(LibraryDestination.FOLDER_ID_ARG),
                     goToPage = { pageId -> appNavigator.goToPage(appRepository, pageId) },
-                    onCreateNewQuickPage = { folderId ->
-                        appNavigator.onCreateNewQuickPage(
-                            appRepository,
-                            folderId
-                        )
+                    onCreateNewCapture = { vaultId ->
+                        appNavigator.onCreateNewCapture(appRepository, vaultId)
+                    },
+                    onOpenFlipSide = { vaultId, path ->
+                        appNavigator.goToFlipSide(appRepository, vaultId, path)
+                    },
+                    onOpenVaultNote = { vaultId, path ->
+                        appNavigator.goToVaultNote(vaultId, path)
                     }
                 )
                 appNavigator.cleanCurrentPageId()
@@ -107,6 +112,7 @@ fun NotableNavHost(
                     exportEngine = exportEngine,
                     editorSettingCacheManager = editorSettingCacheManager,
                     appRepository = appRepository,
+                    obsidianSyncManager = obsidianSyncManager,
                     navController = appNavigator.navController,
                     bookId = bookId,
                     pageId = currentPageId,
@@ -158,25 +164,39 @@ fun NotableNavHost(
                 VaultBrowserView(
                     dir = it.arguments?.getString(VaultBrowserDestination.DIR_ARG),
                     appRepository = appRepository,
-                    onOpenNote = { path -> appNavigator.goToVaultNote(path) },
+                    onOpenNote = { vaultId, path ->
+                        appNavigator.goToVaultNote(vaultId, path)
+                    },
+                    onOpenFlipSide = { vaultId, path ->
+                        appNavigator.goToFlipSide(appRepository, vaultId, path)
+                    },
                     onBack = { appNavigator.goBack() }
                 )
                 appNavigator.cleanCurrentPageId()
             }
             composable(
                 route = NoteReaderDestination.routeWithArgs,
-                arguments = listOf(navArgument(NoteReaderDestination.PATH_ARG) {
-                    type = NavType.StringType
-                }),
+                arguments = listOf(
+                    navArgument(NoteReaderDestination.VAULT_ID_ARG) {
+                        type = NavType.StringType
+                    },
+                    navArgument(NoteReaderDestination.PATH_ARG) {
+                        type = NavType.StringType
+                    },
+                ),
             ) {
                 NoteReaderView(
+                    vaultId = it.arguments?.getString(NoteReaderDestination.VAULT_ID_ARG)!!,
                     relativePath = it.arguments?.getString(NoteReaderDestination.PATH_ARG)!!,
                     appRepository = appRepository,
-                    onOpenNote = { path -> appNavigator.goToVaultNote(path) },
-                    onOpenFlipSide = { path ->
-                        appNavigator.goToFlipSide(appRepository, path)
+                    obsidianSyncManager = obsidianSyncManager,
+                    onOpenNote = { vaultId, path ->
+                        appNavigator.goToVaultNote(vaultId, path)
                     },
-                    onHandwriteInto = { path ->
+                    onOpenFlipSide = { vaultId, path ->
+                        appNavigator.goToFlipSide(appRepository, vaultId, path)
+                    },
+                    onHandwriteInto = { vaultId, path ->
                         appNavigator.goToHandwritingInsert(appRepository, path)
                     },
                     onBack = { appNavigator.goBack() }

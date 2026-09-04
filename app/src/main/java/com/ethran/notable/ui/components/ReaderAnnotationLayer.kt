@@ -32,6 +32,8 @@ import com.ethran.notable.editor.utils.InkGestureClassifier
 import com.ethran.notable.io.markdown.MarkdownEdit
 import com.ethran.notable.io.markdown.MarkdownEdits
 import com.ethran.notable.io.markdown.RenderedMarkdown
+import com.ethran.notable.io.markdown.rememberMarkdownInlineImages
+import java.io.File
 
 /** What a recognized annotation gesture will do to the markdown source on save. */
 enum class AnnotationKind { HIGHLIGHT, BOLD, STRIKETHROUGH }
@@ -169,11 +171,19 @@ fun AnnotatableReaderBody(
     annotationMode: Boolean,
     annotationState: ReaderAnnotationState,
     onLinkTap: (com.ethran.notable.io.markdown.MarkdownLink) -> Unit,
-    onGestureRejected: () -> Unit
+    onGestureRejected: () -> Unit,
+    vaultRoot: File? = null,
+    noteRelativePath: String = ""
 ) {
     var layout by remember { mutableStateOf<TextLayoutResult?>(null) }
     var boxOrigin by remember { mutableStateOf(Offset.Zero) }
     var textOrigin by remember { mutableStateOf(Offset.Zero) }
+    val inlineImages = rememberMarkdownInlineImages(
+        images = rendered.images,
+        vaultRoot = vaultRoot,
+        noteRelativePath = noteRelativePath,
+        horizontalPadding = TEXT_HORIZONTAL_PADDING * 2
+    )
 
     Box(
         Modifier
@@ -183,6 +193,7 @@ fun AnnotatableReaderBody(
         Column(Modifier.fillMaxWidth()) {
             Text(
                 text = rendered.text,
+                inlineContent = inlineImages,
                 lineHeight = rendered.theme.lineHeight,
                 onTextLayout = { layout = it },
                 modifier = Modifier

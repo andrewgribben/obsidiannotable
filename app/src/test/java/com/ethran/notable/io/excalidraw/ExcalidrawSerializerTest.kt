@@ -4,6 +4,7 @@ import com.ethran.notable.data.db.Stroke
 import com.ethran.notable.data.db.StrokePoint
 import com.ethran.notable.editor.utils.Pen
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -11,6 +12,10 @@ import org.junit.Test
 import java.util.Date
 
 class ExcalidrawSerializerTest {
+
+    init {
+        ExcalidrawTestTemplate.ensureInitialized()
+    }
 
     private fun sampleStroke(pen: Pen = Pen.FOUNTAIN): Stroke {
         val points = listOf(
@@ -55,6 +60,56 @@ class ExcalidrawSerializerTest {
             assertEquals(a.tiltY, b.tiltY)
             assertEquals(a.dt, b.dt)
         }
+    }
+
+    @Test
+    fun `serializeUnified uses template json block and preserves text body`() {
+        val stroke = sampleStroke()
+        val content = ExcalidrawSerializer.serializeUnified("# Title\n\nBody text", listOf(stroke))
+        assertTrue(content.contains("excalidraw-plugin: parsed"))
+        assertTrue(content.contains("excalidraw-open-md: true"))
+        assertTrue(content.contains("# Title"))
+        assertTrue(content.contains("Body text"))
+        assertTrue(content.contains("%%"))
+        assertTrue(content.contains("```compressed-json"))
+        assertFalse(content.contains("```json"))
+
+        val parsed = ExcalidrawSerializer.parse(content, "page-2")
+        assertNotNull(parsed)
+        assertEquals(1, parsed!!.size)
+        assertEquals("# Title\n\nBody text", ExcalidrawSerializer.extractMarkdownBody(content))
+    }
+
+    @Test
+    fun `replaceDrawingInUnified preserves text when strokes update`() {
+        val original = ExcalidrawSerializer.serializeUnified("Keep me", listOf(sampleStroke()))
+        val updated = ExcalidrawSerializer.replaceDrawingInUnified(
+            original,
+            listOf(sampleStroke(), sampleStroke(Pen.BALLPEN))
+        )
+        assertTrue(updated.contains("Keep me"))
+        assertTrue(updated.contains("```compressed-json"))
+        val parsed = ExcalidrawSerializer.parse(updated, "page-1")
+        assertEquals(2, parsed!!.size)
+    }
+
+    @Test
+    fun `ensureExcalidrawFrontmatter merges into existing yaml`() {
+        val note = """
+            ---
+            title: My Note
+            pdf: "[[old.pdf]]"
+            flip-side: "[[sidecar]]"
+            ---
+
+            # Content
+        """.trimIndent()
+        val merged = ExcalidrawSerializer.ensureExcalidrawFrontmatter(note)
+        assertTrue(merged.contains("excalidraw-plugin: parsed"))
+        assertTrue(merged.contains("title: My Note"))
+        assertFalse(merged.contains("pdf:"))
+        assertFalse(merged.contains("flip-side:"))
+        assertTrue(merged.contains("# Content"))
     }
 
     @Test
@@ -138,8 +193,85 @@ class ExcalidrawSerializerTest {
     }
 
     @Test
+    fun `extractDrawingJson decompresses obsidian compressed-json block`() {
+        val json = """{"type":"excalidraw","version":2,"elements":[]}"""
+        val compressed = blazing.chain.LZSEncoding.compressToBase64(json)
+        val md = """
+            ---
+            excalidraw-plugin: parsed
+            ---
+            ## Drawing
+            ```compressed-json
+            $compressed
+            ```
+            %%
+        """.trimIndent()
+        assertEquals(json, ExcalidrawSerializer.extractDrawingJson(md))
+    }
+
+    @Test
+    fun `extractDrawingJson prefers compressed-json over stale json block`() {
+        val freshJson = """{"type":"excalidraw","version":2,"elements":[{"type":"freedraw","x":0,"y":0,"points":[[0,0],[5,5]],"isDeleted":false}]}"""
+        val compressed = blazing.chain.LZSEncoding.compressToBase64(freshJson)
+        val md = """
+            ---
+            excalidraw-plugin: parsed
+            ---
+            # Drawing
+            ```json
+            {"type":"excalidraw","version":2,"elements":[]}
+            ```
+            %%
+            ## Drawing
+            ```compressed-json
+            $compressed
+            ```
+            %%
+        """.trimIndent()
+        assertEquals(freshJson, ExcalidrawSerializer.extractDrawingJson(md))
+    }
+
+    @Test
     fun `parse returns null when no drawing found`() {
         assertNull(ExcalidrawSerializer.parse("just some markdown", "page-1"))
+    }
+
+    @Test
+    fun `hasNonemptyInk detects strokes without full parse`() {
+        val unified = ExcalidrawSerializer.serializeUnified("# note", listOf(sampleStroke()))
+        assertTrue(ExcalidrawSerializer.hasNonemptyInk(unified))
+    }
+
+    @Test
+    fun `hasNonemptyInk is false for empty elements`() {
+        val unified = ExcalidrawSerializer.serializeUnified("# note", emptyList())
+        assertFalse(ExcalidrawSerializer.hasNonemptyInk(unified))
+    }
+
+    @Test
+    fun `hasNonemptyInkForListing scans large file tail only`() {
+        val dir = kotlin.io.path.createTempDirectory().toFile()
+        val note = java.io.File(dir, "large.md")
+        val body = buildString {
+            appendLine("---")
+            appendLine("excalidraw-plugin: parsed")
+            appendLine("---")
+            appendLine()
+            appendLine("# text")
+            appendLine()
+            append("%%\n# Excalidraw Data\n## Drawing\n```json\n")
+            append("""{"type":"excalidraw","version":2,"elements":[""")
+            repeat(200_000) { append("""{"type":"freedraw","x":0,"y":0,"points":[[0,0]],"isDeleted":false},""") }
+            append("""{"type":"freedraw","x":1,"y":1,"points":[[0,0],[1,1]],"isDeleted":false}""")
+            append("""],"files":{}}""")
+            appendLine()
+            appendLine("```")
+            append("%%")
+        }
+        note.writeText(body)
+        assertTrue(note.length() > 512 * 1024)
+        assertTrue(ExcalidrawSerializer.hasNonemptyInkForListing(note))
+        dir.deleteRecursively()
     }
 
     @Test

@@ -132,6 +132,35 @@ fun pathFromTreeUri(context: Context, uri: Uri): String? {
     }
 }
 
+private const val EXTERNAL_STORAGE_AUTHORITY = "com.android.externalstorage.documents"
+
+/** Builds a document-tree URI for the system folder picker initial location. */
+fun treeUriFromStoragePath(path: String): Uri {
+    val clean = path.trim().trimStart('/').replace('\\', '/')
+    return DocumentsContract.buildTreeDocumentUri(EXTERNAL_STORAGE_AUTHORITY, "primary:$clean")
+}
+
+/** True when [uri] is a tree URI we still hold persistable read/write access to. */
+fun hasPersistableTreeAccess(context: Context, uri: Uri): Boolean {
+    return context.contentResolver.persistedUriPermissions.any { perm ->
+        perm.uri == uri && perm.isReadPermission && perm.isWritePermission
+    }
+}
+
+/**
+ * Best initial URI for [ActivityResultContracts.OpenDocumentTree]: last browsed tree (if we
+ * still have access), else a tree built from [hintPath], else the last URI anyway.
+ */
+fun initialFolderPickerUri(context: Context, hintPath: String?): Uri? {
+    val last = FolderPickerState.loadLastTreeUri(context)
+    if (last != null && hasPersistableTreeAccess(context, last)) return last
+    if (!hintPath.isNullOrBlank()) {
+        val resolved = resolveExternalStoragePath(hintPath)
+        if (resolved.exists()) return treeUriFromStoragePath(hintPath)
+    }
+    return last
+}
+
 /**
  * Resolves a path string to a File for external storage.
  * - "/" or blank → do not use for attachment dir; call [isAttachmentPathSet] first.

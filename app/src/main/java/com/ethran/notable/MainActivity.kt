@@ -36,8 +36,11 @@ import com.ethran.notable.data.db.StrokeMigrationHelper
 import com.ethran.notable.editor.canvas.CanvasEventBus
 import com.ethran.notable.io.ExportEngine
 import com.ethran.notable.io.VaultTagScanner
+import com.ethran.notable.io.obsidiansync.ObsidianSyncManager
 import com.ethran.notable.navigation.DeepLinks
+import com.ethran.notable.navigation.WidgetActions
 import com.ethran.notable.ui.LocalSnackContext
+import com.ethran.notable.ui.SnackConf
 import com.ethran.notable.ui.SnackState
 import com.ethran.notable.ui.components.NotableApp
 import com.ethran.notable.ui.theme.InkaTheme
@@ -82,13 +85,17 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var exportEngineLazy: dagger.Lazy<ExportEngine>
 
+    @Inject
+    lateinit var obsidianSyncManager: ObsidianSyncManager
+
     // Pending notable:// deep link, consumed by NotableApp once navigation is up.
     private val pendingDeepLinkRoute = MutableStateFlow<String?>(null)
+    private val pendingWidgetAction = MutableStateFlow<WidgetActions.Action?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableFullScreen()
-        pendingDeepLinkRoute.value = intent?.data?.let(DeepLinks::routeFor)
+        consumeLaunchIntent(intent)
         ShipBook.start(
             this.application, BuildConfig.SHIPBOOK_APP_ID, BuildConfig.SHIPBOOK_APP_KEY
         )
@@ -177,8 +184,11 @@ class MainActivity : ComponentActivity() {
                             editorSettingCacheManager = editorSettingCacheManager.get(),
                             snackState = snackState,
                             appRepository = appRepositoryLazy.get(),
+                            obsidianSyncManager = obsidianSyncManager,
                             deepLinkRoute = pendingDeepLinkRoute,
-                            onDeepLinkConsumed = { pendingDeepLinkRoute.value = null }
+                            onDeepLinkConsumed = { pendingDeepLinkRoute.value = null },
+                            widgetAction = pendingWidgetAction,
+                            onWidgetActionConsumed = { pendingWidgetAction.value = null }
                         )
                         showFirstLaunchWelcome -> WelcomeView(
                             requireVaultPaths = true,
@@ -194,7 +204,17 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        intent.data?.let(DeepLinks::routeFor)?.let { pendingDeepLinkRoute.value = it }
+        setIntent(intent)
+        consumeLaunchIntent(intent)
+    }
+
+    private fun consumeLaunchIntent(intent: Intent?) {
+        val uri = intent?.data ?: return
+        WidgetActions.parse(uri)?.let {
+            pendingWidgetAction.value = it
+            return
+        }
+        DeepLinks.routeFor(uri)?.let { pendingDeepLinkRoute.value = it }
     }
 
     override fun onRestart() {

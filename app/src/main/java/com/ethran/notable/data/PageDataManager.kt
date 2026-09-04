@@ -452,6 +452,23 @@ object PageDataManager {
 
     fun getStrokes(pageId: String): List<Stroke> = strokes[pageId] ?: emptyList()
 
+    /**
+     * Drops in-memory page data so the next [requestPageLoadJoin] reloads from the DB.
+     * Used after external flip-side re-import when a completed load job would otherwise
+     * be reused without refreshing cached strokes.
+     */
+    suspend fun evictLoadedPageData(pageId: String) {
+        jobLock.withLock {
+            dataLoadingJobs.remove(pageId)?.cancel()
+        }
+        synchronized(accessLock) {
+            strokes.remove(pageId)
+            strokesById.remove(pageId)
+            images.remove(pageId)
+            imagesById.remove(pageId)
+            annotations.remove(pageId)
+        }
+    }
 
     fun setStrokes(pageId: String, strokes: List<Stroke>) {
         this.strokes[pageId] = strokes.toMutableList()

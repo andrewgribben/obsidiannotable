@@ -1,6 +1,10 @@
 package com.ethran.notable.io.flipside
 
+import com.ethran.notable.data.db.Stroke
+import com.ethran.notable.data.db.StrokePoint
+import com.ethran.notable.editor.utils.Pen
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Test
 
 class FlipSideManagerTest {
@@ -37,5 +41,30 @@ class FlipSideManagerTest {
     @Test
     fun `flipSideNoteName strips extension and flip suffix`() {
         assertEquals("My Note", flipSideNoteName("folder/My Note.md"))
+    }
+
+    @Test
+    fun `strokesFingerprint is empty for no strokes`() {
+        assertEquals("empty", FlipSideManager.strokesFingerprint(emptyList()))
+    }
+
+    @Test
+    fun `strokesFingerprint changes when stroke content changes`() {
+        val stroke = Stroke(
+            id = "s1",
+            size = 3f,
+            pen = Pen.BALLPEN,
+            top = 0f,
+            bottom = 10f,
+            left = 0f,
+            right = 10f,
+            points = listOf(StrokePoint(1f, 2f)),
+            pageId = "p1"
+        )
+        val baseline = FlipSideManager.strokesFingerprint(listOf(stroke))
+        val changed = FlipSideManager.strokesFingerprint(
+            listOf(stroke.copy(points = listOf(StrokePoint(1f, 2f), StrokePoint(3f, 4f))))
+        )
+        assertNotEquals(baseline, changed)
     }
 }

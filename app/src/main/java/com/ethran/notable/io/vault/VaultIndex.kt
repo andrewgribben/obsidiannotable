@@ -1,6 +1,7 @@
 package com.ethran.notable.io.vault
 
 import com.ethran.notable.data.datastore.VaultConfig
+import com.ethran.notable.io.excalidraw.ExcalidrawSerializer
 import com.ethran.notable.io.resolveExternalStoragePath
 import io.shipbook.shipbooksdk.ShipBook
 import java.io.File
@@ -27,6 +28,116 @@ data class VaultNote(
 fun vaultRootDir(vault: VaultConfig): File? {
     if (vault.inboxPath.isBlank()) return null
     return resolveExternalStoragePath(vault.inboxPath).parentFile
+}
+
+/** Obsidian Sync vault root: the inbox folder (matches desktop Obsidian vault root). */
+fun obsidianSyncVaultRoot(vault: VaultConfig): File? {
+    if (vault.inboxPath.isBlank()) return null
+    return resolveExternalStoragePath(vault.inboxPath)
+}
+
+/** Inbox folder path relative to the vault root (forward slashes), or null when unconfigured. */
+fun inboxDirRelativeToVault(vault: VaultConfig): String? {
+    val root = vaultRootDir(vault) ?: return null
+    if (vault.inboxPath.isBlank()) return null
+    val inboxDir = resolveExternalStoragePath(vault.inboxPath)
+    return inboxDir.relativeTo(root).path.replace('\\', '/')
+}
+
+/** Vault-root-relative path → Obsidian Sync path (relative to inbox / sync root). */
+fun vaultRelativeToSyncPath(vault: VaultConfig, vaultRelativePath: String): String {
+    val prefix = inboxDirRelativeToVault(vault) ?: return vaultRelativePath
+    if (vaultRelativePath == prefix) return ""
+    if (vaultRelativePath.startsWith("$prefix/")) {
+        return vaultRelativePath.removePrefix("$prefix/")
+    }
+    return vaultRelativePath
+}
+
+/** Obsidian Sync path → vault-root-relative path for UI and [VaultIndex]. */
+fun syncPathToVaultRelative(vault: VaultConfig, syncRelativePath: String): String {
+    val prefix = inboxDirRelativeToVault(vault) ?: return syncRelativePath
+    if (syncRelativePath.isEmpty()) return prefix
+    return "$prefix/$syncRelativePath"
+}
+
+/**
+ * Resolves a note file from a vault-root-relative path.
+ * Checks the canonical vault-root location first, then the sync-root layout.
+ */
+fun resolveVaultNoteFile(vault: VaultConfig, vaultRelativePath: String): File? {
+    val root = vaultRootDir(vault) ?: return null
+    val normalized = vaultRelativePath.replace('/', File.separatorChar)
+    val direct = File(root, normalized)
+    if (direct.exists()) return direct
+    val syncRoot = obsidianSyncVaultRoot(vault) ?: return direct
+    val syncPath = vaultRelativeToSyncPath(vault, vaultRelativePath)
+    val viaSync = File(syncRoot, syncPath.replace('/', File.separatorChar))
+    if (viaSync.exists()) return viaSync
+    return direct
+}
+
+/** Notes under the vault inbox that use unified Excalidraw format with a drawing block. */
+fun listInboxNotesWithInk(vault: VaultConfig): List<VaultNote> {
+    if (vault.inboxPath.isBlank()) return emptyList()
+    val inboxDir = resolveExternalStoragePath(vault.inboxPath)
+    if (!inboxDir.isDirectory) return emptyList()
+    val root = vaultRootDir(vault) ?: return emptyList()
+
+    return inboxDir.listFiles().orEmpty()
+        .asSequence()
+        .filter { file ->
+            file.isFile &&
+                file.name.endsWith(".md", ignoreCase = true) &&
+                !file.name.endsWith(FLIP_SIDE_SUFFIX, ignoreCase = true)
+        }
+        .mapNotNull { file -> inboxCaptureNote(file, root) }
+        .sortedByDescending { it.lastModified }
+        .toList()
+}
+
+private const val INBOX_HEAD_SCAN_BYTES = 8 * 1024
+
+private fun readFileHead(file: File, maxBytes: Int = INBOX_HEAD_SCAN_BYTES): String? {
+    return try {
+        file.inputStream().use { input ->
+            val buf = ByteArray(maxBytes)
+            val read = input.read(buf)
+            if (read <= 0) return null
+            String(buf, 0, read, Charsets.UTF_8)
+        }
+    } catch (e: Exception) {
+        log.e("Failed to read head of ${file.absolutePath}: ${e.message}")
+        null
+    }
+}
+
+private fun inboxCaptureNote(file: File, vaultRoot: File): VaultNote? {
+    val head = readFileHead(file) ?: return null
+    if (!ExcalidrawSerializer.isExcalidrawNote(head)) return null
+    if (!ExcalidrawSerializer.hasDrawingSectionForListing(file)) return null
+    val relative = file.relativeTo(vaultRoot).path.replace('\\', '/')
+    return VaultNote(
+        file = file,
+        relativePath = relative,
+        name = file.name.removeSuffix(".md"),
+        hasInk = ExcalidrawSerializer.hasNonemptyInkForListing(file),
+        lastModified = file.lastModified()
+    )
+}
+
+private fun hasInkInNoteContent(content: String): Boolean =
+    ExcalidrawSerializer.hasNonemptyInk(content)
+
+/** Inbox captures with ink across [vaults]. */
+fun listInboxNotesWithInkForVaults(
+    vaults: List<VaultConfig>
+): List<Pair<VaultConfig, VaultNote>> = buildList {
+    for (vault in vaults) {
+        for (note in listInboxNotesWithInk(vault)) {
+            add(vault to note)
+        }
+    }
 }
 
 /**
@@ -74,10 +185,13 @@ class VaultIndex(val vaultRoot: File) {
             file = file,
             relativePath = relative,
             name = file.name.removeSuffix(".md"),
-            hasInk = flipSideFileFor(file).exists(),
+            hasInk = hasInkInFile(file),
             lastModified = file.lastModified()
         )
     }
+
+    private fun hasInkInFile(file: File): Boolean =
+        ExcalidrawSerializer.hasNonemptyInkForListing(file)
 
     /** Direct children (folders + notes) of [relativeDir] for the tree browser. */
     fun listDir(relativeDir: String): List<VaultNote> {
@@ -179,6 +293,38 @@ fun flipSideFileFor(noteFile: File): File {
     return File(noteFile.parentFile, "$base$FLIP_SIDE_SUFFIX")
 }
 
+private val FLIP_SIDE_FRONTMATTER_REGEX =
+    Regex("""^flip-side:\s*["']?\[\[([^\]]+)]]""", RegexOption.MULTILINE)
+
+/**
+ * Resolves the Excalidraw file for a note's flip side. Uses the `flip-side` frontmatter
+ * wikilink when present (Obsidian may point at a different path than the default sidecar),
+ * otherwise [flipSideFileFor].
+ */
+fun resolveFlipSideFile(noteFile: File, vaultRoot: File): File {
+    val default = flipSideFileFor(noteFile)
+    if (!noteFile.isFile) return default
+    val content = runCatching { noteFile.readText() }.getOrNull() ?: return default
+    val target = FLIP_SIDE_FRONTMATTER_REGEX.find(content)?.groupValues?.get(1)?.trim()
+        ?: return default
+
+    val noteDir = noteFile.parentFile?.let { parent ->
+        parent.relativeTo(vaultRoot).path.replace('\\', '/').trimStart('/')
+    }.orEmpty()
+
+    val withMd = if (target.endsWith(".md", ignoreCase = true)) target else "$target.md"
+    val candidates = buildList {
+        if (noteDir.isNotEmpty()) {
+            add(File(vaultRoot, "$noteDir/$withMd"))
+            add(File(vaultRoot, "$noteDir/$target"))
+        }
+        add(File(vaultRoot, withMd.replace('/', File.separatorChar)))
+        add(File(vaultRoot, target.replace('/', File.separatorChar)))
+        add(default)
+    }
+    return candidates.firstOrNull { it.isFile } ?: default
+}
+
 /** The text note that pairs with a flip-side [flipFile]. */
 fun noteFileForFlipSide(flipFile: File): File {
     val base = flipFile.name.removeSuffix(FLIP_SIDE_SUFFIX)
@@ -197,5 +343,10 @@ object VaultIndexRegistry {
         val index = VaultIndex(root)
         indexes[vault.id] = index
         return index
+    }
+
+    @Synchronized
+    fun invalidateAll() {
+        indexes.clear()
     }
 }

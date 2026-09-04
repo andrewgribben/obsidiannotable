@@ -1,8 +1,9 @@
 package com.ethran.notable.ui.components
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -35,23 +36,24 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.ethran.notable.io.vault.VaultIndex
-import com.ethran.notable.io.vault.VaultNote
-import com.ethran.notable.ui.noRippleClickable
 import compose.icons.FeatherIcons
 import compose.icons.feathericons.Edit3
 import compose.icons.feathericons.FileText
+import com.ethran.notable.io.vault.VaultIndex
+import com.ethran.notable.io.vault.VaultNote
 
 /**
  * Obsidian-style quick switcher: recents first, fuzzy filename search as you type.
  * Selection navigates immediately; callers save the outgoing note in the background.
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun QuickSwitcher(
     index: VaultIndex,
     recentPaths: List<String>,
     onSelect: (VaultNote) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onAddToBookshelf: ((String) -> Unit)? = null
 ) {
     var query by remember { mutableStateOf("") }
     val focusRequester = remember { FocusRequester() }
@@ -113,7 +115,10 @@ fun QuickSwitcher(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .noRippleClickable { onSelect(note) }
+                            .combinedClickable(
+                                onClick = { onSelect(note) },
+                                onLongClick = { onAddToBookshelf?.invoke(note.relativePath) }
+                            )
                             .padding(vertical = 10.dp, horizontal = 4.dp)
                     ) {
                         Icon(

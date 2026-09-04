@@ -4,8 +4,6 @@ import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.util.Log
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,11 +14,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.Button
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
@@ -32,26 +27,18 @@ import androidx.compose.material.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.Update
-import androidx.compose.material.icons.filled.Upgrade
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.ethran.notable.BuildConfig
@@ -65,7 +52,6 @@ import com.ethran.notable.ui.components.GesturesSettings
 import com.ethran.notable.ui.theme.InkaTheme
 import com.ethran.notable.ui.viewmodels.GestureRowModel
 import com.ethran.notable.ui.viewmodels.SettingsViewModel
-import com.ethran.notable.utils.isNext
 
 
 object SettingsDestination : NavigationDestination {
@@ -79,29 +65,27 @@ fun SettingsView(
     goToSystemInfo: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
-    val context = LocalContext.current
     val settings = viewModel.settings
 
-    LaunchedEffect(Unit) {
-        viewModel.checkUpdate(context, force = false)
-    }
-
     @Suppress("KotlinConstantConditions") val versionString = remember {
-        "v${BuildConfig.VERSION_NAME}${if (isNext) " [NEXT]" else ""}"
+        "v${BuildConfig.VERSION_NAME}${if (BuildConfig.IS_NEXT) " [NEXT]" else ""}"
     }
 
     SettingsContent(
         versionString = versionString,
         settings = settings,
-        isLatestVersion = viewModel.isLatestVersion,
         onBack = onBack,
         goToWelcome = goToWelcome,
         goToSystemInfo = goToSystemInfo,
-        onCheckUpdate = { force ->
-            viewModel.checkUpdate(context, force)
-        },
         onUpdateSettings = { viewModel.updateSettings(it) },
         onClearAllPages = { onComplete -> viewModel.clearAllPages(onComplete) },
+        onObsidianSignIn = { email, password, mfa, onResult ->
+            viewModel.signInToObsidian(email, password, mfa, onResult)
+        },
+        onObsidianSignOut = { onComplete -> viewModel.signOutFromObsidian(onComplete) },
+        onObsidianSaveE2e = { vaultId, password ->
+            viewModel.saveObsidianE2ePassword(vaultId, password)
+        },
         listOfGestures = viewModel.getGestureRows(),
         availableGestures = viewModel.availableGestures
     )
@@ -111,13 +95,14 @@ fun SettingsView(
 fun SettingsContent(
     versionString: String,
     settings: AppSettings,
-    isLatestVersion: Boolean,
     onBack: () -> Unit,
     goToWelcome: () -> Unit,
     goToSystemInfo: () -> Unit,
-    onCheckUpdate: (Boolean) -> Unit,
     onUpdateSettings: (AppSettings) -> Unit,
     onClearAllPages: ((onComplete: () -> Unit) -> Unit)? = null,
+    onObsidianSignIn: ((email: String, password: String, mfa: String, onResult: (Result<Unit>) -> Unit) -> Unit)? = null,
+    onObsidianSignOut: ((onComplete: () -> Unit) -> Unit)? = null,
+    onObsidianSaveE2e: ((vaultConfigId: String, password: String) -> Unit)? = null,
     selectedTabInitial: Int = 0,
     listOfGestures: List<GestureRowModel> = emptyList(),
     availableGestures: List<Pair<AppSettings.GestureAction?, Any>> = emptyList()
@@ -150,33 +135,19 @@ fun SettingsContent(
                     .verticalScroll(rememberScrollState())
             ) {
                 when (selectedTab) {
-                    0 -> GeneralSettings(settings, onUpdateSettings, onClearAllPages)
+                    0 -> GeneralSettings(
+                        settings,
+                        onUpdateSettings,
+                        onClearAllPages,
+                        onObsidianSignIn,
+                        onObsidianSignOut,
+                        onObsidianSaveE2e
+                    )
                     1 -> GesturesSettings(
                         settings, onUpdateSettings, listOfGestures, availableGestures
                     )
 
                     2 -> DebugSettings(settings, onUpdateSettings, goToWelcome, goToSystemInfo)
-                }
-            }
-
-            if (selectedTab == 0) {
-                Column(
-                    modifier = Modifier.padding(bottom = 16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    GitHubSponsorButton(
-                        Modifier
-                            .padding(horizontal = 120.dp, vertical = 16.dp)
-                            .height(48.dp)
-                            .fillMaxWidth()
-                    )
-                    UpdateActions(
-                        isLatestVersion = isLatestVersion, onCheckUpdate = onCheckUpdate,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 30.dp, vertical = 8.dp)
-                            .height(48.dp)
-                    )
                 }
             }
         }
@@ -239,67 +210,6 @@ private fun SettingsTabRow(tabs: List<String>, selectedTab: Int, onTabSelected: 
     }
 }
 
-@Composable
-fun GitHubSponsorButton(modifier: Modifier = Modifier) {
-    val context = LocalContext.current
-    Box(
-        modifier = modifier
-            .background(color = Color(0xFF24292E), shape = RoundedCornerShape(25.dp))
-            .clickable { openInBrowser(context, "https://github.com/sponsors/ethran") },
-        contentAlignment = Alignment.Center
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                imageVector = Icons.Default.FavoriteBorder,
-                contentDescription = null,
-                tint = Color(0xFFEA4AAA),
-                modifier = Modifier.size(24.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = stringResource(R.string.sponsor_button_text),
-                color = Color.White,
-                style = MaterialTheme.typography.button.copy(
-                    fontWeight = FontWeight.Bold, fontSize = 16.sp
-                ),
-            )
-        }
-    }
-}
-
-@Composable
-fun UpdateActions(
-    isLatestVersion: Boolean, onCheckUpdate: (Boolean) -> Unit, modifier: Modifier = Modifier
-) {
-    val context = LocalContext.current
-    if (!isLatestVersion) {
-        Column(modifier = modifier) {
-            Text(
-                text = stringResource(R.string.app_new_version),
-                fontStyle = FontStyle.Italic,
-                style = MaterialTheme.typography.h6,
-            )
-            Spacer(Modifier.height(10.dp))
-            Button(
-                onClick = { openInBrowser(context, "https://github.com/ethran/notable/releases") },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Icon(Icons.Default.Upgrade, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(text = stringResource(R.string.app_see_release))
-            }
-        }
-    } else {
-        Button(onClick = { onCheckUpdate(true) }, modifier = modifier) {
-            Icon(Icons.Default.Update, contentDescription = null)
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(text = stringResource(R.string.app_check_updates))
-        }
-    }
-}
-
-
-
 
 
 fun openInBrowser(context: Context, uriString: String) {
@@ -328,11 +238,9 @@ fun SettingsPreviewGeneral() {
         SettingsContent(
             versionString = "v1.0.0",
             settings = AppSettings(version = 1),
-            isLatestVersion = true,
             onBack = {},
             goToWelcome = {},
             goToSystemInfo = {},
-            onCheckUpdate = {},
             onUpdateSettings = {},
             selectedTabInitial = 0
         )
@@ -354,11 +262,9 @@ fun SettingsPreviewGestures() {
         SettingsContent(
             versionString = "v1.0.0",
             settings = AppSettings(version = 1),
-            isLatestVersion = true,
             onBack = {},
             goToWelcome = {},
             goToSystemInfo = {},
-            onCheckUpdate = {},
             onUpdateSettings = {},
             selectedTabInitial = 1,
             listOfGestures = dummyRows
@@ -373,11 +279,9 @@ fun SettingsPreviewDebug() {
         SettingsContent(
             versionString = "v1.0.0",
             settings = AppSettings(version = 1),
-            isLatestVersion = true,
             onBack = {},
             goToWelcome = {},
             goToSystemInfo = {},
-            onCheckUpdate = {},
             onUpdateSettings = {},
             selectedTabInitial = 2
         )

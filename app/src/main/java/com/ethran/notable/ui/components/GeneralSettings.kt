@@ -40,7 +40,9 @@ import androidx.compose.ui.platform.LocalContext
 import com.ethran.notable.R
 import com.ethran.notable.data.datastore.AppSettings
 import com.ethran.notable.data.datastore.VaultConfig
+import com.ethran.notable.io.FolderPickerState
 import com.ethran.notable.io.VaultTagScanner
+import com.ethran.notable.io.initialFolderPickerUri
 import com.ethran.notable.io.isAttachmentPathSet
 import com.ethran.notable.io.pathFromTreeUri
 
@@ -49,30 +51,37 @@ import com.ethran.notable.io.pathFromTreeUri
 fun GeneralSettings(
     settings: AppSettings,
     onSettingsChange: (AppSettings) -> Unit,
-    onClearAllPages: ((onComplete: () -> Unit) -> Unit)? = null
+    onClearAllPages: ((onComplete: () -> Unit) -> Unit)? = null,
+    onObsidianSignIn: ((email: String, password: String, mfa: String, onResult: (Result<Unit>) -> Unit) -> Unit)? = null,
+    onObsidianSignOut: ((onComplete: () -> Unit) -> Unit)? = null,
+    onObsidianSaveE2e: ((vaultConfigId: String, password: String) -> Unit)? = null,
 ) {
     Column {
+        if (onObsidianSignIn != null && onObsidianSignOut != null && onObsidianSaveE2e != null) {
+            ObsidianSyncSettings(
+                settings = settings,
+                onSettingsChange = onSettingsChange,
+                onSignIn = onObsidianSignIn,
+                onSignOut = onObsidianSignOut,
+                onSaveE2ePassword = onObsidianSaveE2e
+            )
+        }
+
         // Capture settings
-        InboxCaptureSettings(settings, onSettingsChange)
+        InboxCaptureSettings(
+            settings,
+            onSettingsChange,
+            onObsidianSaveE2e = onObsidianSaveE2e
+        )
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        SelectorRow(
-            label = stringResource(R.string.toolbar_position), options = listOf(
-                AppSettings.Position.Top to stringResource(R.string.toolbar_position_top),
-                AppSettings.Position.Bottom to stringResource(
-                    R.string.toolbar_position_bottom
-                )
-            ), value = settings.toolbarPosition, onValueChange = { newPosition ->
-                onSettingsChange(settings.copy(toolbarPosition = newPosition))
-            })
-
-        SettingToggleRow(
-            label = stringResource(R.string.use_onyx_neotools_may_cause_crashes),
-            value = settings.neoTools,
-            onToggle = { isChecked ->
-                onSettingsChange(settings.copy(neoTools = isChecked))
-            })
+        Text(
+            "Drawing",
+            style = MaterialTheme.typography.subtitle1,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.padding(bottom = 4.dp)
+        )
 
         SettingToggleRow(
             label = stringResource(R.string.enable_scribble_to_erase),
@@ -93,32 +102,6 @@ fun GeneralSettings(
             value = settings.continuousZoom,
             onToggle = { isChecked ->
                 onSettingsChange(settings.copy(continuousZoom = isChecked))
-            })
-        SettingToggleRow(
-            label = stringResource(R.string.continuous_stroke_slider),
-            value = settings.continuousStrokeSlider,
-            onToggle = { isChecked ->
-                onSettingsChange(settings.copy(continuousStrokeSlider = isChecked))
-            })
-        SettingToggleRow(
-            label = stringResource(R.string.monochrome_mode) + " " + stringResource(R.string.work_in_progress),
-            value = settings.monochromeMode,
-            onToggle = { isChecked ->
-                onSettingsChange(settings.copy(monochromeMode = isChecked))
-            })
-
-        SettingToggleRow(
-            label = stringResource(R.string.paginate_pdf),
-            value = settings.paginatePdf,
-            onToggle = { isChecked ->
-                onSettingsChange(settings.copy(paginatePdf = isChecked))
-            })
-
-        SettingToggleRow(
-            label = stringResource(R.string.preview_pdf_pagination),
-            value = settings.visualizePdfPagination,
-            onToggle = { isChecked ->
-                onSettingsChange(settings.copy(visualizePdfPagination = isChecked))
             })
 
         if (onClearAllPages != null) {
@@ -189,12 +172,15 @@ private fun ClearAllPagesButton(onClearAllPages: (onComplete: () -> Unit) -> Uni
 @Composable
 private fun InboxCaptureSettings(
     settings: AppSettings,
-    onSettingsChange: (AppSettings) -> Unit
+    onSettingsChange: (AppSettings) -> Unit,
+    onObsidianSaveE2e: ((vaultConfigId: String, password: String) -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val normalized = settings.normalizedVaults()
     val vaults = normalized.vaults
-    var expandedVaultId by remember { mutableStateOf<String?>(null) }
+    var expandedVaultId by remember(settings.settingsExpandedVaultId) {
+        mutableStateOf(settings.settingsExpandedVaultId.takeIf { it.isNotBlank() })
+    }
 
     // Single SAF launcher shared by all vault rows; pendingPick tracks the target.
     var pendingPick by remember { mutableStateOf<Pair<String, VaultPickTarget>?>(null) }
@@ -206,6 +192,7 @@ private fun InboxCaptureSettings(
             pendingPick = null
             if (uri == null || pick == null) return@rememberLauncherForActivityResult
             context.contentResolver.takePersistableUriPermission(uri, persistFlags)
+            FolderPickerState.saveLastTreeUri(context, uri)
             val path = pathFromTreeUri(context, uri) ?: return@rememberLauncherForActivityResult
             val updated = vaults.map { vault ->
                 if (vault.id != pick.first) vault
@@ -249,12 +236,18 @@ private fun InboxCaptureSettings(
                 isActive = vault.id == normalized.activeVaultId,
                 isPrimary = index == 0,
                 isExpanded = vault.id == expandedVaultId,
+                obsidianSyncSignedIn = normalized.obsidianSyncSignedIn,
+                remoteVaults = normalized.obsidianRemoteVaults,
                 onActivate = {
                     onSettingsChange(normalized.copy(activeVaultId = vault.id))
                     VaultTagScanner.refreshCache(vault.inboxPath)
                 },
                 onToggleExpand = {
-                    expandedVaultId = if (expandedVaultId == vault.id) null else vault.id
+                    val next = if (expandedVaultId == vault.id) null else vault.id
+                    expandedVaultId = next
+                    onSettingsChange(
+                        normalized.copy(settingsExpandedVaultId = next.orEmpty())
+                    )
                 },
                 onChange = { changed ->
                     val cleaned = changed.copy(
@@ -267,11 +260,11 @@ private fun InboxCaptureSettings(
                 },
                 onPickInbox = {
                     pendingPick = vault.id to VaultPickTarget.Inbox
-                    folderPicker.launch(null)
+                    folderPicker.launch(initialFolderPickerUri(context, vault.inboxPath))
                 },
                 onPickAttachment = {
                     pendingPick = vault.id to VaultPickTarget.Attachment
-                    folderPicker.launch(null)
+                    folderPicker.launch(initialFolderPickerUri(context, vault.attachmentPath))
                 },
                 onRemove = if (index == 0) null else {
                     {
@@ -283,7 +276,8 @@ private fun InboxCaptureSettings(
                             normalized.copy(vaults = remaining, activeVaultId = newActive)
                         )
                     }
-                }
+                },
+                onSaveE2ePassword = onObsidianSaveE2e
             )
             Spacer(modifier = Modifier.height(8.dp))
         }
@@ -293,8 +287,13 @@ private fun InboxCaptureSettings(
                 .border(1.dp, Color.Gray, RoundedCornerShape(6.dp))
                 .clickable {
                     val newVault = VaultConfig(name = "New vault")
-                    onSettingsChange(normalized.copy(vaults = vaults + newVault))
                     expandedVaultId = newVault.id
+                    onSettingsChange(
+                        normalized.copy(
+                            vaults = vaults + newVault,
+                            settingsExpandedVaultId = newVault.id
+                        )
+                    )
                 }
                 .padding(horizontal = 16.dp, vertical = 10.dp)
         ) {
@@ -313,12 +312,15 @@ private fun VaultRow(
     isActive: Boolean,
     isPrimary: Boolean,
     isExpanded: Boolean,
+    obsidianSyncSignedIn: Boolean,
+    remoteVaults: List<com.ethran.notable.data.datastore.ObsidianRemoteVaultRef>,
     onActivate: () -> Unit,
     onToggleExpand: () -> Unit,
     onChange: (VaultConfig) -> Unit,
     onPickInbox: () -> Unit,
     onPickAttachment: () -> Unit,
-    onRemove: (() -> Unit)?
+    onRemove: (() -> Unit)?,
+    onSaveE2ePassword: ((vaultConfigId: String, password: String) -> Unit)?,
 ) {
     val focusManager = LocalFocusManager.current
     var nameInput by remember(vault.id) { mutableStateOf(vault.name) }
@@ -326,6 +328,7 @@ private fun VaultRow(
     var attachmentInput by remember(vault.id, vault.attachmentPath) {
         mutableStateOf(vault.attachmentPath)
     }
+    var e2eInput by remember(vault.id) { mutableStateOf("") }
 
     Column(
         modifier = Modifier
@@ -462,6 +465,32 @@ private fun VaultRow(
                         .clickable { onPickAttachment() }
                         .padding(horizontal = 12.dp, vertical = 8.dp)
                 ) { Text("Browse", fontSize = 13.sp) }
+            }
+
+            if (obsidianSyncSignedIn && onSaveE2ePassword != null) {
+                ObsidianVaultSyncRow(
+                    remoteVaults = remoteVaults,
+                    syncEnabled = vault.syncEnabled,
+                    selectedRemoteId = vault.obsidianVaultId,
+                    selectedRemoteName = vault.obsidianVaultName,
+                    e2ePassword = e2eInput,
+                    onSyncEnabledChange = { enabled ->
+                        onChange(vault.copy(syncEnabled = enabled))
+                    },
+                    onRemoteVaultSelected = { remote ->
+                        onChange(
+                            vault.copy(
+                                obsidianVaultId = remote.id,
+                                obsidianVaultName = remote.name,
+                                syncEnabled = true
+                            )
+                        )
+                    },
+                    onE2ePasswordChange = { value ->
+                        e2eInput = value
+                        onSaveE2ePassword(vault.id, value)
+                    }
+                )
             }
 
             if (onRemove != null) {

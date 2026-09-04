@@ -13,6 +13,25 @@ import coil.compose.rememberAsyncImagePainter
 import java.io.File
 
 @Composable
+fun CaptureCoverPreview(modifier: Modifier = Modifier, imagePath: String) {
+    val isPreview = LocalInspectionMode.current
+    if (isPreview) {
+        androidx.compose.foundation.layout.Box(
+            modifier = modifier.background(Color.LightGray)
+        )
+        return
+    }
+
+    val imgFile = remember(imagePath) { File(imagePath) }
+    Image(
+        painter = rememberAsyncImagePainter(model = imgFile),
+        contentDescription = "Cover image",
+        contentScale = ContentScale.Crop,
+        modifier = modifier.background(Color.LightGray)
+    )
+}
+
+@Composable
 fun PagePreview(modifier: Modifier = Modifier, pageId: String) {
     val isPreview = LocalInspectionMode.current
     val context = LocalContext.current

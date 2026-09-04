@@ -1,0 +1,5 @@
+<resources>
+    <string name="flip_side_recognized_text_title">Recognised text</string>
+    <string name="flip_side_nothing_recognized">Nothing recognised on this flip side</string>
+    <string name="flip_side_recognizing">Recognising…</string>
+</resources>

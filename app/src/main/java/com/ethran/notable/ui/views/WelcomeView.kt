@@ -64,6 +64,8 @@ import com.ethran.notable.editor.utils.isRecommendedRefreshMode
 import com.ethran.notable.editor.utils.setRecommendedMode
 import com.ethran.notable.data.datastore.GlobalAppSettings
 import com.ethran.notable.data.datastore.VaultPathBootstrap
+import com.ethran.notable.io.FolderPickerState
+import com.ethran.notable.io.initialFolderPickerUri
 import com.ethran.notable.io.pathFromTreeUri
 import com.ethran.notable.navigation.NavigationDestination
 import com.ethran.notable.ui.viewmodels.WelcomeViewModel
@@ -97,12 +99,14 @@ fun WelcomeView(
     val inboxPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
         if (uri != null) {
             context.contentResolver.takePersistableUriPermission(uri, persistFlags)
+            FolderPickerState.saveLastTreeUri(context, uri)
             pathFromTreeUri(context, uri)?.let { inboxPath = it }
         }
     }
     val attachmentPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
         if (uri != null) {
             context.contentResolver.takePersistableUriPermission(uri, persistFlags)
+            FolderPickerState.saveLastTreeUri(context, uri)
             pathFromTreeUri(context, uri)?.let { attachmentPath = it }
         }
     }
@@ -152,8 +156,8 @@ fun WelcomeView(
         refreshModeString = refreshModeString,
         inboxPath = inboxPath,
         attachmentPath = attachmentPath,
-        onInboxPick = { inboxPicker.launch(null) },
-        onAttachmentPick = { attachmentPicker.launch(null) },
+        onInboxPick = { inboxPicker.launch(initialFolderPickerUri(context, inboxPath)) },
+        onAttachmentPick = { attachmentPicker.launch(initialFolderPickerUri(context, attachmentPath)) },
         requireVaultPaths = requireVaultPaths,
         onFilePermissionRequest = { requestPermissions() },
         onRefreshModeRequest = { setRecommendedMode() },

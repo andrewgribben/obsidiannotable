@@ -41,6 +41,7 @@ import com.ethran.notable.io.VaultTagScanner
 import com.ethran.notable.io.exportToLinkedFile
 import com.ethran.notable.io.flipside.FlipSideLink
 import com.ethran.notable.io.flipside.FlipSideManager
+import com.ethran.notable.io.obsidiansync.ObsidianSyncManager
 import com.ethran.notable.navigation.NavigationDestination
 import com.ethran.notable.ui.LocalSnackContext
 import com.ethran.notable.ui.SnackConf
@@ -79,6 +80,7 @@ fun EditorView(
     exportEngine: ExportEngine,
     navController: NavController,
     appRepository: AppRepository,
+    obsidianSyncManager: ObsidianSyncManager,
     bookId: String?,
     pageId: String,
     onPageChange: (String) -> Unit
@@ -163,6 +165,7 @@ fun EditorView(
         val suggestedTags = VaultTagScanner.cachedTags
 
         var flipSideLink by remember { mutableStateOf<FlipSideLink?>(null) }
+        var vaultPullSyncing by remember { mutableStateOf(false) }
 
         LaunchedEffect(pageId) {
             val pageData = withContext(Dispatchers.IO) {
@@ -173,11 +176,42 @@ fun EditorView(
                 FlipSideManager.linkForPage(appRepository, pageId)
             }
             flipSideLink = link
+            if (link?.purpose == FlipSideManager.PURPOSE_FLIP) {
+                withContext(Dispatchers.IO) {
+                    FlipSideManager.syncFlipSideFromVaultIfChanged(appRepository, pageId)
+                    FlipSideManager.ensureHwrStrokeBaseline(appRepository, pageId)
+                }
+                page.reloadStrokesFromDb()
+            }
             val inbox = link == null && (pageData?.notebookId == null &&
                 GlobalAppSettings.current.obsidianInboxPath.isNotBlank() ||
                 pageData?.background == "inbox")
             isInboxPage = inbox
             editorState.isInboxPage = inbox
+        }
+
+        LaunchedEffect(flipSideLink?.vaultId, flipSideLink?.relativePath) {
+            val link = flipSideLink ?: return@LaunchedEffect
+            if (link.purpose != FlipSideManager.PURPOSE_FLIP) return@LaunchedEffect
+            val vault = GlobalAppSettings.current.vaults.find { it.id == link.vaultId }
+                ?: return@LaunchedEffect
+            if (!vault.syncEnabled) return@LaunchedEffect
+
+            vaultPullSyncing = true
+            try {
+                val updated = withContext(Dispatchers.IO) {
+                    obsidianSyncManager.pullVaultIfEnabled(vault)
+                    FlipSideManager.syncFlipSideFromVaultIfChanged(appRepository, pageId)
+                }
+                if (updated) {
+                    page.reloadStrokesFromDb()
+                    SnackState.globalSnackFlow.tryEmit(
+                        SnackConf(text = "Drawing updated from sync", duration = 3000)
+                    )
+                }
+            } finally {
+                vaultPullSyncing = false
+            }
         }
 
         DisposableEffect(Unit) {
@@ -221,7 +255,8 @@ fun EditorView(
                 // so finger taps always work even when Onyx SDK raw drawing is active
                 EditorSidebar(
                     exportEngine, navController, appRepository, editorState,
-                    editorControlTower, flipSideLink = flipSideLink
+                    editorControlTower, flipSideLink = flipSideLink,
+                    vaultPullSyncing = vaultPullSyncing
                 )
                 // Canvas area takes remaining space
                 Box(modifier = Modifier.weight(1f).fillMaxHeight()) {

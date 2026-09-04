@@ -38,7 +38,9 @@ import androidx.compose.ui.window.PopupProperties
 import com.ethran.notable.data.datastore.AppSettings
 import com.ethran.notable.data.datastore.BUTTON_SIZE
 import com.ethran.notable.data.datastore.GlobalAppSettings
+import com.ethran.notable.editor.utils.Pen
 import com.ethran.notable.editor.utils.PenSetting
+import com.ethran.notable.editor.utils.markerColorArgb
 import com.ethran.notable.ui.convertDpToPixel
 import kotlin.math.roundToInt
 
@@ -50,6 +52,7 @@ fun StrokeMenu(
     onClose: () -> Unit,
     sizeOptions: List<Pair<String, Float>>,
     colorOptions: List<Color>,
+    pen: Pen? = null,
 ) {
     val context = LocalContext.current
 
@@ -102,6 +105,7 @@ fun StrokeMenu(
                     value = value,
                     onChange = onChange,
                     colorOptions = listOfColors,
+                    markerAlpha = pen == Pen.MARKER,
                     modifier = Modifier.align(Alignment.CenterHorizontally)
                 )
             } else {
@@ -110,6 +114,7 @@ fun StrokeMenu(
                     value = value,
                     onChange = onChange,
                     colorOptions = listOfColors,
+                    markerAlpha = pen == Pen.MARKER,
                     modifier = Modifier.align(Alignment.CenterHorizontally)
                 )
 
@@ -172,6 +177,7 @@ private fun ColorPicker(
     value: PenSetting,
     onChange: (setting: PenSetting) -> Unit,
     colorOptions: List<Color>,
+    markerAlpha: Boolean = false,
     modifier: Modifier = Modifier,
     embedded: Boolean = false
 ) {
@@ -194,14 +200,21 @@ private fun ColorPicker(
                         3.dp, if (color == Color(value.color)) Color.Black else Color.Transparent
                     )
                     .clickable {
+                        val selectedColor = android.graphics.Color.argb(
+                            (color.alpha * 255).toInt(),
+                            (color.red * 255).toInt(),
+                            (color.green * 255).toInt(),
+                            (color.blue * 255).toInt()
+                        )
+                        val strokeColor = if (markerAlpha) {
+                            markerColorArgb(selectedColor)
+                        } else {
+                            selectedColor
+                        }
                         onChange(
                             PenSetting(
-                                strokeSize = value.strokeSize, color = android.graphics.Color.argb(
-                                    (color.alpha * 255).toInt(),
-                                    (color.red * 255).toInt(),
-                                    (color.green * 255).toInt(),
-                                    (color.blue * 255).toInt()
-                                )
+                                strokeSize = value.strokeSize,
+                                color = strokeColor
                             )
                         )
                     }

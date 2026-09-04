@@ -46,6 +46,9 @@ interface KvDao {
     @Query("DELETE FROM kv WHERE `key`=:key")
     suspend fun delete(key: String)
 
+    @Query("SELECT * FROM kv WHERE `key` LIKE 'FLIP_PAGE:%'")
+    suspend fun getAllFlipPageLinks(): List<Kv>
+
 }
 
 @Singleton
@@ -99,12 +102,13 @@ class KvProxy @Inject constructor(
     @param:ApplicationContext private val context: Context
 ) {
     private val log = ShipBook.getLogger("KvProxy")
+    private val json = Json { ignoreUnknownKeys = true }
 
     fun <T> observeKv(key: String, serializer: KSerializer<T>, default: T): LiveData<T?> {
         return kvRepository.getLive(key).map {
             if (it == null) return@map default
             val jsonValue = it.value
-            Json.decodeFromString(serializer, jsonValue)
+            json.decodeFromString(serializer, jsonValue)
         }
     }
 
@@ -112,12 +116,12 @@ class KvProxy @Inject constructor(
         val kv = kvRepository.get(key)
             ?: return@withContext null //returns null when there is no database
         val jsonValue = kv.value
-        Json.decodeFromString(serializer, jsonValue)
+        json.decodeFromString(serializer, jsonValue)
     }
 
 
     suspend fun <T> setKv(key: String, value: T, serializer: KSerializer<T>) {
-        val jsonValue = Json.encodeToString(serializer, value)
+        val jsonValue = json.encodeToString(serializer, value)
         log.i("Setting $key to $value")
         kvRepository.set(Kv(key, jsonValue))
     }
