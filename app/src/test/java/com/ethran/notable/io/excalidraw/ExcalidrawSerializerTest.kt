@@ -73,6 +73,12 @@ class ExcalidrawSerializerTest {
         assertTrue(content.contains("%%"))
         assertTrue(content.contains("```compressed-json"))
         assertFalse(content.contains("```json"))
+        val compressedStart = content.indexOf("```compressed-json\n") +
+            "```compressed-json\n".length
+        val compressedEnd = content.indexOf("\n```", compressedStart)
+        val compressedLines = content.substring(compressedStart, compressedEnd).lines()
+        assertTrue(compressedLines.any { it.isEmpty() })
+        assertTrue(compressedLines.filter { it.isNotEmpty() }.all { it.length <= 256 })
 
         val parsed = ExcalidrawSerializer.parse(content, "page-2")
         assertNotNull(parsed)

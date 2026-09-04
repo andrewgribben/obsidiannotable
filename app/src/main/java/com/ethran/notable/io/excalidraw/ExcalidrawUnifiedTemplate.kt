@@ -12,6 +12,7 @@ import java.io.BufferedReader
 object ExcalidrawUnifiedTemplate {
 
     private const val ASSET_NAME = "Template.excalidraw.md"
+    private const val COMPRESSED_CHUNK_SIZE = 256
 
     private var defaultDrawingRoot: JSONObject? = null
 
@@ -54,6 +55,8 @@ object ExcalidrawUnifiedTemplate {
 
     fun wrapDrawingJson(jsonBody: String): String {
         val compressed = LZSEncoding.compressToBase64(jsonBody)
+            .chunked(COMPRESSED_CHUNK_SIZE)
+            .joinToString("\n\n")
         return buildString {
             appendLine("%%")
             appendLine("# Excalidraw Data")
