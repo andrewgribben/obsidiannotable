@@ -71,8 +71,8 @@ class ExcalidrawSerializerTest {
         assertTrue(content.contains("# Title"))
         assertTrue(content.contains("Body text"))
         assertTrue(content.contains("%%"))
-        assertTrue(content.contains("```json"))
-        assertFalse(content.contains("```compressed-json"))
+        assertTrue(content.contains("```compressed-json"))
+        assertFalse(content.contains("```json"))
 
         val parsed = ExcalidrawSerializer.parse(content, "page-2")
         assertNotNull(parsed)
@@ -88,7 +88,7 @@ class ExcalidrawSerializerTest {
             listOf(sampleStroke(), sampleStroke(Pen.BALLPEN))
         )
         assertTrue(updated.contains("Keep me"))
-        assertTrue(updated.contains("```json"))
+        assertTrue(updated.contains("```compressed-json"))
         val parsed = ExcalidrawSerializer.parse(updated, "page-1")
         assertEquals(2, parsed!!.size)
     }

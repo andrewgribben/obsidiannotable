@@ -449,7 +449,7 @@ object ExcalidrawSerializer {
     private fun buildDrawingSection(strokes: List<Stroke>): String {
         val templateRoot = runCatching { ExcalidrawUnifiedTemplate.defaultDrawingRoot() }.getOrNull()
         val drawing = buildDrawingJsonForExport(strokes, templateRoot)
-        return ExcalidrawUnifiedTemplate.wrapDrawingJson(drawing.toString(2))
+        return ExcalidrawUnifiedTemplate.wrapDrawingJson(drawing.toString())
     }
 
     /** Builds excalidraw JSON for vault export, optionally merging template [appState]. */

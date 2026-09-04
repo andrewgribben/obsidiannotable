@@ -47,7 +47,7 @@ class FlipSideManagerCaptureTest {
         assertFalse(stub.contains("flip-side:"))
         assertFalse(stub.contains("pdf:"))
         assertTrue(stub.contains("%%"))
-        assertTrue(stub.contains("```json"))
+        assertTrue(stub.contains("```compressed-json"))
     }
 
     @Test
@@ -55,7 +55,7 @@ class FlipSideManagerCaptureTest {
         val unified = ExcalidrawSerializer.serializeUnified("Lyrics here", emptyList())
         val stripped = ExcalidrawSerializer.stripDrawingFromUnified(unified)
         assertTrue(stripped.contains("Lyrics here"))
-        assertFalse(stripped.contains("```json"))
+        assertFalse(stripped.contains("```compressed-json"))
         assertFalse(stripped.contains("excalidraw-plugin:"))
     }
 

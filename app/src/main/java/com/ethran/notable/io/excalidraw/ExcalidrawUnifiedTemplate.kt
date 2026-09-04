@@ -1,12 +1,13 @@
 package com.ethran.notable.io.excalidraw
 
+import blazing.chain.LZSEncoding
 import com.ethran.notable.data.db.Stroke
 import org.json.JSONObject
 import java.io.BufferedReader
 
 /**
  * Obsidian unified-note layout from [Template.excalidraw.md]:
- * frontmatter + optional markdown body + `%%` comment block with pretty-printed JSON.
+ * frontmatter + optional markdown body + `%%` comment block with compressed JSON.
  */
 object ExcalidrawUnifiedTemplate {
 
@@ -48,19 +49,22 @@ object ExcalidrawUnifiedTemplate {
 
     fun wrapDrawingBlock(strokes: List<Stroke>): String {
         val json = ExcalidrawSerializer.buildDrawingJsonForExport(strokes, defaultDrawingRoot())
-        return wrapDrawingJson(json.toString(2))
+        return wrapDrawingJson(json.toString())
     }
 
-    fun wrapDrawingJson(jsonBody: String): String = buildString {
-        appendLine("%%")
-        appendLine("# Excalidraw Data")
-        appendLine()
-        appendLine("## Text Elements")
-        appendLine()
-        appendLine("## Drawing")
-        appendLine("```json")
-        appendLine(jsonBody.trimEnd())
-        appendLine("```")
-        append("%%")
+    fun wrapDrawingJson(jsonBody: String): String {
+        val compressed = LZSEncoding.compressToBase64(jsonBody)
+        return buildString {
+            appendLine("%%")
+            appendLine("# Excalidraw Data")
+            appendLine()
+            appendLine("## Text Elements")
+            appendLine()
+            appendLine("## Drawing")
+            appendLine("```compressed-json")
+            appendLine(compressed)
+            appendLine("```")
+            append("%%")
+        }
     }
 }
