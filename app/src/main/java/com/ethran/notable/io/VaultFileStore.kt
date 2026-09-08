@@ -150,8 +150,18 @@ object VaultFileStore {
      */
     fun writeConflictCopy(file: File, content: String): File? {
         val timestamp = SimpleDateFormat("yyyy-MM-dd HHmmss", Locale.US).format(Date())
-        val base = file.nameWithoutExtension
-        val ext = file.extension.let { if (it.isBlank()) "" else ".$it" }
+        val compoundExtension = ".excalidraw.md"
+        val hasCompoundExtension = file.name.endsWith(compoundExtension, ignoreCase = true)
+        val base = if (hasCompoundExtension) {
+            file.name.dropLast(compoundExtension.length)
+        } else {
+            file.nameWithoutExtension
+        }
+        val ext = if (hasCompoundExtension) {
+            compoundExtension
+        } else {
+            file.extension.let { if (it.isBlank()) "" else ".$it" }
+        }
         val conflictFile = File(file.parentFile, "$base (conflict $timestamp)$ext")
         return when (write(conflictFile, content)) {
             is WriteResult.Success -> conflictFile

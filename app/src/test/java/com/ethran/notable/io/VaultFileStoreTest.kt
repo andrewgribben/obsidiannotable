@@ -98,6 +98,18 @@ class VaultFileStoreTest {
     }
 
     @Test
+    fun `drawing conflict copy preserves compound extension`() {
+        val f = file("Drawing.excalidraw.md")
+        f.writeText("original")
+
+        val copy = VaultFileStore.writeConflictCopy(f, "conflict")
+
+        assertNotNull(copy)
+        assertTrue(copy!!.name.startsWith("Drawing (conflict "))
+        assertTrue(copy.name.endsWith(".excalidraw.md"))
+    }
+
+    @Test
     fun `no temp files remain after write`() {
         val f = file()
         VaultFileStore.write(f, "content")

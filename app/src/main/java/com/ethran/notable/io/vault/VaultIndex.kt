@@ -11,7 +11,7 @@ private val log = ShipBook.getLogger("VaultIndex")
 
 /** Suffix for flip-side drawing files (Excalidraw-compatible markdown). */
 const val FLIP_SIDE_SUFFIX = ".flip.excalidraw.md"
-const val DRAWING_EXTENSION = ".excalidraw"
+const val DRAWING_EXTENSION = ".excalidraw.md"
 
 /** A markdown note inside a vault. */
 data class VaultNote(
@@ -91,7 +91,8 @@ fun listInboxNotesWithInk(vault: VaultConfig): List<VaultNote> {
         .filter { file ->
             file.isFile &&
                 file.name.endsWith(".md", ignoreCase = true) &&
-                !file.name.endsWith(FLIP_SIDE_SUFFIX, ignoreCase = true)
+                !file.name.endsWith(FLIP_SIDE_SUFFIX, ignoreCase = true) &&
+                !file.name.endsWith(DRAWING_EXTENSION, ignoreCase = true)
         }
         .mapNotNull { file -> inboxCaptureNote(file, root, inboxDir) }
         .sortedByDescending { it.lastModified }
@@ -173,7 +174,8 @@ class VaultIndex(val vaultRoot: File, private val linkRoot: File = vaultRoot) {
             if (child.isDirectory) {
                 scanDir(child, out)
             } else if (name.endsWith(".md", ignoreCase = true) &&
-                !name.endsWith(FLIP_SIDE_SUFFIX, ignoreCase = true)
+                !name.endsWith(FLIP_SIDE_SUFFIX, ignoreCase = true) &&
+                !name.endsWith(DRAWING_EXTENSION, ignoreCase = true)
             ) {
                 out.add(toNote(child))
             }
@@ -221,7 +223,8 @@ class VaultIndex(val vaultRoot: File, private val linkRoot: File = vaultRoot) {
                     )
                 )
             } else if (name.endsWith(".md", ignoreCase = true) &&
-                !name.endsWith(FLIP_SIDE_SUFFIX, ignoreCase = true)
+                !name.endsWith(FLIP_SIDE_SUFFIX, ignoreCase = true) &&
+                !name.endsWith(DRAWING_EXTENSION, ignoreCase = true)
             ) {
                 files.add(toNote(child))
             }
@@ -299,7 +302,7 @@ fun flipSideFileFor(noteFile: File): File {
     return File(noteFile.parentFile, "$base$FLIP_SIDE_SUFFIX")
 }
 
-/** Resolves the raw drawing linked by `singularity-drawing`, if it exists. */
+/** Resolves the drawing linked by `singularity-drawing`, including legacy raw files. */
 fun resolveAssociatedDrawingFile(
     noteFile: File,
     vaultRoot: File,
@@ -328,7 +331,7 @@ fun resolveAssociatedDrawingFile(
     return null
 }
 
-/** Chooses a non-conflicting attachment path for a note's raw drawing. */
+/** Chooses a non-conflicting attachment path for a note's modern drawing file. */
 fun availableDrawingFile(noteFile: File, vault: VaultConfig): File? {
     val attachmentDir = resolveVaultAttachmentDir(vault.inboxPath, vault.attachmentPath) ?: return null
     attachmentDir.mkdirs()

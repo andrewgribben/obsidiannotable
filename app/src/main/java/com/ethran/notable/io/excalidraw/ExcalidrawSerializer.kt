@@ -30,6 +30,7 @@ object ExcalidrawSerializer {
     private const val CUSTOM_DATA_KEY = "singularity"
     private const val IMPORTED_ID_SEPARATOR = "|excalidraw|"
     const val DRAWING_PROPERTY = "singularity-drawing"
+    const val DRAWING_HISTORY_PROPERTY = "singularity-drawing-history"
 
     private const val EXCALIDRAW_PLUGIN_LINE = "excalidraw-plugin: parsed"
     private const val DRAWING_WARNING_LINE =
@@ -51,6 +52,12 @@ object ExcalidrawSerializer {
         Regex("""^tags:\s*\[excalidraw\]\s*$""", RegexOption.MULTILINE)
     private val DRAWING_PROPERTY_REGEX =
         Regex("""^singularity-drawing:\s*["']?\[\[([^\]]+)]]["']?\s*$""", RegexOption.MULTILINE)
+    private val DRAWING_HISTORY_BLOCK_REGEX = Regex(
+        """^singularity-drawing-history:[^\n]*(?:\n[ \t]+-[^\n]*)*""",
+        setOf(RegexOption.MULTILINE)
+    )
+    private val DRAWING_HISTORY_LINK_REGEX =
+        Regex("""\[\[([^\]]+)]]""")
 
     // Excalidraw freedraw thickness ≈ strokeWidth in scene px; our stroke size is the
     // brush diameter in page px. Scale down so drawings look similar in Obsidian.
@@ -151,6 +158,18 @@ object ExcalidrawSerializer {
     fun drawingLinkPath(content: String): String? =
         DRAWING_PROPERTY_REGEX.find(content)?.groupValues?.get(1)?.trim()?.takeIf { it.isNotEmpty() }
 
+    /** Older completed canvases retained in note metadata, oldest first. */
+    fun drawingHistoryPaths(content: String): List<String> {
+        val block = DRAWING_HISTORY_BLOCK_REGEX.find(content)?.value ?: return emptyList()
+        return DRAWING_HISTORY_LINK_REGEX.findAll(block)
+            .map { it.groupValues[1].trim() }
+            .filter { it.isNotEmpty() }
+            .toList()
+    }
+
+    fun allDrawingLinkPaths(content: String): List<String> =
+        (drawingHistoryPaths(content) + listOfNotNull(drawingLinkPath(content))).distinct()
+
     /** Adds or replaces the drawing association while preserving all other note content. */
     fun withDrawingLink(content: String, drawingRelativePath: String): String {
         val cleanPath = drawingRelativePath.replace('\\', '/').trimStart('/')
@@ -167,9 +186,44 @@ object ExcalidrawSerializer {
         return "---\n$property\n---\n\n${withoutOld.trimStart()}"
     }
 
+    /** Replaces active/history drawing metadata while preserving all unrelated frontmatter. */
+    fun withDrawingLinks(
+        content: String,
+        activeDrawingRelativePath: String,
+        historyRelativePaths: List<String>
+    ): String {
+        val withoutLinks = DRAWING_HISTORY_BLOCK_REGEX.replace(
+            DRAWING_PROPERTY_REGEX.replace(content, ""),
+            ""
+        )
+        val cleanActive = activeDrawingRelativePath.replace('\\', '/').trimStart('/')
+        val properties = buildString {
+            append("$DRAWING_PROPERTY: \"[[$cleanActive]]\"")
+            val history = historyRelativePaths.map {
+                it.replace('\\', '/').trimStart('/')
+            }.filter { it.isNotEmpty() }.distinct()
+            if (history.isNotEmpty()) {
+                append("\n$DRAWING_HISTORY_PROPERTY:")
+                history.forEach { append("\n  - \"[[$it]]\"") }
+            }
+        }
+        if (withoutLinks.startsWith("---")) {
+            val end = withoutLinks.indexOf("\n---", 3)
+            if (end >= 0) {
+                return withoutLinks.substring(0, end).trimEnd() +
+                    "\n$properties" +
+                    withoutLinks.substring(end)
+            }
+        }
+        return "---\n$properties\n---\n\n${withoutLinks.trimStart()}"
+    }
+
     /** Removes only Singularity's drawing association from a text note. */
     fun withoutDrawingLink(content: String): String =
         DRAWING_PROPERTY_REGEX.replace(content, "")
+
+    fun withoutDrawingLinks(content: String): String =
+        DRAWING_HISTORY_BLOCK_REGEX.replace(DRAWING_PROPERTY_REGEX.replace(content, ""), "")
 
     /** Replaces only a regular Markdown note's body, preserving YAML frontmatter. */
     fun rewriteMarkdownBody(content: String, markdownBody: String): String {
@@ -419,6 +473,24 @@ object ExcalidrawSerializer {
         }
         return root.toString(2) + "\n"
     }
+
+    /** Current Obsidian Excalidraw markdown format, avoiding legacy conversion prompts. */
+    fun serializeDrawingMarkdown(
+        strokes: List<Stroke>,
+        existingContent: String? = null
+    ): String = wrapRawDrawingMarkdown(serializeRaw(strokes, existingContent))
+
+    fun wrapRawDrawingMarkdown(rawDrawingJson: String): String =
+        buildString {
+            appendLine("---")
+            appendLine("excalidraw-plugin: parsed")
+            appendLine("excalidraw-open-md: false")
+            appendLine("tags: [excalidraw]")
+            appendLine("---")
+            appendLine()
+            append(ExcalidrawUnifiedTemplate.wrapDrawingJson(rawDrawingJson.trim()))
+            appendLine()
+        }
 
     private val REGENERATED_FREEDRAW_KEYS = setOf(
         "type", "x", "y", "width", "height", "angle", "points", "pressures",
@@ -727,12 +799,12 @@ object ExcalidrawSerializer {
                 val elementPoint = elementPoints?.optJSONArray(i)
                 val useElementGeometry = elementPoint != null
                 val unrotatedX = if (useElementGeometry) {
-                    originX + elementPoint!!.getDouble(0).toFloat()
+                    originX + elementPoint.getDouble(0).toFloat()
                 } else {
                     nativePoint.getDouble(0).toFloat()
                 }
                 val unrotatedY = if (useElementGeometry) {
-                    originY + elementPoint!!.getDouble(1).toFloat()
+                    originY + elementPoint.getDouble(1).toFloat()
                 } else {
                     nativePoint.getDouble(1).toFloat()
                 }

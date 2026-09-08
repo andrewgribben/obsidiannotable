@@ -7,9 +7,11 @@ import com.ethran.notable.io.VaultFileStore
 import com.ethran.notable.io.excalidraw.ExcalidrawSerializer
 import com.ethran.notable.io.resolveExternalStoragePath
 import com.ethran.notable.io.resolveVaultAttachmentDir
+import com.ethran.notable.io.vault.DRAWING_EXTENSION
 import com.ethran.notable.io.vault.FLIP_SIDE_SUFFIX
 import com.ethran.notable.io.vault.VaultIndexRegistry
 import com.ethran.notable.io.vault.availableDrawingFile
+import com.ethran.notable.io.vault.resolveAssociatedDrawingFile
 import com.ethran.notable.io.vault.vaultRootDir
 import io.shipbook.shipbooksdk.ShipBook
 import kotlinx.serialization.builtins.serializer
@@ -17,7 +19,7 @@ import org.json.JSONObject
 import java.io.File
 
 object SeparateDrawingMigrator {
-    const val VERSION = 1
+    const val VERSION = 2
     private const val VERSION_KEY = "SEPARATE_DRAWING_MIGRATION_VERSION"
     private val log = ShipBook.getLogger("SeparateDrawingMigrator")
 
@@ -64,10 +66,61 @@ object SeparateDrawingMigrator {
             .filter {
                 it.isFile &&
                     it.name.endsWith(".md", ignoreCase = true) &&
-                    !it.name.endsWith(FLIP_SIDE_SUFFIX, ignoreCase = true)
+                    !it.name.endsWith(FLIP_SIDE_SUFFIX, ignoreCase = true) &&
+                    !it.name.endsWith(DRAWING_EXTENSION, ignoreCase = true)
             }
             .forEach { noteFile ->
                 val read = VaultFileStore.read(noteFile) ?: return@forEach
+                val activeLink = ExcalidrawSerializer.drawingLinkPath(read.content)
+                if (activeLink?.endsWith(".excalidraw", ignoreCase = true) == true) {
+                    val legacyFile = resolveAssociatedDrawingFile(
+                        noteFile,
+                        root,
+                        read.content,
+                        syncRoot
+                    )
+                    val legacyJson = legacyFile?.let(VaultFileStore::read)?.content
+                        ?.let(ExcalidrawSerializer::extractDrawingJson)
+                    if (legacyFile == null || legacyJson == null) {
+                        failures += "${noteFile.name}: legacy drawing could not be read"
+                        return@forEach
+                    }
+                    val modernFile = availableDrawingFile(noteFile, vault)
+                    val modernRelative = modernFile?.let {
+                        runCatching { it.relativeTo(syncRoot).path.replace('\\', '/') }.getOrNull()
+                    }
+                    if (modernFile == null || modernRelative == null ||
+                        modernRelative.startsWith("../")
+                    ) {
+                        failures += "${noteFile.name}: modern drawing path unavailable"
+                        return@forEach
+                    }
+                    val modernContent =
+                        ExcalidrawSerializer.wrapRawDrawingMarkdown(legacyJson)
+                    if (VaultFileStore.write(
+                            modernFile,
+                            modernContent,
+                            VaultFileStore.HASH_MISSING
+                        ) !is VaultFileStore.WriteResult.Success
+                    ) {
+                        failures += "${noteFile.name}: modern drawing write failed"
+                        return@forEach
+                    }
+                    val updatedNote = ExcalidrawSerializer.withDrawingLinks(
+                        read.content,
+                        modernRelative,
+                        ExcalidrawSerializer.drawingHistoryPaths(read.content)
+                    )
+                    if (VaultFileStore.write(noteFile, updatedNote, read.hash)
+                        !is VaultFileStore.WriteResult.Success
+                    ) {
+                        VaultFileStore.delete(modernFile, VaultFileStore.hashOf(modernContent))
+                        failures += "${noteFile.name}: note changed during format upgrade"
+                        return@forEach
+                    }
+                    migrated++
+                    return@forEach
+                }
                 if (!ExcalidrawSerializer.hasDrawingSection(read.content)) return@forEach
                 val json = ExcalidrawSerializer.extractDrawingJson(read.content)
                 if (json == null || runCatching { JSONObject(json) }.isFailure) {
@@ -103,8 +156,10 @@ object SeparateDrawingMigrator {
                     return@forEach
                 }
 
-                val rawDrawing = JSONObject(json).toString(2) + "\n"
-                val drawingWrite = VaultFileStore.write(drawingFile, rawDrawing)
+                val drawingContent = ExcalidrawSerializer.wrapRawDrawingMarkdown(
+                    JSONObject(json).toString()
+                )
+                val drawingWrite = VaultFileStore.write(drawingFile, drawingContent)
                 if (drawingWrite !is VaultFileStore.WriteResult.Success ||
                     ExcalidrawSerializer.extractDrawingJson(
                         VaultFileStore.read(drawingFile)?.content.orEmpty()

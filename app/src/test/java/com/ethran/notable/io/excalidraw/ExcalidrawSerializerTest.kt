@@ -95,6 +95,37 @@ class ExcalidrawSerializerTest {
     }
 
     @Test
+    fun `drawing metadata tracks active and historical canvases`() {
+        val linked = ExcalidrawSerializer.withDrawingLinks(
+            "# Daily",
+            "Attachments/Daily-2.excalidraw.md",
+            listOf(
+                "Attachments/Daily.excalidraw.md",
+                "Attachments/Daily-1.excalidraw.md"
+            )
+        )
+        assertEquals(
+            "Attachments/Daily-2.excalidraw.md",
+            ExcalidrawSerializer.drawingLinkPath(linked)
+        )
+        assertEquals(
+            listOf(
+                "Attachments/Daily.excalidraw.md",
+                "Attachments/Daily-1.excalidraw.md"
+            ),
+            ExcalidrawSerializer.drawingHistoryPaths(linked)
+        )
+    }
+
+    @Test
+    fun `modern drawing markdown round trips without legacy raw extension`() {
+        val content = ExcalidrawSerializer.serializeDrawingMarkdown(listOf(sampleStroke()))
+        assertTrue(content.contains("excalidraw-plugin: parsed"))
+        assertTrue(content.contains("```compressed-json"))
+        assertEquals(1, ExcalidrawSerializer.parse(content, "page-2")!!.size)
+    }
+
+    @Test
     fun `plain markdown Drawing heading remains part of body`() {
         val note = "---\ntitle: Sketch\n---\n\n# Drawing\n\nDescription\n"
         assertEquals(

@@ -58,7 +58,9 @@ class SeparateDrawingMigratorTest {
             linkRoot = inbox
         )
         assertNotNull(drawing)
-        assertTrue(drawing!!.readText().trimStart().startsWith("{"))
+        assertTrue(drawing!!.name.endsWith(".excalidraw.md"))
+        assertTrue(drawing.readText().contains("excalidraw-plugin: parsed"))
+        assertNotNull(ExcalidrawSerializer.extractDrawingJson(drawing.readText()))
         assertTrue(
             inbox.resolve(
                 "Attachments/.singularity/migration-backups/Inbox/Capture.md.unified-backup"
@@ -103,5 +105,33 @@ class SeparateDrawingMigratorTest {
         assertEquals(0, result.migrated)
         assertTrue(result.failures.isEmpty())
         assertEquals(original, drawingNote.readText())
+    }
+
+    @Test
+    fun `upgrades linked raw drawing to modern markdown format`() {
+        val root = temporaryFolder.newFolder("LegacyRaw")
+        val inbox = root.resolve("Inbox").apply { mkdirs() }
+        val attachments = inbox.resolve("Attachments").apply { mkdirs() }
+        val raw = attachments.resolve("Capture.excalidraw").apply {
+            writeText("""{"type":"excalidraw","version":2,"elements":[]}""")
+        }
+        val note = inbox.resolve("Capture.md").apply {
+            writeText(
+                "---\nsingularity-drawing: \"[[Attachments/${raw.name}]]\"\n---\n\nText\n"
+            )
+        }
+        val vault = VaultConfig(
+            name = "Test",
+            inboxPath = inbox.absolutePath,
+            attachmentPath = "Attachments"
+        )
+
+        val result = SeparateDrawingMigrator.migrateVault(vault)
+
+        assertEquals(1, result.migrated)
+        val active = ExcalidrawSerializer.drawingLinkPath(note.readText())!!
+        assertTrue(active.endsWith(".excalidraw.md"))
+        assertTrue(inbox.resolve(active).readText().contains("```compressed-json"))
+        assertTrue(raw.isFile)
     }
 }
