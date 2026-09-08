@@ -143,7 +143,6 @@ class HomeWidgetProvider : AppWidgetProvider() {
             appWidgetIds: IntArray
         ) = withContext(Dispatchers.IO) {
             val density = context.resources.displayMetrics.density
-            val activeVaultId = WidgetDataLoader.activeVaultId(context)
             for (appWidgetId in appWidgetIds) {
                 val options = appWidgetManager.getAppWidgetOptions(appWidgetId)
                 val widthDp = widgetWidthDp(context, options)
@@ -158,19 +157,39 @@ class HomeWidgetProvider : AppWidgetProvider() {
                             "$k=${options.get(k)}"
                         }}"
                 )
+                val empty = WidgetData(emptyList(), showVaultName = false)
+                val cached = if (grid.slotCount == 0) {
+                    empty
+                } else {
+                    WidgetDataLoader.cached(context, grid.slotCount)
+                }
+                if (cached.captures.isNotEmpty()) {
+                    appWidgetManager.updateAppWidget(
+                        appWidgetId,
+                        buildRemoteViews(
+                            context = context,
+                            grid = grid,
+                            data = cached,
+                            density = density,
+                            activeVaultId = null
+                        )
+                    )
+                }
                 val data = if (grid.slotCount == 0) {
-                    WidgetData(emptyList(), showVaultName = false)
+                    empty
                 } else {
                     WidgetDataLoader.load(context, grid.slotCount)
                 }
-                val views = buildRemoteViews(
-                    context = context,
-                    grid = grid,
-                    data = data,
-                    density = density,
-                    activeVaultId = activeVaultId
-                )
-                appWidgetManager.updateAppWidget(appWidgetId, views)
+                if (cached.captures.isEmpty() || data != cached) {
+                    val views = buildRemoteViews(
+                        context = context,
+                        grid = grid,
+                        data = data,
+                        density = density,
+                        activeVaultId = WidgetDataLoader.activeVaultId(context)
+                    )
+                    appWidgetManager.updateAppWidget(appWidgetId, views)
+                }
             }
         }
 

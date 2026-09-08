@@ -22,9 +22,11 @@ import com.ethran.notable.ui.viewmodels.HomeCaptureKeys
 import com.ethran.notable.ui.viewmodels.orderHomeBookshelfItems
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.io.File
 
+@Serializable
 data class WidgetCapture(
     val vaultId: String,
     val relativePath: String,
@@ -36,6 +38,7 @@ data class WidgetCapture(
     val vaultName: String?
 )
 
+@Serializable
 data class WidgetData(
     val captures: List<WidgetCapture>,
     val showVaultName: Boolean
@@ -43,64 +46,93 @@ data class WidgetData(
 
 object WidgetDataLoader {
     private val json = Json { ignoreUnknownKeys = true }
+    private const val CACHE_PREFS = "home_widget_cache"
+    private const val CACHE_KEY = "widget_data"
 
     suspend fun load(context: Context, limit: Int = 5): WidgetData =
         withContext(Dispatchers.IO) {
-            val bootstrap = VaultPathBootstrap.load(context)
-                ?: return@withContext WidgetData(emptyList(), showVaultName = false)
-            GlobalAppSettings.update(
-                GlobalAppSettings.current.copy(
-                    obsidianInboxPath = bootstrap.first,
-                    obsidianAttachmentPath = bootstrap.second
-                )
-            )
-            val db = openDatabase(context)
+            val cached = cached(context, limit)
             try {
-                val settings = loadSettings(db)
-                    ?: return@withContext WidgetData(emptyList(), showVaultName = false)
-                val vaultsToScan = settings.vaults.let { all ->
-                    if (settings.homeVaultFilterIds.isEmpty()) all
-                    else all.filter { it.id in settings.homeVaultFilterIds }
-                }
-                if (vaultsToScan.isEmpty()) {
-                    return@withContext WidgetData(emptyList(), showVaultName = false)
-                }
-
-                val flipPageIds = loadFlipPageIds(db)
-                val inputs = vaultsToScan.map { vault ->
-                    val index = BookshelfIndexStore.loadWithPinMigration(vault, settings)
-                    HomeBookshelfBuilder.BuildInput(
-                        vault = vault,
-                        index = index,
-                        bookshelfDir = "",
-                        coverImages = settings.homeCaptureCoverImages,
-                        previewPageIds = flipPageIds
+                val bootstrap = VaultPathBootstrap.load(context)
+                    ?: return@withContext cached
+                GlobalAppSettings.update(
+                    GlobalAppSettings.current.copy(
+                        obsidianInboxPath = bootstrap.first,
+                        obsidianAttachmentPath = bootstrap.second
                     )
-                }
-                val raw = HomeBookshelfBuilder.buildRootItems(inputs)
-                    .filter { !it.isFolder }
-                    .map { item ->
-                        val pageId = item.previewPageId ?: flipPageIds[item.captureKey]
-                        if (pageId != null && item.previewPageId == null) {
-                            item.copy(previewPageId = pageId)
-                        } else {
-                            item
-                        }
-                    }
-                val ordered = orderHomeBookshelfItems(
-                    items = raw,
-                    sortMode = settings.homeSortMode,
-                    vaultFilterIds = settings.homeVaultFilterIds
                 )
-                val showVaultName = vaultsToScan.size > 1
-                val captures = ordered.take(limit).map { item ->
-                    toWidgetCapture(context, item, showVaultName)
+                val db = openDatabase(context)
+                try {
+                    val settings = loadSettings(db)
+                        ?: return@withContext cached
+                    val vaultsToScan = settings.vaults.let { all ->
+                        if (settings.homeVaultFilterIds.isEmpty()) all
+                        else all.filter { it.id in settings.homeVaultFilterIds }
+                    }
+                    if (vaultsToScan.isEmpty()) {
+                        val empty = WidgetData(emptyList(), showVaultName = false)
+                        cache(context, empty)
+                        return@withContext empty
+                    }
+
+                    val flipPageIds = loadFlipPageIds(db)
+                    val inputs = vaultsToScan.map { vault ->
+                        val index = BookshelfIndexStore.loadWithPinMigration(vault, settings)
+                        HomeBookshelfBuilder.BuildInput(
+                            vault = vault,
+                            index = index,
+                            bookshelfDir = "",
+                            coverImages = settings.homeCaptureCoverImages,
+                            previewPageIds = flipPageIds
+                        )
+                    }
+                    val raw = HomeBookshelfBuilder.buildRootItems(inputs)
+                        .filter { !it.isFolder }
+                        .map { item ->
+                            val pageId = item.previewPageId ?: flipPageIds[item.captureKey]
+                            if (pageId != null && item.previewPageId == null) {
+                                item.copy(previewPageId = pageId)
+                            } else {
+                                item
+                            }
+                        }
+                    val ordered = orderHomeBookshelfItems(
+                        items = raw,
+                        sortMode = settings.homeSortMode,
+                        vaultFilterIds = settings.homeVaultFilterIds
+                    )
+                    val showVaultName = vaultsToScan.size > 1
+                    val captures = ordered.take(limit).map { item ->
+                        toWidgetCapture(context, item, showVaultName)
+                    }
+                    WidgetData(captures, showVaultName).also { cache(context, it) }
+                } finally {
+                    db.close()
                 }
-                WidgetData(captures, showVaultName)
-            } finally {
-                db.close()
+            } catch (error: Exception) {
+                android.util.Log.w("HomeWidget", "Local widget load failed; using cache", error)
+                cached
             }
         }
+
+    fun cached(context: Context, limit: Int = 5): WidgetData {
+        val raw = context.getSharedPreferences(CACHE_PREFS, Context.MODE_PRIVATE)
+            .getString(CACHE_KEY, null)
+            ?: return WidgetData(emptyList(), showVaultName = false)
+        return runCatching {
+            val data = json.decodeFromString(WidgetData.serializer(), raw)
+            data.copy(captures = data.captures.take(limit))
+        }.getOrElse {
+            WidgetData(emptyList(), showVaultName = false)
+        }
+    }
+
+    private fun cache(context: Context, data: WidgetData) {
+        context.getSharedPreferences(CACHE_PREFS, Context.MODE_PRIVATE)
+            .edit()
+            .putString(CACHE_KEY, json.encodeToString(WidgetData.serializer(), data))
+            .apply()
+    }
 
     suspend fun activeVaultId(context: Context): String? {
         val bootstrap = VaultPathBootstrap.load(context) ?: return null
