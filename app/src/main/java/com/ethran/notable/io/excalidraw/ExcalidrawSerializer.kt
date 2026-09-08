@@ -10,6 +10,8 @@ import org.json.JSONObject
 import java.util.Date
 import java.util.UUID
 import kotlin.math.abs
+import kotlin.math.cos
+import kotlin.math.sin
 
 private val log = ShipBook.getLogger("ExcalidrawSerializer")
 
@@ -26,6 +28,8 @@ private val log = ShipBook.getLogger("ExcalidrawSerializer")
 object ExcalidrawSerializer {
 
     private const val CUSTOM_DATA_KEY = "singularity"
+    private const val IMPORTED_ID_SEPARATOR = "|excalidraw|"
+    const val DRAWING_PROPERTY = "singularity-drawing"
 
     private const val EXCALIDRAW_PLUGIN_LINE = "excalidraw-plugin: parsed"
     private const val DRAWING_WARNING_LINE =
@@ -45,7 +49,8 @@ object ExcalidrawSerializer {
         Regex("""^excalidraw-plugin:\s*.+$""", RegexOption.MULTILINE)
     private val TAGS_EXCALIDRAW_INLINE_REGEX =
         Regex("""^tags:\s*\[excalidraw\]\s*$""", RegexOption.MULTILINE)
-    private val PAIRED_COMMENT_REGEX = Regex("""%%[\s\S]*?%%""")
+    private val DRAWING_PROPERTY_REGEX =
+        Regex("""^singularity-drawing:\s*["']?\[\[([^\]]+)]]["']?\s*$""", RegexOption.MULTILINE)
 
     // Excalidraw freedraw thickness ≈ strokeWidth in scene px; our stroke size is the
     // brush diameter in page px. Scale down so drawings look similar in Obsidian.
@@ -131,13 +136,52 @@ object ExcalidrawSerializer {
     /** Markdown body between YAML frontmatter and the drawing section (trimmed). */
     fun extractMarkdownBody(content: String): String {
         val bodyStart = frontmatterEndIndex(content)
-        val drawStart = drawingSectionStartIndex(content, bodyStart)
+        val hasFencedDrawing = content.contains("```compressed-json") ||
+            content.contains("```json")
+        val drawStart = if (hasFencedDrawing) drawingTailStartIndex(content, bodyStart) else -1
         val body = if (drawStart >= 0) {
             content.substring(bodyStart, drawStart)
         } else {
             content.substring(bodyStart)
         }
         return body.trim()
+    }
+
+    /** Vault-relative path from the note's `singularity-drawing` wikilink. */
+    fun drawingLinkPath(content: String): String? =
+        DRAWING_PROPERTY_REGEX.find(content)?.groupValues?.get(1)?.trim()?.takeIf { it.isNotEmpty() }
+
+    /** Adds or replaces the drawing association while preserving all other note content. */
+    fun withDrawingLink(content: String, drawingRelativePath: String): String {
+        val cleanPath = drawingRelativePath.replace('\\', '/').trimStart('/')
+        val property = "$DRAWING_PROPERTY: \"[[$cleanPath]]\""
+        val withoutOld = DRAWING_PROPERTY_REGEX.replace(content, "")
+        if (withoutOld.startsWith("---")) {
+            val end = withoutOld.indexOf("\n---", 3)
+            if (end >= 0) {
+                return withoutOld.substring(0, end).trimEnd() +
+                    "\n$property" +
+                    withoutOld.substring(end)
+            }
+        }
+        return "---\n$property\n---\n\n${withoutOld.trimStart()}"
+    }
+
+    /** Removes only Singularity's drawing association from a text note. */
+    fun withoutDrawingLink(content: String): String =
+        DRAWING_PROPERTY_REGEX.replace(content, "")
+
+    /** Replaces only a regular Markdown note's body, preserving YAML frontmatter. */
+    fun rewriteMarkdownBody(content: String, markdownBody: String): String {
+        val fmEnd = frontmatterEndIndex(content)
+        val prefix = if (fmEnd > 0) content.substring(0, fmEnd).trimEnd() else ""
+        val body = markdownBody.trim()
+        return buildString {
+            if (prefix.isNotEmpty()) append(prefix)
+            if (prefix.isNotEmpty() && body.isNotEmpty()) append("\n\n")
+            if (body.isNotEmpty()) append(body)
+            append('\n')
+        }
     }
 
     /**
@@ -227,9 +271,15 @@ object ExcalidrawSerializer {
 
     /** Removes excalidraw drawing data and excalidraw frontmatter; keeps markdown text. */
     fun stripDrawingFromUnified(content: String): String {
-        val withoutComments = PAIRED_COMMENT_REGEX.replace(content, "")
-        val textBody = extractMarkdownBody(withoutComments)
-        val head = stripExcalidrawFrontmatterBlock(withoutComments)
+        val fmEnd = frontmatterEndIndex(content)
+        val drawStart = drawingTailStartIndex(content, fmEnd)
+        val withoutDrawing = if (drawStart >= 0) content.substring(0, drawStart) else content
+        val textBody = if (withoutDrawing.length > fmEnd) {
+            withoutDrawing.substring(fmEnd).trim()
+        } else {
+            ""
+        }
+        val head = stripExcalidrawFrontmatterBlock(content)
         return buildString {
             if (head.isNotEmpty()) {
                 append(head.trimEnd())
@@ -263,7 +313,16 @@ object ExcalidrawSerializer {
                 TAGS_EXCALIDRAW_INLINE_REGEX.matches(trimmed) -> i++
                 trimmed == "tags:" -> {
                     i++
-                    while (i < lines.size && EXCALIDRAW_TAG_REGEX.matches(lines[i])) i++
+                    val tagLines = mutableListOf<String>()
+                    while (i < lines.size && lines[i].trimStart().startsWith("-")) {
+                        tagLines.add(lines[i])
+                        i++
+                    }
+                    val remaining = tagLines.filterNot { EXCALIDRAW_TAG_REGEX.matches(it) }
+                    if (remaining.isNotEmpty()) {
+                        kept.add(line)
+                        kept.addAll(remaining)
+                    }
                 }
                 EXCALIDRAW_TAG_REGEX.matches(line) -> i++
                 else -> {
@@ -309,6 +368,62 @@ object ExcalidrawSerializer {
             appendLine("%%")
         }
     }
+
+    /** Complete raw `.excalidraw` JSON with full-fidelity Singularity stroke metadata. */
+    fun serializeRaw(strokes: List<Stroke>, existingContent: String? = null): String {
+        val existingRoot = existingContent
+            ?.let(::extractDrawingJson)
+            ?.let { runCatching { JSONObject(it) }.getOrNull() }
+        val baseRoot = existingRoot
+            ?: runCatching { ExcalidrawUnifiedTemplate.defaultDrawingRoot() }.getOrNull()
+        val root = buildDrawingJsonForExport(strokes, baseRoot)
+        if (existingRoot != null) {
+            val preserved = existingRoot.optJSONArray("elements")
+            val generated = root.optJSONArray("elements") ?: JSONArray()
+            val existingFreedraw = mutableMapOf<String, JSONObject>()
+            val existingFreedrawInOrder = mutableListOf<JSONObject>()
+            if (preserved != null) {
+                for (i in 0 until preserved.length()) {
+                    val element = preserved.optJSONObject(i) ?: continue
+                    if (element.optString("type") == "freedraw") {
+                        existingFreedraw[element.optString("id")] = element
+                        existingFreedrawInOrder += element
+                    }
+                }
+            }
+            val merged = JSONArray()
+            for (i in 0 until generated.length()) {
+                val element = generated.optJSONObject(i) ?: continue
+                val existing = existingFreedraw[element.optString("id")]
+                    ?: existingFreedrawInOrder
+                        .takeIf { it.size == generated.length() }
+                        ?.getOrNull(i)
+                if (existing != null) {
+                    val keys = existing.keys()
+                    while (keys.hasNext()) {
+                        val key = keys.next()
+                        if (key !in REGENERATED_FREEDRAW_KEYS) {
+                            element.put(key, existing.get(key))
+                        }
+                    }
+                }
+                merged.put(element)
+            }
+            if (preserved != null) {
+                for (i in 0 until preserved.length()) {
+                    val element = preserved.optJSONObject(i) ?: continue
+                    if (element.optString("type") != "freedraw") merged.put(element)
+                }
+            }
+            root.put("elements", merged)
+        }
+        return root.toString(2) + "\n"
+    }
+
+    private val REGENERATED_FREEDRAW_KEYS = setOf(
+        "type", "x", "y", "width", "height", "angle", "points", "pressures",
+        "customData", "lastCommittedPoint", "simulatePressure", "isDeleted"
+    )
 
     /**
      * Parses an .excalidraw.md (or raw .excalidraw JSON) file back into strokes for
@@ -448,6 +563,22 @@ object ExcalidrawSerializer {
             .minOrNull() ?: -1
     }
 
+    private fun drawingTailStartIndex(content: String, searchFrom: Int = 0): Int {
+        val heading = DRAWING_HEADING_REGEX.findAll(content)
+            .filter { match ->
+                match.range.first >= searchFrom &&
+                    listOf("```compressed-json", "```json")
+                        .any { content.indexOf(it, match.range.last + 1) >= 0 }
+            }
+            .maxByOrNull { it.range.first }
+            ?.range?.first ?: return -1
+        val commentStart = content.lastIndexOf("%%", heading)
+        return if (commentStart >= searchFrom) commentStart else heading
+    }
+
+    private val DRAWING_HEADING_REGEX =
+        Regex("""^(?:# Excalidraw Data|#{1,2} Drawing)\s*$""", RegexOption.MULTILINE)
+
     private fun buildDrawingSection(strokes: List<Stroke>): String {
         val templateRoot = runCatching { ExcalidrawUnifiedTemplate.defaultDrawingRoot() }.getOrNull()
         val drawing = buildDrawingJsonForExport(strokes, templateRoot)
@@ -500,7 +631,12 @@ object ExcalidrawSerializer {
 
         return JSONObject()
             .put("type", "freedraw")
-            .put("id", stroke.id.take(20).replace("-", ""))
+            .put(
+                "id",
+                stroke.id.substringAfter(IMPORTED_ID_SEPARATOR, "")
+                    .takeIf { it.isNotEmpty() }
+                    ?: stroke.id.take(20).replace("-", "")
+            )
             .put("x", originX)
             .put("y", originY)
             .put("width", abs(stroke.right - stroke.left))
@@ -570,25 +706,62 @@ object ExcalidrawSerializer {
     /** Full-fidelity restore from customData. */
     private fun nativeToStroke(native: JSONObject, element: JSONObject, pageId: String): Stroke? {
         return try {
-            val pointsJson = native.getJSONArray("points")
+            val nativePoints = native.getJSONArray("points")
+            val elementPoints = element.optJSONArray("points")
+            val pressures = element.optJSONArray("pressures")
+            val originX = element.optDouble("x", 0.0).toFloat()
+            val originY = element.optDouble("y", 0.0).toFloat()
+            val angle = element.optDouble("angle", 0.0)
+            val centerX = originX + element.optDouble("width", 0.0).toFloat() / 2f
+            val centerY = originY + element.optDouble("height", 0.0).toFloat() / 2f
             val points = mutableListOf<StrokePoint>()
-            for (i in 0 until pointsJson.length()) {
-                val p = pointsJson.getJSONArray(i)
+            val sourceCount = elementPoints?.length()?.takeIf { it > 0 } ?: nativePoints.length()
+            for (i in 0 until sourceCount) {
+                val nativeIndex = if (sourceCount <= 1 || nativePoints.length() <= 1) {
+                    0
+                } else {
+                    ((i.toDouble() / (sourceCount - 1)) * (nativePoints.length() - 1))
+                        .toInt()
+                }
+                val nativePoint = nativePoints.getJSONArray(nativeIndex)
+                val elementPoint = elementPoints?.optJSONArray(i)
+                val useElementGeometry = elementPoint != null
+                val unrotatedX = if (useElementGeometry) {
+                    originX + elementPoint!!.getDouble(0).toFloat()
+                } else {
+                    nativePoint.getDouble(0).toFloat()
+                }
+                val unrotatedY = if (useElementGeometry) {
+                    originY + elementPoint!!.getDouble(1).toFloat()
+                } else {
+                    nativePoint.getDouble(1).toFloat()
+                }
+                val dx = unrotatedX - centerX
+                val dy = unrotatedY - centerY
+                val rotatedX = centerX + dx * cos(angle).toFloat() - dy * sin(angle).toFloat()
+                val rotatedY = centerY + dx * sin(angle).toFloat() + dy * cos(angle).toFloat()
+                val pressure = if (sourceCount == nativePoints.length()) {
+                    if (nativePoint.isNull(2)) null else nativePoint.getDouble(2).toFloat()
+                } else {
+                    pressures?.optDouble(i, 0.5)?.times(
+                        native.optInt("maxPressure", 4096)
+                    )?.toFloat()
+                }
                 points.add(
                     StrokePoint(
-                        x = p.getDouble(0).toFloat(),
-                        y = p.getDouble(1).toFloat(),
-                        pressure = if (p.isNull(2)) null else p.getDouble(2).toFloat(),
-                        tiltX = if (p.isNull(3)) null else p.getInt(3),
-                        tiltY = if (p.isNull(4)) null else p.getInt(4),
-                        dt = if (p.isNull(5)) null else p.getInt(5).toUShort()
+                        x = rotatedX,
+                        y = rotatedY,
+                        pressure = pressure,
+                        tiltX = if (nativePoint.isNull(3)) null else nativePoint.getInt(3),
+                        tiltY = if (nativePoint.isNull(4)) null else nativePoint.getInt(4),
+                        dt = if (nativePoint.isNull(5)) null else nativePoint.getInt(5).toUShort()
                     )
                 )
             }
             if (points.isEmpty()) return null
             val pen = Pen.fromString(native.optString("pen", Pen.BALLPEN.penName))
             Stroke(
-                id = UUID.randomUUID().toString(),
+                id = importedStrokeId(pageId, element),
                 size = native.optDouble("size", 5.0).toFloat(),
                 pen = pen,
                 color = native.optInt("color", 0xFF000000.toInt()),
@@ -614,14 +787,21 @@ object ExcalidrawSerializer {
             val originY = element.optDouble("y", 0.0).toFloat()
             val pointsJson = element.optJSONArray("points") ?: return null
             val pressures = element.optJSONArray("pressures")
+            val angle = element.optDouble("angle", 0.0)
+            val centerX = originX + element.optDouble("width", 0.0).toFloat() / 2f
+            val centerY = originY + element.optDouble("height", 0.0).toFloat() / 2f
             val points = mutableListOf<StrokePoint>()
             for (i in 0 until pointsJson.length()) {
                 val p = pointsJson.getJSONArray(i)
                 val pressure = pressures?.optDouble(i, 0.5) ?: 0.5
+                val x = originX + p.getDouble(0).toFloat()
+                val y = originY + p.getDouble(1).toFloat()
+                val dx = x - centerX
+                val dy = y - centerY
                 points.add(
                     StrokePoint(
-                        x = originX + p.getDouble(0).toFloat(),
-                        y = originY + p.getDouble(1).toFloat(),
+                        x = centerX + dx * cos(angle).toFloat() - dy * sin(angle).toFloat(),
+                        y = centerY + dx * sin(angle).toFloat() + dy * cos(angle).toFloat(),
                         pressure = (pressure * 4096).toFloat().coerceIn(1f, 4096f)
                     )
                 )
@@ -629,7 +809,7 @@ object ExcalidrawSerializer {
             if (points.isEmpty()) return null
             val width = element.optDouble("strokeWidth", 2.0).toFloat() / EXCALIDRAW_WIDTH_SCALE
             Stroke(
-                id = UUID.randomUUID().toString(),
+                id = importedStrokeId(pageId, element),
                 size = width.coerceIn(1f, 60f),
                 pen = Pen.BALLPEN,
                 color = hexToColor(element.optString("strokeColor", "#000000")),
@@ -653,6 +833,12 @@ object ExcalidrawSerializer {
             (color shr 8) and 0xFF,
             color and 0xFF
         )
+
+    private fun importedStrokeId(pageId: String, element: JSONObject): String {
+        val elementId = element.optString("id").takeIf { it.isNotBlank() }
+            ?: UUID.randomUUID().toString()
+        return "$pageId$IMPORTED_ID_SEPARATOR$elementId"
+    }
 
     fun hexToColor(hex: String): Int {
         val cleaned = hex.removePrefix("#")

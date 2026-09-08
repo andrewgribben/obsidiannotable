@@ -448,7 +448,11 @@ fun LibraryContent(
             recentPaths = settings.recentNotesByVault[vaultForSwitcher.id].orEmpty(),
             onSelect = { note ->
                 showQuickSwitcher = false
-                onOpenVaultNote(vaultForSwitcher.id, note.relativePath)
+                if (note.hasInk) {
+                    onOpenFlipSide(vaultForSwitcher.id, note.relativePath)
+                } else {
+                    onOpenVaultNote(vaultForSwitcher.id, note.relativePath)
+                }
             },
             onAddToBookshelf = { path ->
                 onAddToBookshelf(vaultForSwitcher.id, path, BookshelfKind.NOTE)
@@ -486,8 +490,10 @@ private fun VaultCaptureCard(
                     onClick = {
                         if (item.isFolder) {
                             onOpenBookshelfFolder(item.vaultId, item.note.relativePath)
-                        } else {
+                        } else if (item.note.hasInk) {
                             onOpenFlipSide(item.vaultId, item.note.relativePath)
+                        } else {
+                            onOpenText(item.vaultId, item.note.relativePath)
                         }
                     },
                     onLongClick = { showMenu = true }

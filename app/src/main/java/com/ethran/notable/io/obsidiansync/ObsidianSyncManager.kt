@@ -40,6 +40,8 @@ class ObsidianSyncManager @Inject constructor(
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val vaultMutexes = ConcurrentHashMap<String, Mutex>()
     private val debouncedPushJobs = ConcurrentHashMap<String, Job>()
+    private val pendingPushPaths = ConcurrentHashMap<String, MutableSet<String>>()
+    private val pendingFullPushes = ConcurrentHashMap.newKeySet<String>()
     private val activeSyncOperations = AtomicInteger(0)
     @Volatile
     private var lastBackgroundPullAt = 0L
@@ -247,16 +249,41 @@ class ObsidianSyncManager @Inject constructor(
         }
     }
 
+    @Synchronized
     fun schedulePushForVault(vaultConfigId: String, onlyPaths: Set<String>? = null) {
         if (!GlobalAppSettings.current.obsidianSyncSignedIn) return
         val vault = GlobalAppSettings.current.normalizedVaults().vaults
             .find { it.id == vaultConfigId } ?: return
         if (!vault.syncEnabled || vault.obsidianVaultId.isBlank()) return
 
-        debouncedPushJobs.remove(vaultConfigId)?.cancel()
+        if (onlyPaths == null) {
+            pendingFullPushes.add(vaultConfigId)
+            pendingPushPaths.remove(vaultConfigId)
+        } else if (!pendingFullPushes.contains(vaultConfigId)) {
+            pendingPushPaths.getOrPut(vaultConfigId) { mutableSetOf() }.addAll(onlyPaths)
+        }
+        if (debouncedPushJobs[vaultConfigId]?.isActive == true) return
         debouncedPushJobs[vaultConfigId] = scope.launch {
             delay(PUSH_DEBOUNCE_MS)
-            pushVault(vault, onlyPaths)
+            while (true) {
+                val batch = synchronized(this@ObsidianSyncManager) {
+                    when {
+                        pendingFullPushes.remove(vaultConfigId) -> {
+                            pendingPushPaths.remove(vaultConfigId)
+                            true to null
+                        }
+                        pendingPushPaths.containsKey(vaultConfigId) -> {
+                            true to pendingPushPaths.remove(vaultConfigId)?.toSet()
+                        }
+                        else -> {
+                            debouncedPushJobs.remove(vaultConfigId)
+                            false to null
+                        }
+                    }
+                }
+                if (!batch.first) break
+                pushVault(vault, batch.second)
+            }
         }
     }
 
@@ -268,6 +295,7 @@ class ObsidianSyncManager @Inject constructor(
         val relativePath = runCatching {
             file.relativeTo(root).path.replace(File.separatorChar, '/')
         }.getOrNull() ?: return
+        if (relativePath == ".." || relativePath.startsWith("../")) return
         schedulePushForVault(vaultId, setOf(relativePath))
     }
 

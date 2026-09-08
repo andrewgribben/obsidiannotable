@@ -121,6 +121,29 @@ object VaultFileStore {
         }
     }
 
+    /** Deletes [file] with the same optimistic hash protection and sync notification as writes. */
+    fun delete(file: File, expectedHash: String? = null): WriteResult {
+        return try {
+            if (expectedHash != null) {
+                val onDisk = currentHash(file)
+                if (onDisk != expectedHash) {
+                    return WriteResult.Conflict(
+                        currentContent = read(file)?.content,
+                        currentHash = onDisk
+                    )
+                }
+            }
+            if (file.exists() && !file.delete()) {
+                return WriteResult.Error("Could not delete ${file.name}")
+            }
+            VaultFileStoreListeners.notifyWritten(file)
+            WriteResult.Success
+        } catch (e: Exception) {
+            log.e("Failed to delete ${file.absolutePath}: ${e.message}")
+            WriteResult.Error(e.message ?: "unknown error")
+        }
+    }
+
     /**
      * Writes [content] to a sibling conflict-copy of [file]
      * (e.g. `Note (conflict 2026-07-04 093000).md`). Returns the file or null on failure.

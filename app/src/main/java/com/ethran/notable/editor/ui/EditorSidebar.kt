@@ -1,6 +1,7 @@
 package com.ethran.notable.editor.ui
 
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.compose.BackHandler
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia
 import androidx.compose.foundation.background
@@ -110,6 +111,56 @@ fun EditorSidebar(
     val context = LocalContext.current
     val view = LocalView.current
     val zoomLevel by state.pageView.zoomLevel.collectAsState()
+    var isRecognizingFlip by remember { mutableStateOf(false) }
+    var flipPreviewText by remember { mutableStateOf<String?>(null) }
+    var pendingAfterHwr by remember { mutableStateOf<(() -> Unit)?>(null) }
+    val isFlipDrawingPage = flipSideLink?.purpose == FlipSideManager.PURPOSE_FLIP
+
+    fun requestFlipNavigation(afterHwr: () -> Unit) {
+        if (!isFlipDrawingPage) {
+            afterHwr()
+            return
+        }
+        if (isRecognizingFlip) return
+        isRecognizingFlip = true
+        scope.launch(Dispatchers.IO) {
+            val changed = FlipSideManager.hasFlipSideDrawingChanged(
+                appRepository,
+                state.currentPageId
+            )
+            if (!changed) {
+                withContext(Dispatchers.Main) {
+                    isRecognizingFlip = false
+                    afterHwr()
+                }
+                return@launch
+            }
+            val text = FlipSideManager.recognizeFlipSide(
+                appRepository,
+                context,
+                state.currentPageId
+            )
+            withContext(Dispatchers.Main) {
+                isRecognizingFlip = false
+                if (text == null) {
+                    SnackState.globalSnackFlow.tryEmit(
+                        SnackConf(
+                            text = context.getString(R.string.flip_side_nothing_recognized),
+                            duration = 3000
+                        )
+                    )
+                    afterHwr()
+                } else {
+                    pendingAfterHwr = afterHwr
+                    flipPreviewText = text
+                }
+            }
+        }
+    }
+
+    BackHandler(enabled = isFlipDrawingPage) {
+        requestFlipNavigation { navController.popBackStack() }
+    }
 
     // Force e-ink refresh when sidebar state changes.
     // The Onyx SDK sets a global display scheme that suppresses normal view updates,
@@ -197,10 +248,6 @@ fun EditorSidebar(
     var isPenPickerOpen by remember { mutableStateOf(false) }
     var isEraserMenuOpen by remember { mutableStateOf(false) }
 
-    // Flip-side HWR: recognized text pending the replace/append choice
-    var isRecognizingFlip by remember { mutableStateOf(false) }
-    var flipPreviewText by remember { mutableStateOf<String?>(null) }
-    val isFlipDrawingPage = flipSideLink?.purpose == FlipSideManager.PURPOSE_FLIP
     var syncRotation by remember { mutableFloatStateOf(0f) }
     LaunchedEffect(vaultPullSyncing) {
         if (!vaultPullSyncing) {
@@ -261,7 +308,7 @@ fun EditorSidebar(
             contentDescription = "back",
             onClick = {
                 log.i("Back button tapped")
-                navController.popBackStack()
+                requestFlipNavigation { navController.popBackStack() }
             }
         )
 
@@ -463,34 +510,8 @@ fun EditorSidebar(
                 isSelected = isRecognizingFlip,
                 onClick = {
                     if (isRecognizingFlip || notePath.isBlank()) return@FlipSideTextToggleButton
-                    isRecognizingFlip = true
-                    scope.launch(Dispatchers.IO) {
-                        val drawingChanged = FlipSideManager.hasFlipSideDrawingChanged(
-                            appRepository, state.currentPageId
-                        )
-                        if (!drawingChanged) {
-                            withContext(Dispatchers.Main) {
-                                isRecognizingFlip = false
-                                openFlipSideTextNote(navController, flipSideLink.vaultId, notePath)
-                            }
-                            return@launch
-                        }
-                        val text = FlipSideManager.recognizeFlipSide(
-                            appRepository, context, state.currentPageId
-                        )
-                        withContext(Dispatchers.Main) {
-                            isRecognizingFlip = false
-                            if (text == null) {
-                                SnackState.globalSnackFlow.tryEmit(
-                                    SnackConf(
-                                        text = context.getString(R.string.flip_side_nothing_recognized),
-                                        duration = 3000
-                                    )
-                                )
-                            } else {
-                                flipPreviewText = text
-                            }
-                        }
+                    requestFlipNavigation {
+                        openFlipSideTextNote(navController, flipSideLink.vaultId, notePath)
                     }
                 }
             )
@@ -500,7 +521,9 @@ fun EditorSidebar(
         SidebarIconButton(
             iconId = R.drawable.home,
             contentDescription = "home",
-            onClick = { navController.navigate("library") }
+            onClick = {
+                requestFlipNavigation { navController.navigate("library") }
+            }
         )
 
         // Menu
@@ -536,9 +559,14 @@ fun EditorSidebar(
             text = previewText,
             onApplied = {
                 flipPreviewText = null
-                openFlipSideTextNote(navController, vaultIdForFlip, notePathForFlip)
+                val action = pendingAfterHwr
+                pendingAfterHwr = null
+                action?.invoke()
             },
-            onDismiss = { flipPreviewText = null }
+            onDismiss = {
+                flipPreviewText = null
+                pendingAfterHwr = null
+            }
         )
     }
 }

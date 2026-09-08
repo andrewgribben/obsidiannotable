@@ -9,6 +9,8 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.json.JSONArray
+import org.json.JSONObject
 import java.util.Date
 
 class ExcalidrawSerializerTest {
@@ -60,6 +62,88 @@ class ExcalidrawSerializerTest {
             assertEquals(a.tiltY, b.tiltY)
             assertEquals(a.dt, b.dt)
         }
+    }
+
+    @Test
+    fun `raw drawing round trip preserves native stroke fidelity`() {
+        val original = sampleStroke()
+        val content = ExcalidrawSerializer.serializeRaw(listOf(original))
+        assertTrue(content.trimStart().startsWith("{"))
+        assertFalse(content.contains("```"))
+        val parsed = ExcalidrawSerializer.parse(content, "page-2")
+        assertEquals(original.points, parsed!!.single().points)
+        assertEquals(original.pen, parsed.single().pen)
+    }
+
+    @Test
+    fun `drawing link is quoted metadata and preserves note body`() {
+        val note = "---\ncreated: \"[[2026-09-08]]\"\n---\n\nBody\n"
+        val linked = ExcalidrawSerializer.withDrawingLink(
+            note,
+            "Attachments/My Drawing.excalidraw"
+        )
+        assertTrue(
+            linked.contains(
+                "singularity-drawing: \"[[Attachments/My Drawing.excalidraw]]\""
+            )
+        )
+        assertEquals(
+            "Attachments/My Drawing.excalidraw",
+            ExcalidrawSerializer.drawingLinkPath(linked)
+        )
+        assertEquals("Body", ExcalidrawSerializer.extractMarkdownBody(linked))
+    }
+
+    @Test
+    fun `plain markdown Drawing heading remains part of body`() {
+        val note = "---\ntitle: Sketch\n---\n\n# Drawing\n\nDescription\n"
+        assertEquals(
+            "# Drawing\n\nDescription",
+            ExcalidrawSerializer.extractMarkdownBody(note)
+        )
+    }
+
+    @Test
+    fun `raw rewrite preserves non-freedraw Excalidraw elements`() {
+        val existing = """
+            {"type":"excalidraw","version":2,"elements":[
+              {"type":"rectangle","id":"box","x":1,"y":2},
+              {"type":"freedraw","id":"old","x":0,"y":0,"points":[[0,0],[1,1]]}
+            ],"appState":{},"files":{}}
+        """.trimIndent()
+        val rewritten = ExcalidrawSerializer.serializeRaw(listOf(sampleStroke()), existing)
+        assertTrue(rewritten.contains("\"id\": \"box\""))
+        assertEquals(1, ExcalidrawSerializer.parse(rewritten, "page-2")!!.size)
+    }
+
+    @Test
+    fun `raw rewrite preserves externally edited freedraw properties`() {
+        val raw = ExcalidrawSerializer.serializeRaw(listOf(sampleStroke()))
+        val root = JSONObject(raw)
+        root.getJSONArray("elements").getJSONObject(0)
+            .put("locked", true)
+            .put("link", "https://example.com")
+            .put("groupIds", JSONArray().put("group-1"))
+        val edited = root.toString()
+        val imported = ExcalidrawSerializer.parse(edited, "page-2")!!
+
+        val rewritten = JSONObject(ExcalidrawSerializer.serializeRaw(imported, edited))
+        val element = rewritten.getJSONArray("elements").getJSONObject(0)
+        assertTrue(element.getBoolean("locked"))
+        assertEquals("https://example.com", element.getString("link"))
+        assertEquals("group-1", element.getJSONArray("groupIds").getString(0))
+    }
+
+    @Test
+    fun `raw import honors externally moved freedraw geometry`() {
+        val root = JSONObject(ExcalidrawSerializer.serializeRaw(listOf(sampleStroke())))
+        val element = root.getJSONArray("elements").getJSONObject(0)
+        element.put("x", element.getDouble("x") + 50.0)
+
+        val imported = ExcalidrawSerializer.parse(root.toString(), "page-2")!!.single()
+
+        assertEquals(150f, imported.points.first().x, 0f)
+        assertEquals(175f, imported.points.last().x, 0f)
     }
 
     @Test

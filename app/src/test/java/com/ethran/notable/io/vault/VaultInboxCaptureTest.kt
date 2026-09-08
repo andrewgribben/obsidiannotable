@@ -5,6 +5,7 @@ import com.ethran.notable.io.excalidraw.ExcalidrawSerializer
 import com.ethran.notable.io.excalidraw.ExcalidrawTestTemplate
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
@@ -85,6 +86,23 @@ class VaultInboxCaptureTest {
 
         assertEquals("Notes/2026-07-06.md", capture.relativeTo(appRoot).path.replace('\\', '/'))
         assertEquals("2026-07-06.md", capture.relativeTo(syncRoot).path.replace('\\', '/'))
+    }
+
+    @Test
+    fun `drawing link cannot escape its vault root`() {
+        val root = Files.createTempDirectory("vault-safe-link").toFile()
+        val inbox = File(root, "Notes").apply { mkdirs() }
+        val outside = File(root.parentFile, "outside.excalidraw").apply {
+            writeText("""{"type":"excalidraw","elements":[]}""")
+        }
+        val note = File(inbox, "note.md").apply {
+            writeText("---\nsingularity-drawing: \"[[../../outside.excalidraw]]\"\n---\n")
+        }
+        try {
+            assertNull(resolveAssociatedDrawingFile(note, root, linkRoot = inbox))
+        } finally {
+            outside.delete()
+        }
     }
 
     @Test

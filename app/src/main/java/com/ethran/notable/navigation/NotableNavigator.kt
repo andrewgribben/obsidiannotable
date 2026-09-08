@@ -194,6 +194,9 @@ class NotableNavigator(
     ) {
         coroutineScope.launch {
             val pageId = withContext(Dispatchers.IO) {
+                FlipSideManager.vaultById(vaultId)?.let { vault ->
+                    obsidianSyncManager.pullVaultIfEnabled(vault)
+                }
                 FlipSideManager.openFlipSide(appRepository, vaultId, noteRelativePath)
             } ?: return@launch
             navController.navigate(EditorDestination.createRoute(pageId, null))
@@ -228,6 +231,9 @@ class NotableNavigator(
     fun onOpenDailyNote(appRepository: AppRepository, vaultId: String) {
         coroutineScope.launch {
             val pageId = withContext(Dispatchers.IO) {
+                FlipSideManager.vaultById(vaultId)?.let { vault ->
+                    obsidianSyncManager.pullVaultIfEnabled(vault)
+                }
                 FlipSideManager.openOrCreateDailyNote(appRepository, vaultId)
             } ?: return@launch
             navController.navigate(EditorDestination.createRoute(pageId, null))
