@@ -193,13 +193,24 @@ class NotableNavigator(
         noteRelativePath: String
     ) {
         coroutineScope.launch {
-            val pageId = withContext(Dispatchers.IO) {
-                FlipSideManager.vaultById(vaultId)?.let { vault ->
+            val vault = FlipSideManager.vaultById(vaultId) ?: return@launch
+            val localPageId = withContext(Dispatchers.IO) {
+                FlipSideManager.openFlipSide(appRepository, vaultId, noteRelativePath)
+            }
+            if (localPageId != null) {
+                navController.navigate(EditorDestination.createRoute(localPageId, null))
+                coroutineScope.launch(Dispatchers.IO) {
                     obsidianSyncManager.pullVaultIfEnabled(vault)
                 }
+                return@launch
+            }
+
+            // A linked drawing may exist only on the server. Pull once, then retry.
+            val remotePageId = withContext(Dispatchers.IO) {
+                obsidianSyncManager.pullVaultIfEnabled(vault)
                 FlipSideManager.openFlipSide(appRepository, vaultId, noteRelativePath)
             } ?: return@launch
-            navController.navigate(EditorDestination.createRoute(pageId, null))
+            navController.navigate(EditorDestination.createRoute(remotePageId, null))
         }
     }
 
