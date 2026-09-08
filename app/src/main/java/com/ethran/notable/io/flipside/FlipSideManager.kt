@@ -418,8 +418,8 @@ object FlipSideManager {
     }
 
     /**
-     * Opens today's daily note in the flip-side editor, creating a unified Excalidraw stub
-     * when the file does not exist yet.
+     * Opens today's daily note in the flip-side editor, creating its Markdown note and
+     * linked Excalidraw attachment when they do not exist yet.
      */
     suspend fun openOrCreateDailyNote(appRepository: AppRepository, vaultId: String): String? {
         val vault = vaultById(vaultId) ?: return missingVaultSnack()
