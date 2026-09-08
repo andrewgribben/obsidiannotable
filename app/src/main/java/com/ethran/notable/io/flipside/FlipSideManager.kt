@@ -871,33 +871,28 @@ object FlipSideManager {
      */
     fun scheduleSaveIfFlipPage(appRepository: AppRepository, pageId: String) {
         val settings = GlobalAppSettings.current
+        // The editor no longer owns the note once onDispose runs. Release synchronously
+        // so a dashboard reopen is not blocked by the queued, hash-checked save.
+        releaseGuard(pageId)
         ioScope.launch {
             val link = appRepository.kvProxy.get(pageKey(pageId), FlipSideLink.serializer())
             if (link == null || link.purpose != PURPOSE_FLIP) {
-                releaseGuard(pageId)
                 return@launch
             }
             val vault = settings.vaults.find { it.id == link.vaultId }
                 ?: GlobalAppSettings.current.activeVault
             if (vault == null) {
-                releaseGuard(pageId)
                 return@launch
             }
             if (vaultRootDir(vault) == null) {
-                releaseGuard(pageId)
                 return@launch
             }
             val drawingFile = drawingFileForLink(link, vault)
             if (drawingFile == null) {
-                releaseGuard(pageId)
                 return@launch
             }
             VaultWriteQueue.enqueue(drawingFile, "flip-side save") {
-                try {
-                    saveFlipSide(appRepository, link, vault)
-                } finally {
-                    releaseGuard(pageId)
-                }
+                saveFlipSide(appRepository, link, vault)
             }
         }
     }
