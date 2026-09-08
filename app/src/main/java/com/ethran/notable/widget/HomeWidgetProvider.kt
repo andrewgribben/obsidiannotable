@@ -413,7 +413,11 @@ class HomeWidgetProvider : AppWidgetProvider() {
                     activityPendingIntent(
                         context,
                         300 + captureIndex,
-                        WidgetActions.flipUri(capture.vaultId, capture.relativePath)
+                        if (capture.hasInk) {
+                            WidgetActions.flipUri(capture.vaultId, capture.relativePath)
+                        } else {
+                            WidgetActions.noteUri(capture.vaultId, capture.relativePath)
+                        }
                     )
                 )
             }

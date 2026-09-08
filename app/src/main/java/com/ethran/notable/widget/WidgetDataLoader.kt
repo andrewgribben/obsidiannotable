@@ -32,6 +32,7 @@ data class WidgetCapture(
     val thumbnailPath: String?,
     val isCover: Boolean,
     val isPinned: Boolean,
+    val hasInk: Boolean,
     val vaultName: String?
 )
 
@@ -130,6 +131,7 @@ object WidgetDataLoader {
             thumbnailPath = coverPath ?: resolveInkPreviewPath(context, item.previewPageId),
             isCover = coverPath != null,
             isPinned = item.isPinned,
+            hasInk = item.note.hasInk,
             vaultName = if (showVaultName) item.vaultName else null
         )
     }
