@@ -13,11 +13,14 @@ import com.ethran.notable.io.InboxSyncEngine
 import com.ethran.notable.io.VaultFileStore
 import com.ethran.notable.io.VaultWriteQueue
 import com.ethran.notable.io.excalidraw.ExcalidrawSerializer
-import com.ethran.notable.io.excalidraw.ExcalidrawUnifiedTemplate
 import com.ethran.notable.io.resolveExternalStoragePath
+import com.ethran.notable.io.resolveVaultAttachmentDir
+import com.ethran.notable.io.vault.availableDrawingFile
 import com.ethran.notable.io.vault.FLIP_SIDE_SUFFIX
 import com.ethran.notable.io.vault.NoteEditGuard
 import com.ethran.notable.io.vault.inboxDirRelativeToVault
+import com.ethran.notable.io.vault.obsidianSyncVaultRoot
+import com.ethran.notable.io.vault.resolveAssociatedDrawingFile
 import com.ethran.notable.io.vault.resolveVaultNoteFile
 import com.ethran.notable.io.vault.vaultRootDir
 import com.ethran.notable.ui.SnackConf
@@ -29,6 +32,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.serializer
+import org.json.JSONObject
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -47,6 +51,11 @@ data class FlipSideLink(
     val pageId: String,
     /** Hash of the flip-side file when we last imported/exported it. */
     val fileHash: String = VaultFileStore.HASH_MISSING,
+    /** Vault-relative path of the modern `.excalidraw.md` drawing. */
+    val drawingRelativePath: String = "",
+    /** Hashes are independent so text and drawing edits cannot overwrite each other. */
+    val drawingFileHash: String = VaultFileStore.HASH_MISSING,
+    val noteFileHash: String = VaultFileStore.HASH_MISSING,
     /**
      * Fingerprint of page strokes when handwriting was last synced to the text note
      * (or when the flip side was opened / re-imported). Used to decide whether to run
@@ -59,8 +68,8 @@ data class FlipSideLink(
 )
 
 /**
- * The "flip side" of a vault note: ink stored in the same `.md` file using Obsidian's
- * unified Excalidraw format (frontmatter + markdown text + compressed-json drawing).
+ * The "flip side" of a vault note: text lives in `.md`, while ink lives in a linked
+ * modern `.excalidraw.md` file under the configured attachment directory.
  * The drawing is edited on a regular editor page (kept in a "Flip Sides" folder); the
  * vault file is the source of truth — the page is re-imported whenever the file changes
  * externally (e.g. edited in Obsidian).
@@ -116,6 +125,122 @@ object FlipSideManager {
     fun vaultById(vaultId: String): VaultConfig? =
         GlobalAppSettings.current.normalizedVaults().vaults.find { it.id == vaultId }
 
+    private fun vaultRelativePath(file: File, root: File): String? = runCatching {
+        file.relativeTo(root).path.replace('\\', '/')
+    }.getOrNull()?.takeUnless { it == ".." || it.startsWith("../") }
+
+    private fun drawingFileForLink(link: FlipSideLink, vault: VaultConfig): File? {
+        val root = vaultRootDir(vault) ?: return null
+        if (link.drawingRelativePath.isNotBlank()) {
+            return File(root, link.drawingRelativePath.replace('/', File.separatorChar))
+        }
+        val noteFile = resolveVaultNoteFile(vault, link.relativePath) ?: return null
+        return resolveAssociatedDrawingFile(
+            noteFile,
+            root,
+            linkRoot = obsidianSyncVaultRoot(vault) ?: root
+        )
+    }
+
+    private fun isDrawingReferencedElsewhere(
+        vault: VaultConfig,
+        noteFile: File,
+        drawingFile: File
+    ): Boolean {
+        val root = vaultRootDir(vault) ?: return true
+        val linkRoot = obsidianSyncVaultRoot(vault) ?: root
+        val target = runCatching { drawingFile.canonicalPath }.getOrNull() ?: return true
+        return root.walkTopDown()
+            .onEnter { !it.name.startsWith(".") }
+            .filter {
+                it.isFile && it != noteFile && it.name.endsWith(".md", ignoreCase = true)
+            }
+            .any { candidate ->
+                val content = runCatching { candidate.readText() }.getOrNull() ?: return@any false
+                ExcalidrawSerializer.allDrawingLinkPaths(content).any { path ->
+                    val singleLink = ExcalidrawSerializer.withDrawingLink("", path)
+                    resolveAssociatedDrawingFile(candidate, root, singleLink, linkRoot)
+                        ?.let { runCatching { it.canonicalPath }.getOrNull() == target } == true
+                }
+            }
+    }
+
+    private suspend fun ensureDrawingAssociation(
+        noteFile: File,
+        vault: VaultConfig,
+        strokes: List<Stroke> = emptyList()
+    ): File? {
+        val root = vaultRootDir(vault) ?: return null
+        val syncRoot = obsidianSyncVaultRoot(vault) ?: root
+        val currentNote = VaultFileStore.read(noteFile)
+        val associated = resolveAssociatedDrawingFile(noteFile, root, linkRoot = syncRoot)
+        val activePath = currentNote?.content?.let(ExcalidrawSerializer::drawingLinkPath)
+        if (associated != null && activePath?.endsWith(".excalidraw", ignoreCase = true) == true) {
+            val noteRead = currentNote ?: return null
+            val modernFile = availableDrawingFile(noteFile, vault) ?: return null
+            val modernMetadataPath = vaultRelativePath(modernFile, syncRoot) ?: return null
+            val rawJson = VaultFileStore.read(associated)?.content
+                ?.let(ExcalidrawSerializer::extractDrawingJson)
+                ?: return null
+            val modernContent = ExcalidrawSerializer.wrapRawDrawingMarkdown(rawJson)
+            if (VaultFileStore.write(modernFile, modernContent, VaultFileStore.HASH_MISSING)
+                !is VaultFileStore.WriteResult.Success
+            ) {
+                return null
+            }
+            val linked = ExcalidrawSerializer.withDrawingLinks(
+                noteRead.content,
+                modernMetadataPath,
+                ExcalidrawSerializer.drawingHistoryPaths(noteRead.content)
+            )
+            return when (VaultFileStore.write(noteFile, linked, noteRead.hash)) {
+                is VaultFileStore.WriteResult.Success -> modernFile
+                else -> {
+                    VaultFileStore.delete(modernFile, VaultFileStore.hashOf(modernContent))
+                    null
+                }
+            }
+        }
+        associated?.let { return it }
+        if (currentNote?.content?.let(ExcalidrawSerializer::drawingLinkPath) != null) {
+            log.w("Linked drawing is missing for ${noteFile.name}; preserving the association")
+            return null
+        }
+        val drawingFile = availableDrawingFile(noteFile, vault) ?: return null
+        val metadataDrawingPath = vaultRelativePath(drawingFile, syncRoot) ?: return null
+        val noteRead = currentNote
+        val embeddedJson = noteRead?.content?.let(ExcalidrawSerializer::extractDrawingJson)
+        val drawingContent = embeddedJson
+            ?.let {
+                runCatching {
+                    ExcalidrawSerializer.wrapRawDrawingMarkdown(JSONObject(it).toString())
+                }.getOrNull()
+            }
+            ?: ExcalidrawSerializer.serializeDrawingMarkdown(strokes)
+        if (VaultFileStore.write(drawingFile, drawingContent) !is VaultFileStore.WriteResult.Success) {
+            return null
+        }
+        if (ExcalidrawSerializer.extractDrawingJson(drawingContent) == null) {
+            VaultFileStore.delete(drawingFile)
+            return null
+        }
+        val textOnly = noteRead?.content?.let(ExcalidrawSerializer::stripDrawingFromUnified).orEmpty()
+        val linked = ExcalidrawSerializer.withDrawingLink(textOnly, metadataDrawingPath)
+        return when (
+            VaultFileStore.write(
+                noteFile,
+                linked,
+                expectedHash = noteRead?.hash ?: VaultFileStore.HASH_MISSING
+            )
+        ) {
+            is VaultFileStore.WriteResult.Success -> drawingFile
+            else -> {
+                VaultFileStore.delete(drawingFile)
+                null
+            }
+        }
+    }
+
     /**
      * Finds or creates the drawing page for the flip side of [noteRelativePath] in the
      * active vault.
@@ -137,19 +262,34 @@ object FlipSideManager {
         val vault = vaultById(vaultId) ?: return null
         val root = vaultRootDir(vault) ?: return null
         val noteFile = resolveVaultNoteFile(vault, noteRelativePath) ?: return null
+        if (!noteFile.exists()) return null
+        val drawingFile = ensureDrawingAssociation(noteFile, vault) ?: return null
+        val drawingRelativePath = vaultRelativePath(drawingFile, root) ?: return null
 
         val existingLink = appRepository.kvProxy.get(
             noteKey(vault.id, noteRelativePath), FlipSideLink.serializer()
         )
         val existingPage = existingLink?.let { appRepository.pageRepository.getById(it.pageId) }
-        val fileHash = VaultFileStore.currentHash(noteFile)
+        val drawingHash = VaultFileStore.currentHash(drawingFile)
+        val noteHash = VaultFileStore.currentHash(noteFile)
 
         if (existingLink != null && existingPage != null) {
             if (!acquireGuard(vault.id, noteRelativePath, existingLink.pageId)) return null
-            if (fileHash != existingLink.fileHash && fileHash != VaultFileStore.HASH_MISSING) {
-                reimportFromFile(appRepository, existingLink.pageId, noteFile)
-                saveLink(appRepository, existingLink.copy(fileHash = fileHash))
+            val previousDrawingHash = existingLink.drawingFileHash
+                .takeUnless { it == VaultFileStore.HASH_MISSING }
+                ?: existingLink.fileHash
+            if (drawingHash != previousDrawingHash && drawingHash != VaultFileStore.HASH_MISSING) {
+                reimportFromFile(appRepository, existingLink.pageId, drawingFile)
             }
+            saveLink(
+                appRepository,
+                existingLink.copy(
+                    fileHash = drawingHash,
+                    drawingRelativePath = drawingRelativePath,
+                    drawingFileHash = drawingHash,
+                    noteFileHash = noteHash
+                )
+            )
             ensureHwrStrokeBaseline(appRepository, existingLink.pageId)
             return existingLink.pageId
         }
@@ -171,15 +311,16 @@ object FlipSideManager {
             return null
         }
 
-        if (noteFile.exists()) {
-            reimportFromFile(appRepository, page.id, noteFile)
-        }
+        reimportFromFile(appRepository, page.id, drawingFile)
 
         val link = FlipSideLink(
             vaultId = vault.id,
             relativePath = noteRelativePath,
             pageId = page.id,
-            fileHash = fileHash
+            fileHash = drawingHash,
+            drawingRelativePath = drawingRelativePath,
+            drawingFileHash = drawingHash,
+            noteFileHash = noteHash
         )
         saveLink(appRepository, link)
         updateHwrStrokeBaseline(appRepository, page.id)
@@ -223,7 +364,7 @@ object FlipSideManager {
             return null
         }
 
-        val markdown = buildCaptureUnifiedStub(createdAt)
+        val markdown = buildCaptureNoteStub(createdAt)
         when (val result = VaultFileStore.write(noteFile, markdown)) {
             is VaultFileStore.WriteResult.Success -> { /* ok */ }
             else -> {
@@ -235,6 +376,13 @@ object FlipSideManager {
             }
         }
 
+        if (ensureDrawingAssociation(noteFile, vault) == null) {
+            VaultFileStore.delete(noteFile)
+            SnackState.globalSnackFlow.tryEmit(
+                SnackConf(text = "Could not create drawing in attachment folder", duration = 4000)
+            )
+            return null
+        }
         val relativePath = noteFile.relativeTo(root).path.replace('\\', '/')
         return openFlipSide(appRepository, vaultId, relativePath)
     }
@@ -270,8 +418,8 @@ object FlipSideManager {
     }
 
     /**
-     * Opens today's daily note in the flip-side editor, creating a unified Excalidraw stub
-     * when the file does not exist yet.
+     * Opens today's daily note in the flip-side editor, creating its Markdown note and
+     * linked Excalidraw attachment when they do not exist yet.
      */
     suspend fun openOrCreateDailyNote(appRepository: AppRepository, vaultId: String): String? {
         val vault = vaultById(vaultId) ?: return missingVaultSnack()
@@ -280,7 +428,7 @@ object FlipSideManager {
 
         if (!noteFile.exists()) {
             noteFile.parentFile?.mkdirs()
-            val markdown = buildCaptureUnifiedStub(Date())
+            val markdown = buildCaptureNoteStub(Date())
             when (val result = VaultFileStore.write(noteFile, markdown)) {
                 is VaultFileStore.WriteResult.Success -> { /* ok */ }
                 else -> {
@@ -290,6 +438,10 @@ object FlipSideManager {
                     )
                     return null
                 }
+            }
+            if (ensureDrawingAssociation(noteFile, vault) == null) {
+                VaultFileStore.delete(noteFile)
+                return null
             }
         }
         return openFlipSide(appRepository, vaultId, relativePath)
@@ -307,10 +459,10 @@ object FlipSideManager {
         return null
     }
 
-    /** Builds a new unified inbox capture stub matching [Template.excalidraw.md]. */
-    fun buildCaptureUnifiedStub(createdAt: Date): String {
+    /** Builds the small text-note half of a new capture pair. */
+    fun buildCaptureNoteStub(createdAt: Date): String {
         val createdDate = CAPTURE_CREATED_DATE_FORMAT.format(createdAt)
-        return ExcalidrawUnifiedTemplate.buildNewCapture(createdDate, emptyList())
+        return "---\ncreated: \"[[$createdDate]]\"\n---\n"
     }
 
     /** Relative path of a vault note within [vault], or null when unconfigured. */
@@ -366,8 +518,21 @@ object FlipSideManager {
         }
         val newRelativePath = noteRelativePath(newFile, vault)
             ?: return Result.failure(IllegalStateException("Invalid path"))
-        if (!oldFile.renameTo(newFile)) {
+        val oldRead = VaultFileStore.read(oldFile)
+            ?: return Result.failure(IllegalStateException("Note could not be read"))
+        if (VaultFileStore.write(
+                newFile,
+                oldRead.content,
+                expectedHash = VaultFileStore.HASH_MISSING
+            ) !is VaultFileStore.WriteResult.Success
+        ) {
             return Result.failure(IllegalStateException("Rename failed"))
+        }
+        if (VaultFileStore.delete(oldFile, expectedHash = oldRead.hash)
+            !is VaultFileStore.WriteResult.Success
+        ) {
+            VaultFileStore.delete(newFile, VaultFileStore.currentHash(newFile))
+            return Result.failure(IllegalStateException("Note changed during rename"))
         }
 
         val link = appRepository.kvProxy.get(
@@ -375,7 +540,13 @@ object FlipSideManager {
         )
         if (link != null) {
             appRepository.kvProxy.delete(noteKey(vaultId, oldRelativePath))
-            saveLink(appRepository, link.copy(relativePath = newRelativePath))
+            saveLink(
+                appRepository,
+                link.copy(
+                    relativePath = newRelativePath,
+                    noteFileHash = VaultFileStore.currentHash(newFile)
+                )
+            )
         }
         log.i("Renamed capture $oldRelativePath -> $newRelativePath")
         return Result.success(newRelativePath)
@@ -401,12 +572,17 @@ object FlipSideManager {
         if (link.purpose != PURPOSE_FLIP) return false
         val vault = GlobalAppSettings.current.vaults.find { it.id == link.vaultId }
             ?: GlobalAppSettings.current.activeVault ?: return false
-        val root = vaultRootDir(vault) ?: return false
-        val noteFile = File(root, link.relativePath.replace('/', File.separatorChar))
-        val fileHash = VaultFileStore.currentHash(noteFile)
-        if (fileHash == link.fileHash || fileHash == VaultFileStore.HASH_MISSING) return false
-        reimportFromFile(appRepository, pageId, noteFile)
-        saveLink(appRepository, link.copy(fileHash = fileHash))
+        val drawingFile = drawingFileForLink(link, vault) ?: return false
+        val fileHash = VaultFileStore.currentHash(drawingFile)
+        val previousHash = link.drawingFileHash
+            .takeUnless { it == VaultFileStore.HASH_MISSING }
+            ?: link.fileHash
+        if (fileHash == previousHash || fileHash == VaultFileStore.HASH_MISSING) return false
+        reimportFromFile(appRepository, pageId, drawingFile)
+        saveLink(
+            appRepository,
+            link.copy(fileHash = fileHash, drawingFileHash = fileHash)
+        )
         updateHwrStrokeBaseline(appRepository, pageId)
         return true
     }
@@ -417,7 +593,14 @@ object FlipSideManager {
         return strokes
             .sortedBy { it.id }
             .joinToString("|") { stroke ->
-                "${stroke.id}:${stroke.points.size}:${stroke.top}:${stroke.bottom}:${stroke.left}:${stroke.right}"
+                val pointsHash = stroke.points.fold(1) { hash, point ->
+                    var next = 31 * hash + point.x.toBits()
+                    next = 31 * next + point.y.toBits()
+                    next = 31 * next + (point.pressure?.toBits() ?: 0)
+                    next
+                }
+                "${stroke.id}:${stroke.points.size}:$pointsHash:" +
+                    "${stroke.top}:${stroke.bottom}:${stroke.left}:${stroke.right}"
             }
     }
 
@@ -487,36 +670,126 @@ object FlipSideManager {
             ?: GlobalAppSettings.current.activeVault ?: return "Vault not found"
         val root = vaultRootDir(vault) ?: return "Vault root not found"
         val noteFile = File(root, link.relativePath.replace('/', File.separatorChar))
-        val pageStrokes = appRepository.pageRepository.getWithStrokeById(pageId).strokes
-
         return VaultFileStore.withFileLock(noteFile) {
             val read = VaultFileStore.read(noteFile)
-            val (newContent, expectedHash) = if (read == null) {
-                ExcalidrawSerializer.serializeUnified(text.trim(), pageStrokes) to
-                    VaultFileStore.HASH_MISSING
-            } else {
-                val existingBody = ExcalidrawSerializer.extractMarkdownBody(read.content)
-                val newBody = when (mode) {
-                    HwrApplyMode.APPEND ->
-                        (existingBody + "\n\n" + text).trim()
-                    HwrApplyMode.REPLACE -> text.trim()
-                }
-                ExcalidrawSerializer.rewriteUnified(read.content, newBody, pageStrokes) to read.hash
+                ?: return@withFileLock "Note is missing — recognized text was not saved"
+            val existingBody = ExcalidrawSerializer.extractMarkdownBody(read.content)
+            val newBody = when (mode) {
+                HwrApplyMode.APPEND ->
+                    (existingBody + "\n\n" + text).trim()
+                HwrApplyMode.REPLACE -> text.trim()
             }
+            val nextCanvas = if (mode == HwrApplyMode.APPEND && link.purpose == PURPOSE_FLIP) {
+                prepareNextCanvas(appRepository, link, vault, noteFile, read.content)
+                    ?: return@withFileLock "Drawing changed elsewhere — append cancelled"
+            } else {
+                null
+            }
+            val metadataContent = nextCanvas?.noteContent ?: read.content
+            val newContent = ExcalidrawSerializer.rewriteMarkdownBody(metadataContent, newBody)
 
-            when (val result = VaultFileStore.write(noteFile, newContent, expectedHash)) {
+            when (val result = VaultFileStore.write(noteFile, newContent, read.hash)) {
                 is VaultFileStore.WriteResult.Success -> {
-                    saveLink(appRepository, link.copy(fileHash = VaultFileStore.hashOf(newContent)))
+                    if (nextCanvas != null) {
+                        val strokes = appRepository.pageRepository.getWithStrokeById(pageId).strokes
+                        if (strokes.isNotEmpty()) {
+                            appRepository.strokeRepository.deleteAll(strokes.map { it.id })
+                        }
+                        PageDataManager.evictLoadedPageData(pageId)
+                    }
+                    saveLink(
+                        appRepository,
+                        nextCanvas?.link?.copy(noteFileHash = VaultFileStore.hashOf(newContent))
+                            ?: link.copy(noteFileHash = VaultFileStore.hashOf(newContent))
+                    )
                     updateHwrStrokeBaseline(appRepository, pageId)
                     "Saved to ${noteFile.name}"
                 }
                 is VaultFileStore.WriteResult.Conflict -> {
                     val copy = VaultFileStore.writeConflictCopy(noteFile, newContent)
+                    if (copy == null) {
+                        nextCanvas?.file?.let {
+                            VaultFileStore.delete(it, nextCanvas.link.drawingFileHash)
+                        }
+                    }
                     "Note changed elsewhere — saved as ${copy?.name ?: "conflict copy"}"
                 }
-                is VaultFileStore.WriteResult.Error -> "Save failed: ${result.message}"
+                is VaultFileStore.WriteResult.Error -> {
+                    nextCanvas?.file?.let {
+                        VaultFileStore.delete(it, nextCanvas.link.drawingFileHash)
+                    }
+                    "Save failed: ${result.message}"
+                }
             }
         }
+    }
+
+    private data class NextCanvas(
+        val file: File,
+        val noteContent: String,
+        val link: FlipSideLink
+    )
+
+    private suspend fun prepareNextCanvas(
+        appRepository: AppRepository,
+        link: FlipSideLink,
+        vault: VaultConfig,
+        noteFile: File,
+        noteContent: String
+    ): NextCanvas? {
+        val root = vaultRootDir(vault) ?: return null
+        val syncRoot = obsidianSyncVaultRoot(vault) ?: root
+        val currentDrawing = drawingFileForLink(link, vault) ?: return null
+        val strokes = appRepository.pageRepository.getWithStrokeById(link.pageId).strokes
+        val currentRead = VaultFileStore.read(currentDrawing)
+        val currentContent = ExcalidrawSerializer.serializeDrawingMarkdown(
+            strokes,
+            currentRead?.content
+        )
+        val expectedCurrentHash = link.drawingFileHash
+            .takeUnless { it == VaultFileStore.HASH_MISSING }
+            ?: link.fileHash
+        if (VaultFileStore.write(currentDrawing, currentContent, expectedCurrentHash)
+            !is VaultFileStore.WriteResult.Success
+        ) {
+            return null
+        }
+        val currentHash = VaultFileStore.hashOf(currentContent)
+        saveLink(
+            appRepository,
+            link.copy(fileHash = currentHash, drawingFileHash = currentHash)
+        )
+
+        val nextFile = availableDrawingFile(noteFile, vault) ?: return null
+        val nextMetadataPath = vaultRelativePath(nextFile, syncRoot) ?: return null
+        val nextVaultPath = vaultRelativePath(nextFile, root) ?: return null
+        val blankContent = ExcalidrawSerializer.serializeDrawingMarkdown(emptyList())
+        if (VaultFileStore.write(nextFile, blankContent, VaultFileStore.HASH_MISSING)
+            !is VaultFileStore.WriteResult.Success
+        ) {
+            return null
+        }
+
+        val currentMetadataPath = ExcalidrawSerializer.drawingLinkPath(noteContent)
+            ?: vaultRelativePath(currentDrawing, syncRoot)
+            ?: return null
+        val history = ExcalidrawSerializer.drawingHistoryPaths(noteContent) + currentMetadataPath
+        val updatedNote = ExcalidrawSerializer.withDrawingLinks(
+            noteContent,
+            nextMetadataPath,
+            history
+        )
+        val nextHash = VaultFileStore.hashOf(blankContent)
+        return NextCanvas(
+            file = nextFile,
+            noteContent = updatedNote,
+            link = link.copy(
+                fileHash = nextHash,
+                drawingRelativePath = nextVaultPath,
+                drawingFileHash = nextHash,
+                hwrStrokeBaseline = "empty"
+            )
+        )
     }
 
     /**
@@ -598,30 +871,28 @@ object FlipSideManager {
      */
     fun scheduleSaveIfFlipPage(appRepository: AppRepository, pageId: String) {
         val settings = GlobalAppSettings.current
+        // The editor no longer owns the note once onDispose runs. Release synchronously
+        // so a dashboard reopen is not blocked by the queued, hash-checked save.
+        releaseGuard(pageId)
         ioScope.launch {
             val link = appRepository.kvProxy.get(pageKey(pageId), FlipSideLink.serializer())
             if (link == null || link.purpose != PURPOSE_FLIP) {
-                releaseGuard(pageId)
                 return@launch
             }
             val vault = settings.vaults.find { it.id == link.vaultId }
                 ?: GlobalAppSettings.current.activeVault
             if (vault == null) {
-                releaseGuard(pageId)
                 return@launch
             }
-            val root = vaultRootDir(vault)
-            if (root == null) {
-                releaseGuard(pageId)
+            if (vaultRootDir(vault) == null) {
                 return@launch
             }
-            val noteFile = File(root, link.relativePath.replace('/', File.separatorChar))
-            VaultWriteQueue.enqueue(noteFile, "flip-side save") {
-                try {
-                    saveFlipSide(appRepository, link, vault)
-                } finally {
-                    releaseGuard(pageId)
-                }
+            val drawingFile = drawingFileForLink(link, vault)
+            if (drawingFile == null) {
+                return@launch
+            }
+            VaultWriteQueue.enqueue(drawingFile, "flip-side save") {
+                saveFlipSide(appRepository, link, vault)
             }
         }
     }
@@ -631,34 +902,39 @@ object FlipSideManager {
         link: FlipSideLink,
         vault: VaultConfig
     ) {
-        val root = vaultRootDir(vault) ?: return
-        val noteFile = File(root, link.relativePath.replace('/', File.separatorChar))
+        vaultRootDir(vault) ?: return
+        val drawingFile = drawingFileForLink(link, vault) ?: return
 
         val strokes = appRepository.pageRepository.getWithStrokeById(link.pageId).strokes
-        val read = VaultFileStore.read(noteFile)
+        val read = VaultFileStore.read(drawingFile)
         val existing = read?.content.orEmpty()
-        if (strokes.isEmpty() && !ExcalidrawSerializer.hasEmbeddedDrawing(existing)) return
+        if (strokes.isEmpty() && !ExcalidrawSerializer.hasNonemptyInk(existing)) return
 
-        val content = if (existing.isBlank()) {
-            ExcalidrawSerializer.serializeUnified("", strokes)
-        } else {
-            ExcalidrawSerializer.replaceDrawingInUnified(existing, strokes)
-        }
-        val expected = link.fileHash
-        when (val result = VaultFileStore.write(noteFile, content, expectedHash = expected)) {
+        val content = ExcalidrawSerializer.serializeDrawingMarkdown(
+            strokes,
+            existing.takeIf { it.isNotBlank() }
+        )
+        val expected = link.drawingFileHash
+            .takeUnless { it == VaultFileStore.HASH_MISSING }
+            ?: link.fileHash
+        when (val result = VaultFileStore.write(drawingFile, content, expectedHash = expected)) {
             is VaultFileStore.WriteResult.Success -> {
-                saveLink(appRepository, link.copy(fileHash = VaultFileStore.hashOf(content)))
-                log.i("Flip side saved: ${noteFile.name} (${strokes.size} strokes)")
+                val hash = VaultFileStore.hashOf(content)
+                saveLink(
+                    appRepository,
+                    link.copy(fileHash = hash, drawingFileHash = hash)
+                )
+                log.i("Flip side saved: ${drawingFile.name} (${strokes.size} strokes)")
             }
             is VaultFileStore.WriteResult.Conflict -> {
-                val copy = VaultFileStore.writeConflictCopy(noteFile, content)
+                val copy = VaultFileStore.writeConflictCopy(drawingFile, content)
                 SnackState.globalSnackFlow.tryEmit(
                     SnackConf(
                         text = "Note changed elsewhere — saved as ${copy?.name ?: "conflict copy"}",
                         duration = 6000
                     )
                 )
-                log.w("Flip side conflict for ${noteFile.name}; conflict copy: ${copy?.name}")
+                log.w("Flip side conflict for ${drawingFile.name}; conflict copy: ${copy?.name}")
             }
             is VaultFileStore.WriteResult.Error -> {
                 SnackState.globalSnackFlow.tryEmit(
@@ -684,11 +960,32 @@ object FlipSideManager {
         val root = vaultRootDir(vault) ?: return false
         val noteFile = File(root, relativePath.replace('/', File.separatorChar))
         val read = VaultFileStore.read(noteFile) ?: return false
+        val drawingFile = resolveAssociatedDrawingFile(
+            noteFile,
+            root,
+            read.content,
+            obsidianSyncVaultRoot(vault) ?: root
+        )
 
-        val stripped = ExcalidrawSerializer.stripDrawingFromUnified(read.content)
+        val stripped = ExcalidrawSerializer.withoutDrawingLink(
+            ExcalidrawSerializer.stripDrawingFromUnified(read.content)
+        )
         when (VaultFileStore.write(noteFile, stripped, expectedHash = read.hash)) {
             is VaultFileStore.WriteResult.Success -> { /* ok */ }
             else -> return false
+        }
+        if (drawingFile != null && !isDrawingReferencedElsewhere(vault, noteFile, drawingFile)) {
+            val expectedHash = link.drawingFileHash
+                .takeUnless { it == VaultFileStore.HASH_MISSING }
+                ?: link.fileHash
+            if (VaultFileStore.delete(drawingFile, expectedHash) is VaultFileStore.WriteResult.Conflict) {
+                SnackState.globalSnackFlow.tryEmit(
+                    SnackConf(
+                        text = "Drawing changed elsewhere and was preserved",
+                        duration = 5000
+                    )
+                )
+            }
         }
 
         detachFlipSideLink(appRepository, vaultId, relativePath)
@@ -725,11 +1022,32 @@ object FlipSideManager {
         file: File
     ): Boolean {
         val relativePath = noteRelativePath(file, vault) ?: return false
+        val root = vaultRootDir(vault)
+        val link = appRepository.kvProxy.get(
+            noteKey(vaultId, relativePath),
+            FlipSideLink.serializer()
+        )
+        val drawingFile = root?.let {
+            resolveAssociatedDrawingFile(
+                file,
+                it,
+                linkRoot = obsidianSyncVaultRoot(vault) ?: it
+            )
+        }
         detachFlipSideLink(appRepository, vaultId, relativePath)
         val sidecarName = file.name.removeSuffix(".md") + FLIP_SIDE_SUFFIX
         val sidecar = File(file.parentFile, sidecarName)
-        if (sidecar.exists()) sidecar.delete()
-        return file.delete()
+        if (sidecar.exists()) VaultFileStore.delete(sidecar)
+        val deleted = VaultFileStore.delete(file) is VaultFileStore.WriteResult.Success
+        if (deleted && drawingFile != null &&
+            !isDrawingReferencedElsewhere(vault, file, drawingFile)
+        ) {
+            val expectedHash = link?.drawingFileHash
+                ?.takeUnless { it == VaultFileStore.HASH_MISSING }
+                ?: link?.fileHash
+            VaultFileStore.delete(drawingFile, expectedHash)
+        }
+        return deleted
     }
 
     private suspend fun deleteDirectoryTree(
@@ -746,7 +1064,7 @@ object FlipSideManager {
                     !file.name.endsWith(FLIP_SIDE_SUFFIX, ignoreCase = true) -> {
                     deleteNoteFile(appRepository, vaultId, vault, file)
                 }
-                else -> file.delete()
+                else -> VaultFileStore.delete(file)
             }
         }
         return !dir.exists()
@@ -775,7 +1093,7 @@ object FlipSideManager {
         releaseGuard(link.pageId)
     }
 
-    /** Replaces the page's strokes with the unified note file contents. */
+    /** Replaces the page's strokes with the associated Excalidraw file contents. */
     private suspend fun reimportFromFile(
         appRepository: AppRepository,
         pageId: String,

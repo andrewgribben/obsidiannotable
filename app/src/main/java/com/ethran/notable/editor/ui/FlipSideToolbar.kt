@@ -133,7 +133,9 @@ fun FlipTextPreviewDialog(
         scope.launch(Dispatchers.IO) {
             val message = FlipSideManager.applyTextToNote(appRepository, pageId, text, mode)
             SnackState.globalSnackFlow.tryEmit(SnackConf(text = message, duration = 4000))
-            withContext(Dispatchers.Main) { onApplied() }
+            if (message.startsWith("Saved")) {
+                withContext(Dispatchers.Main) { onApplied() }
+            }
         }
     }
 

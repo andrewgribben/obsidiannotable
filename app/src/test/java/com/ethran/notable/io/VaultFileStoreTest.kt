@@ -1,6 +1,7 @@
 package com.ethran.notable.io
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -97,10 +98,38 @@ class VaultFileStoreTest {
     }
 
     @Test
+    fun `drawing conflict copy preserves compound extension`() {
+        val f = file("Drawing.excalidraw.md")
+        f.writeText("original")
+
+        val copy = VaultFileStore.writeConflictCopy(f, "conflict")
+
+        assertNotNull(copy)
+        assertTrue(copy!!.name.startsWith("Drawing (conflict "))
+        assertTrue(copy.name.endsWith(".excalidraw.md"))
+    }
+
+    @Test
     fun `no temp files remain after write`() {
         val f = file()
         VaultFileStore.write(f, "content")
         val leftovers = folder.root.listFiles()!!.filter { it.name.contains(".tmp-") }
         assertTrue(leftovers.isEmpty())
+    }
+
+    @Test
+    fun `conditional delete protects external changes`() {
+        val f = file("drawing.excalidraw")
+        VaultFileStore.write(f, "v1")
+        val expected = VaultFileStore.currentHash(f)
+        f.writeText("external")
+
+        val conflict = VaultFileStore.delete(f, expected)
+        assertTrue(conflict is VaultFileStore.WriteResult.Conflict)
+        assertEquals("external", f.readText())
+
+        val deleted = VaultFileStore.delete(f, VaultFileStore.currentHash(f))
+        assertTrue(deleted is VaultFileStore.WriteResult.Success)
+        assertFalse(f.exists())
     }
 }

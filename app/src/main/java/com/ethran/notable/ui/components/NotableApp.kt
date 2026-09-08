@@ -76,6 +76,8 @@ fun NotableApp(
         when (val action = pendingWidget) {
             is WidgetActions.Action.OpenFlip ->
                 appNavState.goToFlipSide(appRepository, action.vaultId, action.relativePath)
+            is WidgetActions.Action.OpenNote ->
+                appNavState.goToVaultNote(action.vaultId, action.relativePath)
             is WidgetActions.Action.NewCapture -> {
                 val vaultId = action.vaultId ?: GlobalAppSettings.current.activeVault?.id
                 if (vaultId != null) {

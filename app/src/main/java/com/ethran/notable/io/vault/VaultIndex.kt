@@ -3,6 +3,7 @@ package com.ethran.notable.io.vault
 import com.ethran.notable.data.datastore.VaultConfig
 import com.ethran.notable.io.excalidraw.ExcalidrawSerializer
 import com.ethran.notable.io.resolveExternalStoragePath
+import com.ethran.notable.io.resolveVaultAttachmentDir
 import io.shipbook.shipbooksdk.ShipBook
 import java.io.File
 
@@ -10,6 +11,7 @@ private val log = ShipBook.getLogger("VaultIndex")
 
 /** Suffix for flip-side drawing files (Excalidraw-compatible markdown). */
 const val FLIP_SIDE_SUFFIX = ".flip.excalidraw.md"
+const val DRAWING_EXTENSION = ".excalidraw.md"
 
 /** A markdown note inside a vault. */
 data class VaultNote(
@@ -89,9 +91,10 @@ fun listInboxNotesWithInk(vault: VaultConfig): List<VaultNote> {
         .filter { file ->
             file.isFile &&
                 file.name.endsWith(".md", ignoreCase = true) &&
-                !file.name.endsWith(FLIP_SIDE_SUFFIX, ignoreCase = true)
+                !file.name.endsWith(FLIP_SIDE_SUFFIX, ignoreCase = true) &&
+                !file.name.endsWith(DRAWING_EXTENSION, ignoreCase = true)
         }
-        .mapNotNull { file -> inboxCaptureNote(file, root) }
+        .mapNotNull { file -> inboxCaptureNote(file, root, inboxDir) }
         .sortedByDescending { it.lastModified }
         .toList()
 }
@@ -112,16 +115,18 @@ private fun readFileHead(file: File, maxBytes: Int = INBOX_HEAD_SCAN_BYTES): Str
     }
 }
 
-private fun inboxCaptureNote(file: File, vaultRoot: File): VaultNote? {
+private fun inboxCaptureNote(file: File, vaultRoot: File, linkRoot: File): VaultNote? {
     val head = readFileHead(file) ?: return null
-    if (!ExcalidrawSerializer.isExcalidrawNote(head)) return null
-    if (!ExcalidrawSerializer.hasDrawingSectionForListing(file)) return null
+    val drawing = resolveAssociatedDrawingFile(file, vaultRoot, head, linkRoot)
+    val legacyUnified = ExcalidrawSerializer.isExcalidrawNote(head) &&
+        ExcalidrawSerializer.hasDrawingSectionForListing(file)
+    if (drawing == null && !legacyUnified) return null
     val relative = file.relativeTo(vaultRoot).path.replace('\\', '/')
     return VaultNote(
         file = file,
         relativePath = relative,
         name = file.name.removeSuffix(".md"),
-        hasInk = ExcalidrawSerializer.hasNonemptyInkForListing(file),
+        hasInk = drawing != null || ExcalidrawSerializer.hasNonemptyInkForListing(file),
         lastModified = file.lastModified()
     )
 }
@@ -144,7 +149,7 @@ fun listInboxNotesWithInkForVaults(
  * Index of the markdown notes of a single vault. Scans the filesystem directly (the app
  * holds all-files access) and provides Obsidian-style wikilink resolution by file name.
  */
-class VaultIndex(val vaultRoot: File) {
+class VaultIndex(val vaultRoot: File, private val linkRoot: File = vaultRoot) {
 
     @Volatile
     private var notes: List<VaultNote> = emptyList()
@@ -169,7 +174,8 @@ class VaultIndex(val vaultRoot: File) {
             if (child.isDirectory) {
                 scanDir(child, out)
             } else if (name.endsWith(".md", ignoreCase = true) &&
-                !name.endsWith(FLIP_SIDE_SUFFIX, ignoreCase = true)
+                !name.endsWith(FLIP_SIDE_SUFFIX, ignoreCase = true) &&
+                !name.endsWith(DRAWING_EXTENSION, ignoreCase = true)
             ) {
                 out.add(toNote(child))
             }
@@ -190,8 +196,10 @@ class VaultIndex(val vaultRoot: File) {
         )
     }
 
-    private fun hasInkInFile(file: File): Boolean =
-        ExcalidrawSerializer.hasNonemptyInkForListing(file)
+    private fun hasInkInFile(file: File): Boolean {
+        val drawing = resolveAssociatedDrawingFile(file, vaultRoot, linkRoot = linkRoot)
+        return drawing != null || ExcalidrawSerializer.hasNonemptyInkForListing(file)
+    }
 
     /** Direct children (folders + notes) of [relativeDir] for the tree browser. */
     fun listDir(relativeDir: String): List<VaultNote> {
@@ -215,7 +223,8 @@ class VaultIndex(val vaultRoot: File) {
                     )
                 )
             } else if (name.endsWith(".md", ignoreCase = true) &&
-                !name.endsWith(FLIP_SIDE_SUFFIX, ignoreCase = true)
+                !name.endsWith(FLIP_SIDE_SUFFIX, ignoreCase = true) &&
+                !name.endsWith(DRAWING_EXTENSION, ignoreCase = true)
             ) {
                 files.add(toNote(child))
             }
@@ -293,6 +302,49 @@ fun flipSideFileFor(noteFile: File): File {
     return File(noteFile.parentFile, "$base$FLIP_SIDE_SUFFIX")
 }
 
+/** Resolves the drawing linked by `singularity-drawing`, including legacy raw files. */
+fun resolveAssociatedDrawingFile(
+    noteFile: File,
+    vaultRoot: File,
+    content: String? = null,
+    linkRoot: File = vaultRoot
+): File? {
+    if (!noteFile.isFile) return null
+    val noteContent = content ?: runCatching { noteFile.readText() }.getOrNull() ?: return null
+    val target = ExcalidrawSerializer.drawingLinkPath(noteContent) ?: return null
+    val normalized = target.replace('/', File.separatorChar)
+    fun safeChild(root: File, relative: String): File? {
+        val candidate = runCatching { File(root, relative).canonicalFile }.getOrNull() ?: return null
+        val canonicalRoot = runCatching { root.canonicalFile }.getOrNull() ?: return null
+        return candidate.takeIf {
+            it.path == canonicalRoot.path || it.path.startsWith("${canonicalRoot.path}${File.separator}")
+        }
+    }
+    val exact = safeChild(linkRoot, normalized) ?: return null
+    if (exact.isFile) return exact
+    if (!target.endsWith(DRAWING_EXTENSION, ignoreCase = true)) {
+        val withExtension = safeChild(linkRoot, "$normalized$DRAWING_EXTENSION") ?: return null
+        if (withExtension.isFile) return withExtension
+    }
+    val legacyRootRelative = safeChild(vaultRoot, normalized) ?: return null
+    if (legacyRootRelative.isFile) return legacyRootRelative
+    return null
+}
+
+/** Chooses a non-conflicting attachment path for a note's modern drawing file. */
+fun availableDrawingFile(noteFile: File, vault: VaultConfig): File? {
+    val attachmentDir = resolveVaultAttachmentDir(vault.inboxPath, vault.attachmentPath) ?: return null
+    attachmentDir.mkdirs()
+    val base = noteFile.name.removeSuffix(".md")
+    var candidate = File(attachmentDir, "$base$DRAWING_EXTENSION")
+    var suffix = 2
+    while (candidate.exists()) {
+        candidate = File(attachmentDir, "$base-$suffix$DRAWING_EXTENSION")
+        suffix++
+    }
+    return candidate
+}
+
 private val FLIP_SIDE_FRONTMATTER_REGEX =
     Regex("""^flip-side:\s*["']?\[\[([^\]]+)]]""", RegexOption.MULTILINE)
 
@@ -340,7 +392,7 @@ object VaultIndexRegistry {
         val root = vaultRootDir(vault) ?: return null
         val existing = indexes[vault.id]
         if (existing != null && existing.vaultRoot == root) return existing
-        val index = VaultIndex(root)
+        val index = VaultIndex(root, obsidianSyncVaultRoot(vault) ?: root)
         indexes[vault.id] = index
         return index
     }

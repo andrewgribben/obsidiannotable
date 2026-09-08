@@ -66,5 +66,10 @@ class FlipSideManagerTest {
             listOf(stroke.copy(points = listOf(StrokePoint(1f, 2f), StrokePoint(3f, 4f))))
         )
         assertNotEquals(baseline, changed)
+
+        val sameCountDifferentPoint = FlipSideManager.strokesFingerprint(
+            listOf(stroke.copy(points = listOf(StrokePoint(8f, 9f))))
+        )
+        assertNotEquals(baseline, sameCountDifferentPoint)
     }
 }

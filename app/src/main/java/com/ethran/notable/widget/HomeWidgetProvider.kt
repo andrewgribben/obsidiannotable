@@ -347,7 +347,11 @@ class HomeWidgetProvider : AppWidgetProvider() {
 
             views.setViewVisibility(
                 R.id.widget_row_2,
-                if (grid.rows > 1) View.VISIBLE else View.GONE
+                if (grid.rows > 1 && data.captures.size > grid.columns) {
+                    View.VISIBLE
+                } else {
+                    View.GONE
+                }
             )
 
             for (viewIndex in 0 until MAX_SLOTS) {
@@ -364,13 +368,17 @@ class HomeWidgetProvider : AppWidgetProvider() {
                 }
 
                 val captureIndex = row * grid.columns + col
-                if (captureIndex >= grid.slotCount) {
-                    views.setViewVisibility(containerId, View.GONE)
+                if (captureIndex >= grid.slotCount ||
+                    data.captures.getOrNull(captureIndex) == null
+                ) {
+                    // Keep empty first-row cells as invisible spacers so real cards retain
+                    // their configured width; an entirely empty second row is hidden above.
+                    views.setViewVisibility(containerId, View.INVISIBLE)
                     continue
                 }
 
+                val capture = data.captures[captureIndex]
                 views.setViewVisibility(containerId, View.VISIBLE)
-                val capture = data.captures.getOrNull(captureIndex)
                 val preview = WidgetCardRenderer.renderPreview(
                     context = context,
                     capture = capture,
@@ -392,31 +400,26 @@ class HomeWidgetProvider : AppWidgetProvider() {
                 )
                 views.setImageViewBitmap(imageId, preview)
 
-                if (capture != null) {
-                    views.setTextViewText(titleId, capture.title)
-                    views.setViewVisibility(titleId, View.VISIBLE)
-                    if (!grid.compactTitles && data.showVaultName && capture.vaultName != null) {
-                        views.setTextViewText(vaultId, capture.vaultName)
-                        views.setViewVisibility(vaultId, View.VISIBLE)
-                    } else {
-                        views.setViewVisibility(vaultId, View.GONE)
-                    }
-                    views.setOnClickPendingIntent(
-                        containerId,
-                        activityPendingIntent(
-                            context,
-                            300 + captureIndex,
-                            WidgetActions.flipUri(capture.vaultId, capture.relativePath)
-                        )
-                    )
+                views.setTextViewText(titleId, capture.title)
+                views.setViewVisibility(titleId, View.VISIBLE)
+                if (!grid.compactTitles && data.showVaultName && capture.vaultName != null) {
+                    views.setTextViewText(vaultId, capture.vaultName)
+                    views.setViewVisibility(vaultId, View.VISIBLE)
                 } else {
-                    views.setTextViewText(titleId, "")
                     views.setViewVisibility(vaultId, View.GONE)
-                    views.setOnClickPendingIntent(
-                        containerId,
-                        openAppPendingIntent(context, 200 + captureIndex)
-                    )
                 }
+                views.setOnClickPendingIntent(
+                    containerId,
+                    activityPendingIntent(
+                        context,
+                        300 + captureIndex,
+                        if (capture.hasInk) {
+                            WidgetActions.flipUri(capture.vaultId, capture.relativePath)
+                        } else {
+                            WidgetActions.noteUri(capture.vaultId, capture.relativePath)
+                        }
+                    )
+                )
             }
             return views
         }
@@ -435,16 +438,5 @@ class HomeWidgetProvider : AppWidgetProvider() {
             )
         }
 
-        private fun openAppPendingIntent(context: Context, requestCode: Int): PendingIntent {
-            val intent = Intent(context, MainActivity::class.java).apply {
-                flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
-            }
-            return PendingIntent.getActivity(
-                context,
-                requestCode,
-                intent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-        }
     }
 }

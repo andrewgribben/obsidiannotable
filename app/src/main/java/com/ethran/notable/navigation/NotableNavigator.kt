@@ -194,6 +194,9 @@ class NotableNavigator(
     ) {
         coroutineScope.launch {
             val pageId = withContext(Dispatchers.IO) {
+                FlipSideManager.vaultById(vaultId)?.let { vault ->
+                    obsidianSyncManager.pullVaultIfEnabled(vault)
+                }
                 FlipSideManager.openFlipSide(appRepository, vaultId, noteRelativePath)
             } ?: return@launch
             navController.navigate(EditorDestination.createRoute(pageId, null))
@@ -231,6 +234,13 @@ class NotableNavigator(
                 FlipSideManager.openOrCreateDailyNote(appRepository, vaultId)
             } ?: return@launch
             navController.navigate(EditorDestination.createRoute(pageId, null))
+            // Do not leave the widget user staring at the dashboard during a full pull.
+            // The editor opens from local data first; sync can then refresh in background.
+            FlipSideManager.vaultById(vaultId)?.let { vault ->
+                coroutineScope.launch(Dispatchers.IO) {
+                    obsidianSyncManager.pullVaultIfEnabled(vault)
+                }
+            }
         }
     }
 

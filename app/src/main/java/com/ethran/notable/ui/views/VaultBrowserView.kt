@@ -272,7 +272,12 @@ private fun VaultBrowserContent(
 
     fun openEntryNote(path: String) {
         val vaultId = activeVault?.id ?: return
-        onOpenNote(vaultId, path)
+        val note = index?.allNotes()?.firstOrNull { it.relativePath == path }
+        if (note?.hasInk == true && onOpenFlipSide != null) {
+            onOpenFlipSide.invoke(vaultId, path)
+        } else {
+            onOpenNote(vaultId, path)
+        }
     }
 
     fun addEntryToBookshelf(entry: VaultNote) {
@@ -424,7 +429,8 @@ private fun VaultBrowserContent(
                 renameTarget = entry
             },
             onOpenText = {
-                openEntryNote(entry.relativePath)
+                val vaultId = activeVault?.id ?: return@VaultBrowserEntryMenu
+                onOpenNote(vaultId, entry.relativePath)
                 menuEntry = null
                 onClose()
             },

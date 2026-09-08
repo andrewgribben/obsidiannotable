@@ -39,15 +39,13 @@ class FlipSideManagerCaptureTest {
     }
 
     @Test
-    fun `buildCaptureUnifiedStub has excalidraw frontmatter`() {
-        val stub = FlipSideManager.buildCaptureUnifiedStub(Date(1700000000000L))
-        assertTrue(stub.contains("excalidraw-plugin: parsed"))
-        assertTrue(stub.contains("excalidraw-open-md: false"))
+    fun `buildCaptureNoteStub is small plain markdown`() {
+        val stub = FlipSideManager.buildCaptureNoteStub(Date(1700000000000L))
         assertTrue(stub.contains("created:"))
         assertFalse(stub.contains("flip-side:"))
         assertFalse(stub.contains("pdf:"))
-        assertTrue(stub.contains("%%"))
-        assertTrue(stub.contains("```compressed-json"))
+        assertFalse(stub.contains("excalidraw-plugin:"))
+        assertFalse(stub.contains("%%"))
     }
 
     @Test
@@ -66,7 +64,9 @@ class FlipSideManagerCaptureTest {
             created: "[[2026-03-14]]"
             excalidraw-plugin: parsed
             excalidraw-open-md: true
-            tags: [excalidraw]
+            tags:
+              - project
+              - excalidraw
             ---
 
             Study notes here
@@ -82,9 +82,43 @@ class FlipSideManagerCaptureTest {
         val stripped = ExcalidrawSerializer.stripDrawingFromUnified(unified)
         assertTrue(stripped.contains("Study notes here"))
         assertTrue(stripped.contains("created:"))
+        assertTrue(stripped.contains("  - project"))
+        assertFalse(stripped.contains("  - excalidraw"))
         assertFalse(stripped.contains("excalidraw-plugin:"))
         assertFalse(stripped.contains("excalidraw-open-md:"))
         assertFalse(stripped.contains("# Excalidraw Data"))
         assertFalse(stripped.contains("%%"))
+    }
+
+    @Test
+    fun `stripDrawingFromUnified preserves ordinary Obsidian comments`() {
+        val unified = ExcalidrawSerializer.serializeUnified(
+            "Visible\n\n# Drawing ideas\n\n%% keep this comment %%\n\nMore",
+            emptyList()
+        )
+        val stripped = ExcalidrawSerializer.stripDrawingFromUnified(unified)
+        assertTrue(stripped.contains("# Drawing ideas"))
+        assertTrue(stripped.contains("%% keep this comment %%"))
+        assertTrue(stripped.contains("More"))
+        assertFalse(stripped.contains("# Excalidraw Data"))
+    }
+
+    @Test
+    fun `stripDrawingFromUnified preserves earlier Drawing json example`() {
+        val body = """
+            # Drawing
+
+            ```json
+            {"example": true}
+            ```
+
+            Keep this paragraph.
+        """.trimIndent()
+        val stripped = ExcalidrawSerializer.stripDrawingFromUnified(
+            ExcalidrawSerializer.serializeUnified(body, emptyList())
+        )
+        assertTrue(stripped.contains("""{"example": true}"""))
+        assertTrue(stripped.contains("Keep this paragraph."))
+        assertFalse(stripped.contains("# Excalidraw Data"))
     }
 }

@@ -36,6 +36,7 @@ import com.ethran.notable.data.db.StrokeMigrationHelper
 import com.ethran.notable.editor.canvas.CanvasEventBus
 import com.ethran.notable.io.ExportEngine
 import com.ethran.notable.io.VaultTagScanner
+import com.ethran.notable.io.flipside.SeparateDrawingMigrator
 import com.ethran.notable.io.obsidiansync.ObsidianSyncManager
 import com.ethran.notable.navigation.DeepLinks
 import com.ethran.notable.navigation.WidgetActions
@@ -153,6 +154,16 @@ class MainActivity : ComponentActivity() {
 
                             editorSettingCacheManager.get().init()
                             strokeMigrationHelper.get().reencodeStrokePointsToSB1()
+                            val drawingMigration =
+                                SeparateDrawingMigrator.migrateAll(appRepositoryLazy.get())
+                            if (drawingMigration.failures.isNotEmpty()) {
+                                SnackState.globalSnackFlow.tryEmit(
+                                    SnackConf(
+                                        text = "Some drawings could not be migrated; originals were kept",
+                                        duration = 6000
+                                    )
+                                )
+                            }
                             VaultTagScanner.refreshCache(GlobalAppSettings.current.obsidianInboxPath)
                         }
                         fullInitDone = true
@@ -166,6 +177,7 @@ class MainActivity : ComponentActivity() {
                     withContext(Dispatchers.IO) {
                         editorSettingCacheManager.get().init()
                         strokeMigrationHelper.get().reencodeStrokePointsToSB1()
+                        SeparateDrawingMigrator.migrateAll(appRepositoryLazy.get())
                         VaultTagScanner.refreshCache(GlobalAppSettings.current.obsidianInboxPath)
                     }
                     deferredInitDone = true
