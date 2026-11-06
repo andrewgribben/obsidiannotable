@@ -154,19 +154,23 @@ class MainActivity : ComponentActivity() {
 
                             editorSettingCacheManager.get().init()
                             strokeMigrationHelper.get().reencodeStrokePointsToSB1()
-                            val drawingMigration =
-                                SeparateDrawingMigrator.migrateAll(appRepositoryLazy.get())
-                            if (drawingMigration.failures.isNotEmpty()) {
-                                SnackState.globalSnackFlow.tryEmit(
-                                    SnackConf(
-                                        text = "Some drawings could not be migrated; originals were kept",
-                                        duration = 6000
-                                    )
-                                )
-                            }
                             VaultTagScanner.refreshCache(GlobalAppSettings.current.obsidianInboxPath)
                         }
                         fullInitDone = true
+                        isInitialized = true
+                        // Full-vault walk; retries every launch while a sync is still pulling
+                        // drawings, so keep it off the startup gate. Writes are hash-guarded.
+                        val drawingMigration = withContext(Dispatchers.IO) {
+                            SeparateDrawingMigrator.migrateAll(appRepositoryLazy.get())
+                        }
+                        if (drawingMigration.failures.isNotEmpty()) {
+                            SnackState.globalSnackFlow.tryEmit(
+                                SnackConf(
+                                    text = "Some drawings could not be migrated; originals were kept",
+                                    duration = 6000
+                                )
+                            )
+                        }
                     }
                 }
                 isInitialized = true
@@ -177,10 +181,12 @@ class MainActivity : ComponentActivity() {
                     withContext(Dispatchers.IO) {
                         editorSettingCacheManager.get().init()
                         strokeMigrationHelper.get().reencodeStrokePointsToSB1()
-                        SeparateDrawingMigrator.migrateAll(appRepositoryLazy.get())
                         VaultTagScanner.refreshCache(GlobalAppSettings.current.obsidianInboxPath)
                     }
                     deferredInitDone = true
+                    withContext(Dispatchers.IO) {
+                        SeparateDrawingMigrator.migrateAll(appRepositoryLazy.get())
+                    }
                 }
             }
 
