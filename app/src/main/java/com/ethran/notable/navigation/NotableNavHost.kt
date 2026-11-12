@@ -199,7 +199,8 @@ fun NotableNavHost(
                     onHandwriteInto = { vaultId, path ->
                         appNavigator.goToHandwritingInsert(appRepository, path)
                     },
-                    onBack = { appNavigator.goBack() }
+                    onBack = { appNavigator.goBack() },
+                    onHome = { appNavigator.goHome() }
                 )
                 appNavigator.cleanCurrentPageId()
             }

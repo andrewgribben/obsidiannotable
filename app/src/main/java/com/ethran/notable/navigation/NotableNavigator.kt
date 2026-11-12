@@ -142,6 +142,16 @@ class NotableNavigator(
         navController.navigate(EditorDestination.createRoute(pageId, bookId))
     }
 
+    /** Back to the dashboard, dropping every note opened on the way (e.g. via links). */
+    fun goHome() {
+        if (!navController.popBackStack(LibraryDestination.routeWithArgs, inclusive = false)) {
+            // Opened from a widget or deep link: the dashboard is not on the stack yet.
+            navController.navigate(LibraryDestination.createRoute(null)) {
+                popUpTo(navController.graph.id) { inclusive = true }
+            }
+        }
+    }
+
     fun goBack() {
         navController.popBackStack()
     }

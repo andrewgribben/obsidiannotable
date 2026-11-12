@@ -102,6 +102,20 @@ class VaultLinkResolutionTest {
     }
 
     @Test
+    fun `path wikilink written from a parent folder picks the nearest match, not another same-named note`() {
+        val root = tempVault()
+        note(root, "Study/Law guide/Introduction.md")
+        note(root, "Study/W111/Module Guide/Introduction.md")
+        val target = note(root, "Study/W211/Module Guide/Introduction.md")
+        val index = VaultIndex(root)
+
+        val resolved = resolveNoteLink(index, "Study/W211/Module Guide", "Module Guide/Introduction.md")
+
+        assertEquals(target, resolved?.file)
+        assertTrue("index must stay unscanned", index.allNotes().isEmpty())
+    }
+
+    @Test
     fun `resolves a link with a custom block-ref-style anchor`() {
         val root = tempVault()
         val target = note(root, "Module Guide/3 Module assessment.md")

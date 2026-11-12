@@ -359,20 +359,27 @@ fun decodeVaultLinkTarget(encoded: String): String {
 fun resolveNoteLink(index: VaultIndex?, currentDir: String, target: String): VaultNote? {
     if (index == null) return null
     val decoded = decodeVaultLinkTarget(target)
-    // Fast path: a relative link to an existing file needs no vault-wide index scan,
-    // which reads every note and takes seconds on large vaults.
-    if (currentDir.isNotEmpty() && !decoded.startsWith("/")) {
-        val path = normalizeVaultPath("$currentDir/${decoded.substringBefore('#').substringBefore('^').trim()}")
-        val withExt = if (path.endsWith(".md", ignoreCase = true)) path else "$path.md"
-        val file = File(index.vaultRoot, withExt.replace('/', File.separatorChar))
-        if (file.isFile) {
-            return VaultNote(
-                file = file,
-                relativePath = withExt,
-                name = file.name.removeSuffix(".md"),
-                hasInk = false,
-                lastModified = file.lastModified()
-            )
+    // Fast path: look for the target next to the note, then in each parent folder (Obsidian
+    // path links such as [[Module Guide/Introduction.md]] are written from a higher folder).
+    // This avoids the vault-wide index scan, which reads every note and takes seconds, and
+    // picks the nearest match instead of any same-named note elsewhere in the vault.
+    val clean = decoded.substringBefore('#').substringBefore('^').trim().trimStart('/')
+    if (clean.isNotEmpty()) {
+        val targetPath = if (clean.endsWith(".md", ignoreCase = true)) clean else "$clean.md"
+        var dir: String? = if (decoded.startsWith("/")) "" else currentDir
+        while (dir != null) {
+            val path = normalizeVaultPath(if (dir.isEmpty()) targetPath else "$dir/$targetPath")
+            val file = File(index.vaultRoot, path.replace('/', File.separatorChar))
+            if (file.isFile) {
+                return VaultNote(
+                    file = file,
+                    relativePath = path,
+                    name = file.name.removeSuffix(".md"),
+                    hasInk = false,
+                    lastModified = file.lastModified()
+                )
+            }
+            dir = if (dir.isEmpty()) null else dir.substringBeforeLast('/', "")
         }
     }
     val viaCurrentDir = if (currentDir.isNotEmpty() && !decoded.startsWith("/")) {
