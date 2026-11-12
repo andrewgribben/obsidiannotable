@@ -183,15 +183,21 @@ fun NotableNavHost(
                     navArgument(NoteReaderDestination.PATH_ARG) {
                         type = NavType.StringType
                     },
+                    navArgument(NoteReaderDestination.HEADING_ARG) {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    },
                 ),
             ) {
                 NoteReaderView(
                     vaultId = it.arguments?.getString(NoteReaderDestination.VAULT_ID_ARG)!!,
                     relativePath = it.arguments?.getString(NoteReaderDestination.PATH_ARG)!!,
+                    initialHeadingAnchor = it.arguments?.getString(NoteReaderDestination.HEADING_ARG),
                     appRepository = appRepository,
                     obsidianSyncManager = obsidianSyncManager,
-                    onOpenNote = { vaultId, path ->
-                        appNavigator.goToVaultNote(vaultId, path)
+                    onOpenNote = { vaultId, path, heading ->
+                        appNavigator.goToVaultNote(vaultId, path, heading)
                     },
                     onOpenFlipSide = { vaultId, path ->
                         appNavigator.goToFlipSide(appRepository, vaultId, path)

@@ -66,6 +66,16 @@ data class MarkdownImage(
     val widthHintPx: Int? = null
 )
 
+/**
+ * A heading in the rendered text, for anchor-based scrolling (`#heading` links).
+ * [text] is the heading's plain display text (markup already stripped).
+ */
+data class MarkdownHeading(
+    val level: Int,
+    val displayStart: Int,
+    val text: String
+)
+
 /** Result of rendering a markdown document for the reader. */
 data class RenderedMarkdown(
     val text: AnnotatedString,
@@ -76,7 +86,9 @@ data class RenderedMarkdown(
     /** Source offset where the body (after frontmatter) starts. */
     val bodySourceStart: Int,
     /** Theme (and font scale) this document was rendered with. */
-    val theme: MarkdownTheme
+    val theme: MarkdownTheme,
+    /** Headings in document order, for `#heading` link scrolling. */
+    val headings: List<MarkdownHeading> = emptyList()
 )
 
 /**
@@ -184,22 +196,32 @@ object MarkdownRenderer {
             } else break
         }
 
+        val finalText = builder.annotated.toAnnotatedString()
+        val headings = builder.headingSpans.map { (level, start, end) ->
+            MarkdownHeading(level, start, finalText.text.substring(start, end))
+        }
+
         return RenderedMarkdown(
-            text = builder.annotated.toAnnotatedString(),
+            text = finalText,
             sourceMap = MarkdownSourceMap(builder.segments),
             links = builder.links,
             images = builder.images,
             frontmatter = frontmatterVisitor.data,
             bodySourceStart = bodyStart,
-            theme = theme
+            theme = theme,
+            headings = headings
         )
     }
+
+    /** (level, display start, display end) of a heading, recorded while rendering. */
+    private data class HeadingSpan(val level: Int, val start: Int, val end: Int)
 
     private class Builder(val source: String, val theme: MarkdownTheme) {
         val annotated = AnnotatedString.Builder()
         val segments = mutableListOf<MarkdownSourceMap.Segment>()
         val links = mutableListOf<MarkdownLink>()
         val images = mutableListOf<MarkdownImage>()
+        val headingSpans = mutableListOf<HeadingSpan>()
 
         private var blockCount = 0
         private var imageCounter = 0
@@ -279,6 +301,7 @@ object MarkdownRenderer {
                     val start = length
                     renderInlines(node.firstChild)
                     annotated.addStyle(theme.headingStyle(node.level), start, length)
+                    headingSpans.add(HeadingSpan(node.level, start, length))
                 }
                 is Paragraph -> {
                     blockSpacing()
