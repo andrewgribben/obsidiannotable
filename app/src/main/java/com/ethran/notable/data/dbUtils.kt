@@ -24,8 +24,7 @@ fun getDbDir(): File {
         Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS)
     val legacyDbDir = File(documentsDir, "notabledb")
 
-    val inboxPath = GlobalAppSettings.current.obsidianInboxPath
-    val attachmentPath = GlobalAppSettings.current.obsidianAttachmentPath
+    val (inboxPath, attachmentPath) = GlobalAppSettings.current.dbHomePaths
     val vaultBase = resolveVaultAttachmentDir(inboxPath, attachmentPath)
 
     val dbDir = if (vaultBase != null) {

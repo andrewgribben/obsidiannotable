@@ -144,12 +144,8 @@ class MainActivity : ComponentActivity() {
                                 kvProxy.get().setAppSettings(normalized)
                             } else {
                                 GlobalAppSettings.update(normalized)
-                                val dbHome = normalized.primaryVault
-                                VaultPathBootstrap.save(
-                                    this@MainActivity,
-                                    dbHome?.inboxPath ?: normalized.obsidianInboxPath,
-                                    dbHome?.attachmentPath ?: normalized.obsidianAttachmentPath
-                                )
+                                val (inboxPath, attachmentPath) = normalized.dbHomePaths
+                                VaultPathBootstrap.save(this@MainActivity, inboxPath, attachmentPath)
                             }
 
                             editorSettingCacheManager.get().init()
