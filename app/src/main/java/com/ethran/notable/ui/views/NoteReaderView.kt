@@ -51,6 +51,7 @@ import com.ethran.notable.io.vault.NoteEditGuard
 import com.ethran.notable.io.vault.VaultNoteEditModel
 import com.ethran.notable.io.vault.VaultNoteEditRegions
 import com.ethran.notable.io.vault.VaultIndexRegistry
+import com.ethran.notable.io.vault.resolveNoteLink
 import com.ethran.notable.io.vault.resolveVaultNoteFile
 import com.ethran.notable.io.vault.vaultRootDir
 import com.ethran.notable.navigation.DeepLinks
@@ -111,7 +112,13 @@ class NoteReaderState(
     var error by mutableStateOf<String?>(null)
     var missingOnDisk by mutableStateOf(false)
 
-    fun load(fontScale: Float = 1f) {
+    /**
+     * Reads and renders the note. File IO and markdown parsing/layout can take a
+     * noticeable amount of time for large, link-heavy notes (hundreds of links in
+     * deeply nested lists) — both run on [Dispatchers.Default] so the UI thread never
+     * blocks while a note loads, even on slow e-ink hardware.
+     */
+    suspend fun load(fontScale: Float = 1f) {
         if (!file.exists()) {
             missingOnDisk = true
             error = buildNoteMissingMessage(file.name, vaultName, relativePath)
@@ -120,24 +127,29 @@ class NoteReaderState(
             rendered = null
             return
         }
-        val result = VaultFileStore.read(file)
+        val result = withContext(Dispatchers.Default) { VaultFileStore.read(file) }
         if (result == null) {
             missingOnDisk = false
             error = "Could not read ${file.name}"
             return
         }
+        val renderedMarkdown = withContext(Dispatchers.Default) {
+            MarkdownRenderer.renderForReader(result.content, fontScale)
+        }
         missingOnDisk = false
         content = result.content
         contentHash = result.hash
-        rendered = MarkdownRenderer.renderForReader(result.content, fontScale)
+        rendered = renderedMarkdown
         error = null
     }
 
-    /** Re-renders the already-loaded content at a new font scale. */
-    fun rerender(fontScale: Float) {
+    /** Re-renders the already-loaded content at a new font scale, off the main thread. */
+    suspend fun rerender(fontScale: Float) {
         val current = content ?: return
         if (rendered?.theme?.scale == fontScale) return
-        rendered = MarkdownRenderer.renderForReader(current, fontScale)
+        rendered = withContext(Dispatchers.Default) {
+            MarkdownRenderer.renderForReader(current, fontScale)
+        }
     }
 }
 
@@ -282,7 +294,7 @@ fun NoteReaderView(
         onDispose { guardKey?.let { NoteEditGuard.release(it, editOwner) } }
     }
 
-    fun reloadNote() {
+    suspend fun reloadNote() {
         val noteFile = vault?.let { resolveVaultNoteFile(it, relativePath) }
         if (noteFile != null) {
             state.file = noteFile
@@ -484,13 +496,10 @@ fun NoteReaderView(
             openInBrowser(context, target)
             return
         }
-        val decoded = android.net.Uri.decode(target)
         // Markdown links are usually relative to the current note's folder — try that
         // first, then Obsidian-style vault-wide resolution (path, then unique name).
         val currentDir = relativePath.substringBeforeLast('/', "")
-        val resolved = (if (currentDir.isNotEmpty() && !decoded.startsWith("/"))
-            index?.resolveWikilink(normalizeVaultPath("$currentDir/$decoded")) else null)
-            ?: index?.resolveWikilink(decoded.trimStart('/'))
+        val resolved = resolveNoteLink(index, currentDir, target)
         if (resolved != null) {
             onOpenNote(vaultId, resolved.relativePath)
         } else {
@@ -801,7 +810,7 @@ fun NoteReaderView(
                 annotationState.clear()
                 exitAnnotationMode()
                 exitEditMode()
-                state.load(fontScale)
+                scope.launch { state.load(fontScale) }
             },
             onSaveCopy = {
                 conflictContent = null
@@ -891,19 +900,6 @@ private fun FontSizeButton(
     ) {
         Text(label, fontSize = 15.sp, fontWeight = FontWeight.Medium)
     }
-}
-
-/** Collapses "." and ".." segments in a vault-relative path. */
-private fun normalizeVaultPath(path: String): String {
-    val parts = mutableListOf<String>()
-    for (part in path.split('/')) {
-        when (part) {
-            "", "." -> Unit
-            ".." -> if (parts.isNotEmpty()) parts.removeAt(parts.size - 1)
-            else -> parts.add(part)
-        }
-    }
-    return parts.joinToString("/")
 }
 
 private enum class NoteConflictSource {

@@ -296,6 +296,75 @@ class VaultIndex(val vaultRoot: File, private val linkRoot: File = vaultRoot) {
     }
 }
 
+/** Collapses "." and ".." segments in a vault-relative path. */
+fun normalizeVaultPath(path: String): String {
+    val parts = mutableListOf<String>()
+    for (part in path.split('/')) {
+        when (part) {
+            "", "." -> Unit
+            ".." -> if (parts.isNotEmpty()) parts.removeAt(parts.size - 1)
+            else -> parts.add(part)
+        }
+    }
+    return parts.joinToString("/")
+}
+
+/**
+ * Percent-decodes [encoded] as UTF-8, matching the parts of `android.net.Uri.decode`'s
+ * behaviour link resolution relies on: valid `%XX` escapes become bytes (assembled as UTF-8
+ * text), anything else — including malformed escapes — passes through unchanged. Unlike
+ * [java.net.URLDecoder], `+` is never turned into a space (link paths may legitimately
+ * contain a literal `+`). Implemented in plain Kotlin (no `android.net.Uri`) so it runs in
+ * JVM unit tests.
+ */
+fun decodeVaultLinkTarget(encoded: String): String {
+    if ('%' !in encoded) return encoded
+    val out = StringBuilder()
+    val byteBuf = java.io.ByteArrayOutputStream()
+    fun flushBytes() {
+        if (byteBuf.size() > 0) {
+            out.append(String(byteBuf.toByteArray(), Charsets.UTF_8))
+            byteBuf.reset()
+        }
+    }
+    var i = 0
+    while (i < encoded.length) {
+        val c = encoded[i]
+        val value = if (c == '%' && i + 2 < encoded.length) {
+            encoded.substring(i + 1, i + 3).toIntOrNull(16)
+        } else null
+        if (value != null) {
+            byteBuf.write(value)
+            i += 3
+        } else {
+            flushBytes()
+            out.append(c)
+            i++
+        }
+    }
+    flushBytes()
+    return out.toString()
+}
+
+/**
+ * Resolves a tapped note-reader link target ([com.ethran.notable.io.markdown.MarkdownLink.target])
+ * to a vault note. [target] may be a wikilink target or a markdown link destination, with or
+ * without percent-encoding, a `#heading`/`^block` suffix, or a leading `/` for a vault-root-
+ * relative path.
+ *
+ * Markdown/wikilink targets are usually relative to the linking note's folder — resolved first
+ * against [currentDir] — falling back to Obsidian-style vault-wide resolution (exact path, then
+ * unique file name) so `[[Note Name]]`-style links without a folder still work.
+ */
+fun resolveNoteLink(index: VaultIndex?, currentDir: String, target: String): VaultNote? {
+    if (index == null) return null
+    val decoded = decodeVaultLinkTarget(target)
+    val viaCurrentDir = if (currentDir.isNotEmpty() && !decoded.startsWith("/")) {
+        index.resolveWikilink(normalizeVaultPath("$currentDir/$decoded"))
+    } else null
+    return viaCurrentDir ?: index.resolveWikilink(decoded.trimStart('/'))
+}
+
 /** The flip-side file that pairs with [noteFile] (same folder, same base name). */
 fun flipSideFileFor(noteFile: File): File {
     val base = noteFile.name.removeSuffix(".md")
