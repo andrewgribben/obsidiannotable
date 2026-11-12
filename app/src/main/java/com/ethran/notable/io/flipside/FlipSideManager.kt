@@ -932,10 +932,15 @@ object FlipSideManager {
 
     private suspend fun saveFlipSide(
         appRepository: AppRepository,
-        link: FlipSideLink,
+        queuedLink: FlipSideLink,
         vault: VaultConfig,
         notifySync: Boolean
     ) {
+        // Re-read inside the write queue: an earlier queued save (e.g. a background save
+        // on scroll) may have updated the file hashes since this save was scheduled, and
+        // the stale hash would be reported as a conflict.
+        val link = appRepository.kvProxy.get(pageKey(queuedLink.pageId), FlipSideLink.serializer())
+            ?: queuedLink
         vaultRootDir(vault) ?: return
         val drawingFile = drawingFileForLink(link, vault) ?: return
 
