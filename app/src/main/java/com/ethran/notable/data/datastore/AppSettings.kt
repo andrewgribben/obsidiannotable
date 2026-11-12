@@ -166,6 +166,15 @@ data class AppSettings(
         get() = vaults.firstOrNull()
 
     /**
+     * (inboxPath, attachmentPath) that locate the app database: the primary vault, never
+     * the active one. The legacy obsidian* fields mirror the active vault once settings
+     * load, so reading them here would open a different vault's database.
+     */
+    val dbHomePaths: Pair<String, String>
+        get() = primaryVault?.let { it.inboxPath to it.attachmentPath }
+            ?: (obsidianInboxPath to obsidianAttachmentPath)
+
+    /**
      * Normalizes the vault registry:
      * 1. Migrates the legacy single-vault fields into `vaults[0]` when the registry is empty.
      * 2. Ensures `activeVaultId` points at a registered vault.

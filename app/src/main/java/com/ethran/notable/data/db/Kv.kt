@@ -136,12 +136,8 @@ class KvProxy @Inject constructor(
         GlobalAppSettings.update(normalized)
         // The bootstrap determines the DB location before settings load, so it must
         // track the *primary* vault — switching the active vault must never move the DB.
-        val dbHome = normalized.primaryVault
-        VaultPathBootstrap.save(
-            context,
-            dbHome?.inboxPath ?: normalized.obsidianInboxPath,
-            dbHome?.attachmentPath ?: normalized.obsidianAttachmentPath
-        )
+        val (inboxPath, attachmentPath) = normalized.dbHomePaths
+        VaultPathBootstrap.save(context, inboxPath, attachmentPath)
     }
 
 }
