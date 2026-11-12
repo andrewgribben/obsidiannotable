@@ -232,9 +232,19 @@ class LibraryViewModel @Inject constructor(
     fun openBookshelfFolder(vaultId: String, relativePath: String) {
         viewModelScope.launch(Dispatchers.IO) {
             val settings = GlobalAppSettings.current
+            val currentlyOpenVaultId = settings.homeBookshelfDirByVault.keys.firstOrNull()
+            // Entering a fresh folder (from the home root, or from a different vault's
+            // folder) starts a new hierarchy and records its root for "back" tracking.
+            // Navigating into a subfolder of the folder already open keeps the same root.
+            val newRootDirByVault = if (currentlyOpenVaultId == vaultId) {
+                settings.homeBookshelfRootDirByVault
+            } else {
+                mapOf(vaultId to relativePath)
+            }
             appRepository.kvProxy.setAppSettings(
                 settings.copy(
-                    homeBookshelfDirByVault = settings.homeBookshelfDirByVault + (vaultId to relativePath)
+                    homeBookshelfDirByVault = mapOf(vaultId to relativePath),
+                    homeBookshelfRootDirByVault = newRootDirByVault
                 )
             )
             refreshHomeCaptures()
@@ -244,9 +254,19 @@ class LibraryViewModel @Inject constructor(
     fun closeBookshelfFolder() {
         viewModelScope.launch(Dispatchers.IO) {
             val settings = GlobalAppSettings.current
-            if (settings.homeBookshelfDirByVault.isEmpty()) return@launch
+            val vaultId = settings.homeBookshelfDirByVault.keys.firstOrNull() ?: return@launch
+            val currentDir = settings.homeBookshelfDirByVault[vaultId].orEmpty()
+            val rootDir = settings.homeBookshelfRootDirByVault[vaultId].orEmpty()
+            val parentDir = HomeBookshelfBuilder.stepUpFolder(currentDir, rootDir)
             appRepository.kvProxy.setAppSettings(
-                settings.copy(homeBookshelfDirByVault = emptyMap())
+                if (parentDir == null) {
+                    settings.copy(
+                        homeBookshelfDirByVault = emptyMap(),
+                        homeBookshelfRootDirByVault = emptyMap()
+                    )
+                } else {
+                    settings.copy(homeBookshelfDirByVault = mapOf(vaultId to parentDir))
+                }
             )
             refreshHomeCaptures()
         }

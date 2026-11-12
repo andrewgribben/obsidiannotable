@@ -135,7 +135,13 @@ data class AppSettings(
     val vaultBrowserDirByVault: Map<String, String> = emptyMap(),
 
     // Home bookshelf drill-down: vault id → vault-root-relative folder path.
+    // Holds at most one entry: the single folder currently open on the home screen.
     val homeBookshelfDirByVault: Map<String, String> = emptyMap(),
+
+    // The vault-root-relative path of the pinned folder that was opened from the home
+    // root to start the current drill-down (used so "back" from a nested subfolder
+    // goes up one level, and from the pinned folder itself returns to the home root).
+    val homeBookshelfRootDirByVault: Map<String, String> = emptyMap(),
 
     // Which vault row is expanded in Settings → Vaults (empty = all collapsed).
     val settingsExpandedVaultId: String = "",

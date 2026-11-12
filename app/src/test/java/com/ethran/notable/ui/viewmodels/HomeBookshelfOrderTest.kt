@@ -141,7 +141,7 @@ class HomeBookshelfFolderTest {
     }
 
     @Test
-    fun `folder drill lists direct md children only`() {
+    fun `folder drill lists direct subfolders and md files only`() {
         val root = Files.createTempDirectory("bookshelf-folder").toFile()
         val inbox = File(root, "inbox").apply { mkdirs() }
         val projects = File(root, "Projects").apply { mkdirs() }
@@ -167,7 +167,72 @@ class HomeBookshelfFolderTest {
         )
         val items = HomeBookshelfBuilder.buildFolderItems(input, "Projects") { false }
         val names = items.map { it.note.name }.sorted()
-        assertEquals(listOf("one", "two"), names)
-        assertFalse(items.any { it.isFolder })
+        // Direct children only: the "nested" subfolder plus the two notes, never
+        // "three.md" which lives one level deeper.
+        assertEquals(listOf("nested", "one", "two"), names)
+        assertTrue(items.single { it.note.name == "nested" }.isFolder)
+        assertFalse(items.any { it.note.name == "three" })
+    }
+
+    @Test
+    fun `buildRootItems scopes to the open folder's own vault only`() {
+        val rootA = Files.createTempDirectory("bookshelf-scope-a").toFile()
+        val inboxA = File(rootA, "inbox").apply { mkdirs() }
+        File(inboxA, "2026-07-06.md").writeText(
+            ExcalidrawSerializer.serializeUnified("# note", emptyList())
+        )
+        val vaultA = VaultConfig(
+            id = "vA",
+            name = "A",
+            inboxPath = inboxA.absolutePath,
+            attachmentPath = ""
+        )
+        val indexA = BookshelfIndex(
+            entries = listOf(
+                BookshelfEntry(path = "PinnedFolder", kind = BookshelfKind.FOLDER, pinned = true)
+            )
+        )
+
+        val rootB = Files.createTempDirectory("bookshelf-scope-b").toFile()
+        val inboxB = File(rootB, "inbox").apply { mkdirs() }
+        val folderB = File(rootB, "Folder").apply { mkdirs() }
+        File(folderB, "child.md").writeText("# child")
+        val vaultB = VaultConfig(
+            id = "vB",
+            name = "B",
+            inboxPath = inboxB.absolutePath,
+            attachmentPath = ""
+        )
+        VaultIndexRegistry.forVault(vaultB)?.refresh()
+
+        val inputA = HomeBookshelfBuilder.BuildInput(
+            vault = vaultA,
+            index = indexA,
+            bookshelfDir = "", // vault A has no folder open
+            coverImages = emptyMap(),
+            previewPageIds = emptyMap()
+        )
+        val inputB = HomeBookshelfBuilder.BuildInput(
+            vault = vaultB,
+            index = BookshelfIndex(),
+            bookshelfDir = "Folder", // vault B's folder is open
+            coverImages = emptyMap(),
+            previewPageIds = emptyMap()
+        )
+
+        val items = HomeBookshelfBuilder.buildRootItems(listOf(inputA, inputB))
+
+        // Only vault B's open-folder contents are shown; vault A's inbox capture and
+        // pinned folder from the dashboard must not leak into the drill-down view.
+        assertEquals(1, items.size)
+        assertEquals("vB", items[0].vaultId)
+        assertEquals("child", items[0].note.name)
+    }
+
+    @Test
+    fun `stepUpFolder goes up one level then closes at the pinned root`() {
+        assertEquals("Projects", HomeBookshelfBuilder.stepUpFolder("Projects/Sub", "Projects"))
+        assertEquals(null, HomeBookshelfBuilder.stepUpFolder("Projects", "Projects"))
+        assertEquals(null, HomeBookshelfBuilder.stepUpFolder("", ""))
     }
 }
