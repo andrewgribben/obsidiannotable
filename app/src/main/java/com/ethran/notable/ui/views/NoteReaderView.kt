@@ -73,6 +73,7 @@ import compose.icons.feathericons.ChevronRight
 import compose.icons.feathericons.Edit2
 import compose.icons.feathericons.ExternalLink
 import compose.icons.feathericons.FileText
+import compose.icons.feathericons.Home
 import compose.icons.feathericons.PenTool
 import compose.icons.feathericons.Sliders
 import compose.icons.feathericons.RotateCcw
@@ -175,7 +176,8 @@ fun NoteReaderView(
     onOpenNote: (String, String) -> Unit,
     onOpenFlipSide: (String, String) -> Unit,
     onHandwriteInto: (String, String) -> Unit = { _, _ -> },
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onHome: () -> Unit = onBack
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -530,6 +532,16 @@ fun NoteReaderView(
                 modifier = Modifier
                     .size(32.dp)
                     .noRippleClickable { requestBack() }
+            )
+            Spacer(Modifier.width(14.dp))
+            Icon(
+                imageVector = FeatherIcons.Home,
+                contentDescription = "Home",
+                modifier = Modifier
+                    .size(28.dp)
+                    .noRippleClickable {
+                        if (isEditDirty) showDiscardEditDialog = true else onHome()
+                    }
             )
             Spacer(Modifier.width(10.dp))
             Text(
