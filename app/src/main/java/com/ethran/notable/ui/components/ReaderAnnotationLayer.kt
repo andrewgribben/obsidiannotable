@@ -158,6 +158,36 @@ fun buildPendingAnnotation(
     )
 }
 
+/** Finger taps on e-ink often land just beside a link's glyphs; accept taps this close. */
+private val LINK_TAP_SLOP = 16.dp
+
+/**
+ * The link whose rendered bounds are nearest [position], within [slopPx]. Only links on
+ * the tapped line and its neighbours are measured, so long link lists stay cheap.
+ */
+private fun linkNear(
+    layout: TextLayoutResult,
+    links: List<com.ethran.notable.io.markdown.MarkdownLink>,
+    position: Offset,
+    slopPx: Float
+): com.ethran.notable.io.markdown.MarkdownLink? {
+    if (links.isEmpty()) return null
+    val line = layout.getLineForVerticalPosition(position.y)
+    val from = layout.getLineStart((line - 1).coerceAtLeast(0))
+    val to = layout.getLineEnd((line + 1).coerceAtMost(layout.lineCount - 1))
+    return links
+        .filter { it.displayEnd > from && it.displayStart < to }
+        .map { link ->
+            val box = layout.getPathForRange(link.displayStart, link.displayEnd).getBounds()
+            val dx = maxOf(box.left - position.x, 0f, position.x - box.right)
+            val dy = maxOf(box.top - position.y, 0f, position.y - box.bottom)
+            link to (dx * dx + dy * dy)
+        }
+        .filter { it.second <= slopPx * slopPx }
+        .minByOrNull { it.second }
+        ?.first
+}
+
 /**
  * The reader body: rendered markdown text plus, in annotation mode, an ink capture
  * and pending-mark overlay. The capture area spans the full width (screen edge to
@@ -202,12 +232,10 @@ fun AnnotatableReaderBody(
                     .onGloballyPositioned { textOrigin = it.positionInRoot() }
                     .pointerInput(rendered, annotationMode) {
                         if (annotationMode) return@pointerInput
+                        val slop = LINK_TAP_SLOP.toPx()
                         detectTapGestures { position ->
                             val textLayout = layout ?: return@detectTapGestures
-                            val offset = textLayout.getOffsetForPosition(position)
-                            rendered.links
-                                .firstOrNull { offset >= it.displayStart && offset < it.displayEnd }
-                                ?.let(onLinkTap)
+                            linkNear(textLayout, rendered.links, position, slop)?.let(onLinkTap)
                         }
                     }
             )
