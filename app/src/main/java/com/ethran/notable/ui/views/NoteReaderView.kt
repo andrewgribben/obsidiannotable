@@ -34,8 +34,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -46,6 +50,8 @@ import com.ethran.notable.data.datastore.GlobalAppSettings
 import com.ethran.notable.io.VaultFileStore
 import com.ethran.notable.io.markdown.MarkdownRenderer
 import com.ethran.notable.io.markdown.RenderedMarkdown
+import com.ethran.notable.io.markdown.extractHeadingAnchor
+import com.ethran.notable.io.markdown.findHeadingDisplayStart
 import com.ethran.notable.io.obsidiansync.ObsidianSyncManager
 import com.ethran.notable.io.vault.NoteEditGuard
 import com.ethran.notable.io.vault.VaultNoteEditModel
@@ -89,10 +95,17 @@ object NoteReaderDestination : NavigationDestination {
     override val route = "vaultnote"
     const val VAULT_ID_ARG = "vaultId"
     const val PATH_ARG = "path"
-    val routeWithArgs = "$route?$VAULT_ID_ARG={$VAULT_ID_ARG}&$PATH_ARG={$PATH_ARG}"
-    fun createRoute(vaultId: String, relativePath: String) =
-        "$route?$VAULT_ID_ARG=${android.net.Uri.encode(vaultId)}" +
+    const val HEADING_ARG = "heading"
+    val routeWithArgs =
+        "$route?$VAULT_ID_ARG={$VAULT_ID_ARG}&$PATH_ARG={$PATH_ARG}&$HEADING_ARG={$HEADING_ARG}"
+
+    /** [heading] is the decoded heading text to scroll to on open, when known (link anchors). */
+    fun createRoute(vaultId: String, relativePath: String, heading: String? = null): String {
+        val base = "$route?$VAULT_ID_ARG=${android.net.Uri.encode(vaultId)}" +
             "&$PATH_ARG=${android.net.Uri.encode(relativePath)}"
+        return if (heading.isNullOrBlank()) base
+        else "$base&$HEADING_ARG=${android.net.Uri.encode(heading)}"
+    }
 
     /** Opens using the active vault when [vaultId] is not known (deep links, legacy callers). */
     fun createRoute(relativePath: String): String {
@@ -173,11 +186,13 @@ fun NoteReaderView(
     relativePath: String,
     appRepository: AppRepository,
     obsidianSyncManager: ObsidianSyncManager,
-    onOpenNote: (String, String) -> Unit,
+    onOpenNote: (String, String, String?) -> Unit,
     onOpenFlipSide: (String, String) -> Unit,
     onHandwriteInto: (String, String) -> Unit = { _, _ -> },
     onBack: () -> Unit,
-    onHome: () -> Unit = onBack
+    onHome: () -> Unit = onBack,
+    /** Heading (decoded, display text) to scroll to once the note loads, from a link anchor. */
+    initialHeadingAnchor: String? = null
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -199,6 +214,18 @@ fun NoteReaderView(
     var fontScale by remember { mutableStateOf(settings.readerFontScale) }
     var syncing by remember { mutableStateOf(false) }
     val annotationState = remember(relativePath) { ReaderAnnotationState() }
+
+    // #heading anchor scrolling: the anchor to scroll to (from the nav arg on first load,
+    // or set directly when a link targets a heading in this same note), plus the live
+    // text layout and positions needed to translate a heading's display offset into a
+    // scroll-container pixel offset. All reset when the note changes.
+    var pendingHeadingAnchor by remember(vaultId, relativePath) {
+        mutableStateOf(initialHeadingAnchor)
+    }
+    var bodyTextLayout by remember(relativePath) { mutableStateOf<TextLayoutResult?>(null) }
+    var bodyTextOrigin by remember(relativePath) { mutableStateOf<Offset?>(null) }
+    var scrollContainerOrigin by remember(relativePath) { mutableStateOf<Offset?>(null) }
+    val scrollState = rememberScrollState()
 
     // Undo for the last applied annotation save: (content before the save, file hash
     // right after it). Valid until the file changes again from anywhere else.
@@ -357,6 +384,34 @@ fun NoteReaderView(
         state.rerender(fontScale)
     }
 
+    // Jump (no animation — e-ink) to a pending #heading anchor once both the heading's
+    // display offset is resolvable (note rendered) and its on-screen position is known
+    // (first text layout + positioning pass has run). Consumes the anchor once applied,
+    // or once it fails to match any heading, so it never re-fires while scrolling.
+    LaunchedEffect(
+        pendingHeadingAnchor, state.rendered, bodyTextLayout, bodyTextOrigin, scrollContainerOrigin
+    ) {
+        val anchor = pendingHeadingAnchor ?: return@LaunchedEffect
+        val headings = state.rendered?.headings ?: return@LaunchedEffect
+        val layout = bodyTextLayout ?: return@LaunchedEffect
+        val textOrigin = bodyTextOrigin ?: return@LaunchedEffect
+        val containerOrigin = scrollContainerOrigin ?: return@LaunchedEffect
+
+        val displayStart = findHeadingDisplayStart(headings, anchor)
+        if (displayStart == null) {
+            pendingHeadingAnchor = null
+            return@LaunchedEffect
+        }
+        val clamped = displayStart.coerceIn(0, layout.layoutInput.text.length.coerceAtLeast(0))
+        val lineTop = layout.getLineTop(layout.getLineForOffset(clamped))
+        // textOrigin.y moves up by scrollState.value as the user scrolls down, so adding
+        // it back gives the body's offset within the (unscrolled) scroll content.
+        val bodyOffsetInContent = (textOrigin.y - containerOrigin.y) + scrollState.value
+        val target = (bodyOffsetInContent + lineTop).toInt().coerceAtLeast(0)
+        scrollState.scrollTo(target.coerceAtMost(scrollState.maxValue))
+        pendingHeadingAnchor = null
+    }
+
     fun saveEdit() {
         val regions = editRegions ?: return
         val hash = state.contentHash ?: return
@@ -498,6 +553,7 @@ fun NoteReaderView(
             openInBrowser(context, target)
             return
         }
+        val anchor = extractHeadingAnchor(target)
         // Markdown links are usually relative to the current note's folder — try that
         // first, then Obsidian-style vault-wide resolution (path, then unique name).
         val currentDir = relativePath.substringBeforeLast('/', "")
@@ -505,7 +561,12 @@ fun NoteReaderView(
             // Resolution may scan the whole vault on first use: keep it off the main thread.
             val resolved = withContext(Dispatchers.IO) { resolveNoteLink(index, currentDir, target) }
             if (resolved != null) {
-                onOpenNote(vaultId, resolved.relativePath)
+                if (resolved.relativePath == relativePath) {
+                    // Same-note anchor: scroll in place rather than re-navigating.
+                    if (anchor != null) pendingHeadingAnchor = anchor
+                } else {
+                    onOpenNote(vaultId, resolved.relativePath, anchor)
+                }
             } else {
                 SnackState.globalSnackFlow.tryEmit(
                     SnackConf(text = "Note not found: $target", duration = 3000)
@@ -725,7 +786,8 @@ fun NoteReaderView(
                 Column(
                     Modifier
                         .fillMaxSize()
-                        .verticalScroll(rememberScrollState(), enabled = !annotationMode)
+                        .onGloballyPositioned { scrollContainerOrigin = it.positionInRoot() }
+                        .verticalScroll(scrollState, enabled = !annotationMode)
                         .padding(vertical = 12.dp)
                 ) {
                     if (rendered.frontmatter.isNotEmpty()) {
@@ -750,7 +812,9 @@ fun NoteReaderView(
                             )
                         },
                         vaultRoot = vaultRoot,
-                        noteRelativePath = relativePath
+                        noteRelativePath = relativePath,
+                        onBodyTextLayout = { bodyTextLayout = it },
+                        onBodyPositioned = { bodyTextOrigin = it }
                     )
                     Spacer(Modifier.height(48.dp))
                 }
@@ -797,7 +861,7 @@ fun NoteReaderView(
             onSelect = { note ->
                 showQuickSwitcher = false
                 if (note.relativePath != relativePath) {
-                    onOpenNote(vaultId, note.relativePath)
+                    onOpenNote(vaultId, note.relativePath, null)
                 }
             },
             onDismiss = { showQuickSwitcher = false }

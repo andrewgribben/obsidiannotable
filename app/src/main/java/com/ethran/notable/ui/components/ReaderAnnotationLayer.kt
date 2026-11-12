@@ -203,7 +203,11 @@ fun AnnotatableReaderBody(
     onLinkTap: (com.ethran.notable.io.markdown.MarkdownLink) -> Unit,
     onGestureRejected: () -> Unit,
     vaultRoot: File? = null,
-    noteRelativePath: String = ""
+    noteRelativePath: String = "",
+    /** Reports the body's rendered text layout, for anchor-based scroll (see NoteReaderView). */
+    onBodyTextLayout: (TextLayoutResult) -> Unit = {},
+    /** Reports the body text's position in root coordinates, for anchor-based scroll. */
+    onBodyPositioned: (Offset) -> Unit = {}
 ) {
     var layout by remember { mutableStateOf<TextLayoutResult?>(null) }
     var boxOrigin by remember { mutableStateOf(Offset.Zero) }
@@ -225,11 +229,17 @@ fun AnnotatableReaderBody(
                 text = rendered.text,
                 inlineContent = inlineImages,
                 lineHeight = rendered.theme.lineHeight,
-                onTextLayout = { layout = it },
+                onTextLayout = {
+                    layout = it
+                    onBodyTextLayout(it)
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = TEXT_HORIZONTAL_PADDING)
-                    .onGloballyPositioned { textOrigin = it.positionInRoot() }
+                    .onGloballyPositioned {
+                        textOrigin = it.positionInRoot()
+                        onBodyPositioned(textOrigin)
+                    }
                     .pointerInput(rendered, annotationMode) {
                         if (annotationMode) return@pointerInput
                         val slop = LINK_TAP_SLOP.toPx()

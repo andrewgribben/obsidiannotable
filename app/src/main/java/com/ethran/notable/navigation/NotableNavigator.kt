@@ -183,8 +183,8 @@ class NotableNavigator(
         navController.navigate(VaultBrowserDestination.createRoute(dir))
     }
 
-    fun goToVaultNote(vaultId: String, relativePath: String) {
-        navController.navigate(NoteReaderDestination.createRoute(vaultId, relativePath))
+    fun goToVaultNote(vaultId: String, relativePath: String, heading: String? = null) {
+        navController.navigate(NoteReaderDestination.createRoute(vaultId, relativePath, heading))
     }
 
     fun goToVaultNote(relativePath: String) {
