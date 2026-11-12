@@ -177,11 +177,13 @@ fun EditorView(
             }
             flipSideLink = link
             if (link?.purpose == FlipSideManager.PURPOSE_FLIP) {
-                withContext(Dispatchers.IO) {
+                val imported = withContext(Dispatchers.IO) {
                     FlipSideManager.syncFlipSideFromVaultIfChanged(appRepository, pageId)
-                    FlipSideManager.ensureHwrStrokeBaseline(appRepository, pageId)
+                        .also { FlipSideManager.ensureHwrStrokeBaseline(appRepository, pageId) }
                 }
-                page.reloadStrokesFromDb()
+                // Reloading unconditionally raced the initial load and showed a
+                // "Cannot remove current page" snack on every open.
+                if (imported) page.reloadStrokesFromDb()
             }
             val inbox = link == null && (pageData?.notebookId == null &&
                 GlobalAppSettings.current.obsidianInboxPath.isNotBlank() ||

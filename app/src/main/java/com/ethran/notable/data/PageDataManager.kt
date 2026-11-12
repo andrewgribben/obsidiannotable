@@ -285,7 +285,10 @@ object PageDataManager {
             calculateMemoryUsage(pageId, 1)
         } catch (e: CancellationException) {
             log.w("Loading of page $pageId was cancelled.")
-            if (!validatePageDataLoaded(pageId)) removePage(pageId)
+            // A reload (evictLoadedPageData) replaces this job and clears the data itself;
+            // removing here would wipe what the replacement job is loading.
+            val replaced = dataLoadingJobs[pageId] !== coroutineScope.coroutineContext[Job]
+            if (!replaced && !validatePageDataLoaded(pageId)) removePage(pageId)
             throw e  // rethrow cancellation
         } finally {
             log.d("Loaded page $pageId")
