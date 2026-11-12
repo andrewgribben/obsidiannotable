@@ -132,4 +132,21 @@ class VaultFileStoreTest {
         assertTrue(deleted is VaultFileStore.WriteResult.Success)
         assertFalse(f.exists())
     }
+
+    @Test
+    fun `notifySync false skips the write listener but still writes`() {
+        val f = file()
+        val notified = mutableListOf<File>()
+        VaultFileStore.addWriteListener { notified.add(it) }
+
+        val result = VaultFileStore.write(f, "silent save", notifySync = false)
+
+        assertTrue(result is VaultFileStore.WriteResult.Success)
+        assertEquals("silent save", f.readText())
+        assertTrue(notified.isEmpty())
+
+        // A normal write (as on editor close) still notifies, so sync push is unaffected.
+        VaultFileStore.write(f, "closing save")
+        assertEquals(listOf(f), notified)
+    }
 }

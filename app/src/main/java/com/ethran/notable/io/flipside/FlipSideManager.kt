@@ -892,7 +892,40 @@ object FlipSideManager {
                 return@launch
             }
             VaultWriteQueue.enqueue(drawingFile, "flip-side save") {
-                saveFlipSide(appRepository, link, vault)
+                saveFlipSide(appRepository, link, vault, notifySync = true)
+            }
+        }
+    }
+
+    /**
+     * Silently saves a flip-side page's strokes to its vault file while the note is still
+     * open, e.g. once the page scroll settles. Unlike [scheduleSaveIfFlipPage] this does
+     * NOT release the note edit guard (the editor still owns the note) and does NOT notify
+     * Obsidian Sync (the push still only happens on editor close). No-op for non-flip pages,
+     * missing vault, or when a save is already in flight for the file (serialized by
+     * [VaultWriteQueue]/[VaultFileStore.withFileLock]).
+     */
+    fun scheduleBackgroundSave(appRepository: AppRepository, pageId: String) {
+        val settings = GlobalAppSettings.current
+        ioScope.launch {
+            val link = appRepository.kvProxy.get(pageKey(pageId), FlipSideLink.serializer())
+            if (link == null || link.purpose != PURPOSE_FLIP) {
+                return@launch
+            }
+            val vault = settings.vaults.find { it.id == link.vaultId }
+                ?: GlobalAppSettings.current.activeVault
+            if (vault == null) {
+                return@launch
+            }
+            if (vaultRootDir(vault) == null) {
+                return@launch
+            }
+            val drawingFile = drawingFileForLink(link, vault)
+            if (drawingFile == null) {
+                return@launch
+            }
+            VaultWriteQueue.enqueue(drawingFile, "flip-side background save") {
+                saveFlipSide(appRepository, link, vault, notifySync = false)
             }
         }
     }
@@ -900,7 +933,8 @@ object FlipSideManager {
     private suspend fun saveFlipSide(
         appRepository: AppRepository,
         link: FlipSideLink,
-        vault: VaultConfig
+        vault: VaultConfig,
+        notifySync: Boolean
     ) {
         vaultRootDir(vault) ?: return
         val drawingFile = drawingFileForLink(link, vault) ?: return
@@ -917,7 +951,12 @@ object FlipSideManager {
         val expected = link.drawingFileHash
             .takeUnless { it == VaultFileStore.HASH_MISSING }
             ?: link.fileHash
-        when (val result = VaultFileStore.write(drawingFile, content, expectedHash = expected)) {
+        when (val result = VaultFileStore.write(
+            drawingFile,
+            content,
+            expectedHash = expected,
+            notifySync = notifySync
+        )) {
             is VaultFileStore.WriteResult.Success -> {
                 val hash = VaultFileStore.hashOf(content)
                 saveLink(

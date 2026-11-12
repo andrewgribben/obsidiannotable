@@ -30,6 +30,7 @@ import com.ethran.notable.editor.canvas.CanvasEventBus
 import com.ethran.notable.editor.drawing.annotationVisualBounds
 import com.ethran.notable.editor.drawing.drawBg
 import com.ethran.notable.editor.drawing.drawOnCanvasFromPage
+import com.ethran.notable.editor.utils.ScrollAutosaveTracker
 import com.ethran.notable.editor.utils.div
 import com.ethran.notable.editor.utils.loadPersistBitmap
 import com.ethran.notable.editor.utils.minus
@@ -37,6 +38,7 @@ import com.ethran.notable.editor.utils.plus
 import com.ethran.notable.editor.utils.times
 import com.ethran.notable.editor.utils.toIntOffset
 import com.ethran.notable.gestures.ZOOM_SNAP_THRESHOLD
+import com.ethran.notable.io.flipside.FlipSideManager
 import com.ethran.notable.ui.SnackState
 import com.ethran.notable.ui.SnackState.Companion.logAndShowError
 import com.onyx.android.sdk.extension.isNotNull
@@ -57,6 +59,9 @@ import kotlin.system.measureTimeMillis
 
 const val OVERLAP = 2
 
+/** How long page scroll must be idle before a silent flip-side background save runs. */
+const val SCROLL_AUTOSAVE_DEBOUNCE_MS = 1000L
+
 /**
  * Manages the state and rendering of a single page within the editor.
  * @param currentPageId Id of page assigned to it.
@@ -76,6 +81,12 @@ class PageView(
     private val logCache = ShipBook.getLogger("PageViewCache")
 
     private var loadingJob: Job? = null
+
+    // Silent background save of the flip-side drawing while the user keeps writing.
+    // Scroll settling is the trigger so it never competes with pen input; it only does
+    // work when strokes actually changed, and it is a no-op for non-flip pages.
+    private val backgroundSaveTracker = ScrollAutosaveTracker()
+    private var backgroundSaveJob: Job? = null
 
     @Volatile
     var windowedBitmap = createBitmap(viewWidth, viewHeight)
@@ -119,6 +130,7 @@ class PageView(
         }
         set(value) {
             PageDataManager.setPageScroll(currentPageId, value)
+            scheduleBackgroundFlipSideSave()
         }
 
     val isTransformationAllowed: Boolean
@@ -212,6 +224,7 @@ class PageView(
      */
     fun changePage(newPageId: String) {
         val oldId = currentPageId
+        backgroundSaveJob?.cancel()
         currentPageId = newPageId
         coroutineScope.launch {
             PageDataManager.updateOnExit(oldId)
@@ -262,6 +275,7 @@ class PageView(
     */
     fun disposeOldPage() {
         log.d("Dispose old page")
+        backgroundSaveJob?.cancel()
         PageDataManager.updateOnExit(currentPageId)
         persistBitmapDebounced(currentPageId)
         cleanJob()
@@ -329,6 +343,7 @@ class PageView(
 
         saveStrokesToPersistLayer(strokesToAdd)
         PageDataManager.indexStrokes(coroutineScope, currentPageId)
+        backgroundSaveTracker.markDirty()
 
         persistBitmapDebounced()
     }
@@ -344,6 +359,7 @@ class PageView(
             appRepository.strokeRepository.update(strokesToUpdate)
         }
         PageDataManager.indexStrokes(coroutineScope, currentPageId)
+        backgroundSaveTracker.markDirty()
         persistBitmapDebounced()
     }
 
@@ -352,6 +368,7 @@ class PageView(
         removeStrokesFromPersistLayer(strokeIds)
         PageDataManager.indexStrokes(coroutineScope, currentPageId)
         PageDataManager.recomputeHeight(currentPageId)
+        backgroundSaveTracker.markDirty()
 
         persistBitmapDebounced()
     }
@@ -876,6 +893,22 @@ class PageView(
             CanvasEventBus.forceUpdate.emit(null)
         }
         persistBitmapDebounced()
+    }
+
+    /**
+     * Debounces a silent local save of the flip-side drawing file: restarted on every
+     * scroll update, it only fires once scroll has been idle for
+     * [SCROLL_AUTOSAVE_DEBOUNCE_MS], and only when strokes changed since the last save.
+     * Runs off the UI/pen thread and never releases the note edit guard or pushes to sync.
+     */
+    private fun scheduleBackgroundFlipSideSave() {
+        val pageId = currentPageId
+        backgroundSaveJob?.cancel()
+        backgroundSaveJob = coroutineScope.launch(Dispatchers.Default) {
+            delay(SCROLL_AUTOSAVE_DEBOUNCE_MS)
+            if (!backgroundSaveTracker.consumeIfDirty()) return@launch
+            FlipSideManager.scheduleBackgroundSave(appRepository, pageId)
+        }
     }
 
     // should be run after every modification of widowedBitmap.

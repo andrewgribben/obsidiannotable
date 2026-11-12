@@ -89,8 +89,17 @@ object VaultFileStore {
      * When [expectedHash] is non-null the write only happens if the on-disk state still
      * matches: pass the hash from [read], or [HASH_MISSING] when the file is expected
      * not to exist yet. Pass null for an unconditional write.
+     *
+     * When [notifySync] is false the write skips the listener notification that drives
+     * an Obsidian Sync push (e.g. a silent background save that should stay purely local
+     * until the editor closes and pushes for real).
      */
-    fun write(file: File, content: String, expectedHash: String? = null): WriteResult {
+    fun write(
+        file: File,
+        content: String,
+        expectedHash: String? = null,
+        notifySync: Boolean = true
+    ): WriteResult {
         try {
             file.parentFile?.mkdirs()
 
@@ -113,7 +122,9 @@ object VaultFileStore {
                 tempFile.delete()
             }
             log.i("Wrote ${content.length} chars to ${file.absolutePath}")
-            VaultFileStoreListeners.notifyWritten(file)
+            if (notifySync) {
+                VaultFileStoreListeners.notifyWritten(file)
+            }
             return WriteResult.Success
         } catch (e: Exception) {
             log.e("Failed to write ${file.absolutePath}: ${e.message}")
