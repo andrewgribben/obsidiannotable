@@ -242,12 +242,19 @@ private fun InboxCaptureSettings(
                     onSettingsChange(normalized.copy(activeVaultId = vault.id))
                     VaultTagScanner.refreshCache(vault.inboxPath)
                 },
-                onToggleExpand = {
+                onToggleExpand = { pending ->
                     val next = if (expandedVaultId == vault.id) null else vault.id
                     expandedVaultId = next
                     onSettingsChange(
-                        normalized.copy(settingsExpandedVaultId = next.orEmpty())
+                        normalized.copy(
+                            settingsExpandedVaultId = next.orEmpty(),
+                            vaults = if (pending == null) vaults
+                            else vaults.map { if (it.id == vault.id) pending else it }
+                        )
                     )
+                    if (pending != null && pending.inboxPath != vault.inboxPath) {
+                        VaultTagScanner.refreshCache(pending.inboxPath)
+                    }
                 },
                 onChange = { changed ->
                     val cleaned = changed.copy(
@@ -315,7 +322,7 @@ private fun VaultRow(
     obsidianSyncSignedIn: Boolean,
     remoteVaults: List<com.ethran.notable.data.datastore.ObsidianRemoteVaultRef>,
     onActivate: () -> Unit,
-    onToggleExpand: () -> Unit,
+    onToggleExpand: (pending: VaultConfig?) -> Unit,
     onChange: (VaultConfig) -> Unit,
     onPickInbox: () -> Unit,
     onPickAttachment: () -> Unit,
@@ -329,6 +336,15 @@ private fun VaultRow(
         mutableStateOf(vault.attachmentPath)
     }
     var e2eInput by remember(vault.id) { mutableStateOf("") }
+
+    // Text fields commit on IME Done, which Boox keyboards often never send, so the
+    // row's Done button commits them too (in the same settings update as the collapse).
+    fun pendingEdits(): VaultConfig? = vault.copy(
+        name = nameInput.trim(),
+        inboxPath = inboxInput.trim(),
+        attachmentPath = attachmentInput.trim()
+            .takeIf { isAttachmentPathSet(it) }.orEmpty()
+    ).takeIf { it != vault }
 
     Column(
         modifier = Modifier
@@ -376,7 +392,7 @@ private fun VaultRow(
             }
             Box(
                 modifier = Modifier
-                    .clickable { onToggleExpand() }
+                    .clickable { onToggleExpand(if (isExpanded) pendingEdits() else null) }
                     .padding(horizontal = 10.dp, vertical = 4.dp)
             ) {
                 Text(if (isExpanded) "Done" else "Edit", fontSize = 13.sp)
