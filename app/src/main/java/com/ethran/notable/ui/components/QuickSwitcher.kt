@@ -22,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -41,6 +42,8 @@ import compose.icons.feathericons.Edit3
 import compose.icons.feathericons.FileText
 import com.ethran.notable.io.vault.VaultIndex
 import com.ethran.notable.io.vault.VaultNote
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * Obsidian-style quick switcher: recents first, fuzzy filename search as you type.
@@ -58,15 +61,18 @@ fun QuickSwitcher(
     var query by remember { mutableStateOf("") }
     val focusRequester = remember { FocusRequester() }
 
-    val results = remember(query, index) {
-        if (query.isBlank()) {
-            val all = index.allNotes().ifEmpty { index.refresh() }
-            val byPath = all.associateBy { it.relativePath }
-            val recents = recentPaths.mapNotNull { byPath[it] }
-            val rest = all.filter { it.relativePath !in recentPaths.toSet() }
-            (recents + rest).take(30)
-        } else {
-            index.search(query)
+    // The first query may scan the whole vault (seconds on large vaults): run it off the main thread.
+    val results by produceState(emptyList<VaultNote>(), query, index) {
+        value = withContext(Dispatchers.IO) {
+            if (query.isBlank()) {
+                val all = index.allNotes().ifEmpty { index.refresh() }
+                val byPath = all.associateBy { it.relativePath }
+                val recents = recentPaths.mapNotNull { byPath[it] }
+                val rest = all.filter { it.relativePath !in recentPaths.toSet() }
+                (recents + rest).take(30)
+            } else {
+                index.search(query)
+            }
         }
     }
 

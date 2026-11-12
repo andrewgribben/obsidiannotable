@@ -89,6 +89,19 @@ class VaultLinkResolutionTest {
     }
 
     @Test
+    fun `relative link to an existing file resolves without scanning the vault`() {
+        val root = tempVault()
+        val target = note(root, "W211/Module Guide/Introduction.md")
+        val index = VaultIndex(root)
+
+        val resolved = resolveNoteLink(index, "W211", "Module%20Guide/Introduction.md#Intro")
+
+        assertEquals("W211/Module Guide/Introduction.md", resolved?.relativePath)
+        assertEquals(target, resolved?.file)
+        assertTrue("index must stay unscanned", index.allNotes().isEmpty())
+    }
+
+    @Test
     fun `resolves a link with a custom block-ref-style anchor`() {
         val root = tempVault()
         val target = note(root, "Module Guide/3 Module assessment.md")
