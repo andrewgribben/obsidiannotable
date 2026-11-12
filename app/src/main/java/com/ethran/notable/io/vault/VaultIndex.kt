@@ -359,6 +359,22 @@ fun decodeVaultLinkTarget(encoded: String): String {
 fun resolveNoteLink(index: VaultIndex?, currentDir: String, target: String): VaultNote? {
     if (index == null) return null
     val decoded = decodeVaultLinkTarget(target)
+    // Fast path: a relative link to an existing file needs no vault-wide index scan,
+    // which reads every note and takes seconds on large vaults.
+    if (currentDir.isNotEmpty() && !decoded.startsWith("/")) {
+        val path = normalizeVaultPath("$currentDir/${decoded.substringBefore('#').substringBefore('^').trim()}")
+        val withExt = if (path.endsWith(".md", ignoreCase = true)) path else "$path.md"
+        val file = File(index.vaultRoot, withExt.replace('/', File.separatorChar))
+        if (file.isFile) {
+            return VaultNote(
+                file = file,
+                relativePath = withExt,
+                name = file.name.removeSuffix(".md"),
+                hasInk = false,
+                lastModified = file.lastModified()
+            )
+        }
+    }
     val viaCurrentDir = if (currentDir.isNotEmpty() && !decoded.startsWith("/")) {
         index.resolveWikilink(normalizeVaultPath("$currentDir/$decoded"))
     } else null

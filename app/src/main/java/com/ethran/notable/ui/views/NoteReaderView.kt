@@ -499,13 +499,16 @@ fun NoteReaderView(
         // Markdown links are usually relative to the current note's folder — try that
         // first, then Obsidian-style vault-wide resolution (path, then unique name).
         val currentDir = relativePath.substringBeforeLast('/', "")
-        val resolved = resolveNoteLink(index, currentDir, target)
-        if (resolved != null) {
-            onOpenNote(vaultId, resolved.relativePath)
-        } else {
-            SnackState.globalSnackFlow.tryEmit(
-                SnackConf(text = "Note not found: $target", duration = 3000)
-            )
+        scope.launch {
+            // Resolution may scan the whole vault on first use: keep it off the main thread.
+            val resolved = withContext(Dispatchers.IO) { resolveNoteLink(index, currentDir, target) }
+            if (resolved != null) {
+                onOpenNote(vaultId, resolved.relativePath)
+            } else {
+                SnackState.globalSnackFlow.tryEmit(
+                    SnackConf(text = "Note not found: $target", duration = 3000)
+                )
+            }
         }
     }
 
